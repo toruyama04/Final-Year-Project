@@ -1,0 +1,14 @@
+{
+	"Targets": [
+		{
+			"Name": "AuroraSim",
+			"Path": "..\\Source\\AuroraSim.Target.cs",
+			"Type": "Game"
+		},
+		{
+			"Name": "AuroraSimEditor",
+			"Path": "..\\Source\\AuroraSimEditor.Target.cs",
+			"Type": "Editor"
+		}
+	]
+}
