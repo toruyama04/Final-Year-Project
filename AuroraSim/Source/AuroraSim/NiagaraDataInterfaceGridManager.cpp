@@ -8,7 +8,7 @@ UNiagaraDataInterfaceGridManager::UNiagaraDataInterfaceGridManager()
 	  rho(32, 32, 32),
 	  ef(32, 32, 32),
 	  node_volume(32, 32, 32),
-	  A(32 * 32 * 32)
+	  node_type(32, 32, 32)
 {
 	// CHANGE HARDCODED VALUES
 	NodeCountInX = 32;
@@ -19,46 +19,28 @@ UNiagaraDataInterfaceGridManager::UNiagaraDataInterfaceGridManager()
 	max_solver_iteration = 2000;
 	tolerance = 1e-4;
 
-	BuildMatrix();
 }
 
-// is this for GPU?
-void UNiagaraDataInterfaceGridManager::BuildMatrix()
+void UNiagaraDataInterfaceGridManager::SetBoundaryNodes()
 {
-	float inverse_dx = 1.0 / cell_spacing[0];
-	float inverse_dy = 1.0 / cell_spacing[1];
-	float inverse_dz = 1.0 / cell_spacing[2];
-	float inverse2_dx = inverse_dx * inverse_dx;
-	float inverse2_dy = inverse_dy * inverse_dy;
-	float inverse2_dz = inverse_dz * inverse_dz;
-	for (int n = 0; n < total_nodes; ++n)
+	for (int z = 0; z < NodeCountInZ; ++z)
 	{
-		A.clearRow(n);
-		int x = n % NodeCountInX;
-		int y = n % NodeCountInY;
-		int z = n % NodeCountInZ;
-		if (z == 0) { A(n, n) = inverse_dx; A(n, n + 1) = -inverse_dx; }
-		else if (z == NodeCountInX) { A(n, n) = inverse_dx; A(n, n - 1) = -inverse_dx; }
-		else if (y == 0) { A(n, n) = inverse_dy; A(n, n + NodeCountInX) = -inverse_dy; }
-		else if (y == NodeCountInY) { A(n, n) = inverse_dy; A(n, n - NodeCountInX) = -inverse_dy; }
-		else if (x == 0) { A(n, n) = inverse_dz; A(n, n + NodeCountInX * NodeCountInY) = -inverse_dz; }
-		else if (x == NodeCountInZ - 1) { A(n, n) = inverse_dz; A(n, n - NodeCountInX * NodeCountInY) = -inverse_dz; }
-		else {
-			A(n, n - NodeCountInX * NodeCountInY) = inverse2_dz;
-			A(n, n - NodeCountInX) = inverse2_dy;
-			A(n, n - 1) = inverse2_dx;
-			A(n, n) = -2.0 * (inverse2_dx + inverse2_dy + inverse2_dz);
-			A(n, n + 1) = inverse2_dx;
-			A(n, n + NodeCountInX) = inverse2_dy;
-			A(n, n + NodeCountInX * NodeCountInY) = inverse2_dz;
+		for (int y = 0; y < NodeCountInY; ++y)
+		{
+			for (int x = 0; x < NodeCountInX; ++x)
+			{
+				int index = x + y * NodeCountInX + z * NodeCountInX * NodeCountInY;
+				if (x == 0 || x == NodeCountInX - 1 || y == 0 || y == NodeCountInY - 1 || z == 0 || z == NodeCountInZ - 1)
+				{
+					node_type[index] = 1; // Boundary node
+				}
+				else
+				{
+					node_type[index] = 0; // Non-boundary node
+				}
+			}
 		}
 	}
-	// TO COMPLETE
-	/*
-	float rho0 = init_electron_density * ELECTRON CHARGE
-	float density_ratio_min = 1e-6;
-	for 
-	*/
 }
 
 bool UNiagaraDataInterfaceGridManager::SetCoordinates(FVector3f origin, FVector3f end)
@@ -75,75 +57,21 @@ bool UNiagaraDataInterfaceGridManager::SetCoordinates(FVector3f origin, FVector3
 	return false;
 }
 
-std::vector<float> Matrix::operator*(std::vector<float>& vec) {
-	std::vector<float> row(row_count);
-	for (int count = 0; count < row_count; ++count)
-	{
-		auto& r = rows[count];
-		row[count] = 0;
-		for (int i = 0; i < max_non_zero_values; ++i) 
-		{
-			if (r.columns[i] >= 0)
-			{
-				row[count] += r.coefficients[i] * vec[r.columns[i]];
-			}
-			else break;
-		}
-	}
-	return row;
-}
-
-float& Matrix::operator()(int row, int col)
-{
-	for (int i = 0; i < max_non_zero_values; ++i)
-	{
-		if (rows[row].columns[i] == col)
-		{
-			return rows[row].coefficients[i];
-		}
-		else if (rows[row].columns[i] == -1)
-		{
-			rows[row].columns[i] = col;
-			return rows[row].coefficients[i];
-		}
-	}
-	throw std::out_of_range("Column index out of range for sparse matrix");
-}
-
-Matrix Matrix::InverseDiagonal()
-{
-	Matrix M(row_count);
-	for (int r = 0; r < row_count; ++r)
-	{
-		M(r, r) = 1.0 / (*this)(r, r);
-	}
-	return M;
-}
-
-Matrix Matrix::SubVectorFromDiagonal(std::vector<float>& vec)
-{
-	Matrix M(*this);
-	for (int i = 0; i < row_count; ++i)
-	{
-		M(i, i) = (*this)(i, i) - vec[i];
-	}
-	return M;
-}
-
-float Matrix::MultiplyRowWithVector(int r, std::vector<float>& vec)
-{
-	auto& row = rows[r];
-	float sum = 0;
-	for (int i = 0; i < max_non_zero_values; ++i)
-	{
-		if (row.columns[i] >= 0)
-		{
-			sum += row.coefficients[i] * vec[row.columns[i]];
-		}
-		else break;
-	}
-	return sum;
-}
+// function to solve plasma potential (Jacobi iterator)
+// in current potential
+// in charge density
+// in grid spacing
+// permittivity?
+// out potential
 
 
+// function to compute electric field
+// in potential
+// in grid spacing
+// out electric field
 
+// grid sampling
+
+// gradient calculation?
+
+// interpolation (gather, scatter)

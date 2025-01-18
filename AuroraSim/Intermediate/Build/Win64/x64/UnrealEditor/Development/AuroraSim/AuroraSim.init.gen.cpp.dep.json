@@ -1,0 +1,13 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\toruy_iu\\documents\\y3 modules\\fyp\\aurorasim\\aurorasim\\intermediate\\build\\win64\\unrealeditor\\inc\\aurorasim\\uht\\aurorasim.init.gen.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\toruy_iu\\documents\\y3 modules\\fyp\\aurorasim\\aurorasim\\intermediate\\build\\win64\\x64\\aurorasimeditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.cpp20.h.pch",
+        "Includes": [
+            "c:\\users\\toruy_iu\\documents\\y3 modules\\fyp\\aurorasim\\aurorasim\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\aurorasim\\definitions.aurorasim.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

@@ -45,5 +45,17 @@
     <ClCompile Include="..\..\Source\AuroraSim\NiagaraDataInterfaceGridManager.h">
       <Filter>Source\AuroraSim</Filter>
     </ClCompile>
+    <Filter Include="Source\AuroraSim\Private">
+      <UniqueIdentifier>{4937A736-D085-3230-BA30-1573BA1C2311}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\AuroraSim\Private\UNiagaraDataInterfaceAuroraData.cpp">
+      <Filter>Source\AuroraSim\Private</Filter>
+    </ClCompile>
+    <Filter Include="Source\AuroraSim\Public">
+      <UniqueIdentifier>{094C38AE-88EE-39B4-B2EA-33BC9853670C}</UniqueIdentifier>
+    </Filter>
+    <ClCompile Include="..\..\Source\AuroraSim\Public\UNiagaraDataInterfaceAuroraData.h">
+      <Filter>Source\AuroraSim\Public</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
