@@ -26,6 +26,7 @@ static const FString PlasmaPotential2ParamName(TEXT("PlasmaPotential2"));
 static const FString ChargeDensityParamName(TEXT("ChargeDensity"));
 static const FString ElectricFieldParamName(TEXT("ElectricField"));
 static const FString NodeCountsParamName(TEXT("NodeCounts"));
+static const FString CellSizeParamName(TEXT("CellSize"));
 
 #if WITH_EDITORONLY_DATA
 void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const
@@ -288,6 +289,8 @@ void UUNiagaraDataInterfaceAuroraData::GetParameterDefinitionHLSL(const FNiagara
 		*ParamInfo.DataInterfaceHLSLSymbol, *ElectricFieldParamName);
 	OutHLSL.Appendf(TEXT("int3 %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *NodeCountsParamName);
+	OutHLSL.Appendf(TEXT("float3 %s%s;\n"),
+		*ParamInfo.DataInterfaceHLSLSymbol, *CellSizeParamName);
 }
 
 UUNiagaraDataInterfaceAuroraData::UUNiagaraDataInterfaceAuroraData()
@@ -543,3 +546,5 @@ void UUNiagaraDataInterfaceAuroraData::SetShaderParameters(const FNiagaraDataInt
 FNiagaraDataInterfaceAuroraProxy::FNiagaraDataInterfaceAuroraProxy()
 {
 }
+
+

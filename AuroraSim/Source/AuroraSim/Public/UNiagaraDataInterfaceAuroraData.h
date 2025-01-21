@@ -4,26 +4,43 @@
 
 #include "CoreMinimal.h"
 #include "NiagaraDataInterface.h"
+#include "NiagaraDataInterfaceRW.h"
 #include "UNiagaraDataInterfaceAuroraData.generated.h"
 
 
 /**
-*  Handle GPU-related operations. 
-*  setting up shader parameters, handling data transfers between CPU/GPU
-*  executing GPU compute tasks
+*  Called before PreStage to get the dispatch arguments
 */
-struct FNiagaraDataInterfaceAuroraProxy : public FNiagaraDataInterfaceProxy
+struct FNiagaraDataInterfaceAuroraProxy : public FNiagaraDataInterfaceProxyRW
 {
 	FNiagaraDataInterfaceAuroraProxy();
-	virtual ~FNiagaraDataInterfaceAuroraProxy();
 
 	// gpu buffers
+	TSharedPtr<FRDGBuffer, ESPMode::ThreadSafe> PlasmaPotentialBufferA;
+	TSharedPtr<FRDGBuffer, ESPMode::ThreadSafe> PlasmaPotentialBufferB;
+	TSharedPtr<FRDGBuffer, ESPMode::ThreadSafe> ElectricFieldBuffer;
+	TSharedPtr<FRDGBuffer, ESPMode::ThreadSafe> ChargeDensityBuffer;
 
 	// function to resize buffers
+	virtual void GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context) override;
 
 	// function to sychronise data
+	// check proxy_data is not null, clear buffers
+	virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
+	// if requires buffering? beginsimulate(), if element count aren't same as node counts
+	//  if you need to clearBeforeIterationStage, if destinationData is true, clear buffers
+	virtual void PreStage(const FNDIGpuComputePreStageContext& Context) override;
+	// if requires buffering, endsimulate
+	virtual void PostStage(const FNDIGpuComputePostStageContext& Context) override;
+	// check stuff - see code
+	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
+	// BeginSimulate(), EndSimulate()
 	
 	// shader parameter bindings
+
+	// managing grid data
+	void ResizeGrid(FIntVector NewGridSize);
+	void ResetGrid();
 
 private:
 	FIntVector GridDimensions;
@@ -40,12 +57,13 @@ class UUNiagaraDataInterfaceAuroraData : public UNiagaraDataInterface
 	GENERATED_UCLASS_BODY()
 
 	// add unit_to_uv vec3?
-	BEGIN_SHADER_PARAMETER_STRUCT(FAuroraShaderParameters, )
+	BEGIN_SHADER_PARAMETER_STRUCT(FGridDataInterfaceParameters, )
 		SHADER_PARAMETER_SRV(Buffer<float>,  PlasmaPotential1)
 		SHADER_PARAMETER_SRV(Buffer<float>,  PlasmaPotential2)
 		SHADER_PARAMETER_SRV(Buffer<float>,  ChargeDensity)
 		SHADER_PARAMETER_SRV(Buffer<float4>, ElectricField)
 		SHADER_PARAMETER(FIntVector,         NodeCounts)
+		SHADER_PARAMETER(FVector,            CellSize)
 	END_SHADER_PARAMETER_STRUCT()
 
 public:
@@ -88,12 +106,12 @@ public:
 	virtual void GetParameterDefinitionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, FString& OutHLSL) override;
 	virtual bool GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL) override;
 #endif
+	// shader parameter binding
 	virtual void BuildShaderParameters(FNiagaraShaderParametersBuilder& ShaderParametersBuilder) const override;
 	virtual void SetShaderParameters(const FNiagaraDataInterfaceSetShaderParametersContext& Context) const override;
 
 	// Init per instance data
 	// destroy per instance data
-	// get proxy
 	virtual bool Equals(const UNiagaraDataInterface* Other) const override;
 
 protected:
