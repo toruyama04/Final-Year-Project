@@ -27,7 +27,7 @@ static const FString ChargeDensityParamName(TEXT("ChargeDensity"));
 static const FString ElectricFieldParamName(TEXT("ElectricField"));
 static const FString NodeCountsParamName(TEXT("NodeCounts"));
 
-
+#if WITH_EDITORONLY_DATA
 void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const
 {
 	Super::GetFunctionsInternal(OutFunctions);
@@ -188,6 +188,7 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		OutFunctions.Add(GridIndexToLinearSig);
 	}
 }
+#endif
 
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, GetChargeDensity);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, GetPlasmaPotential1);
@@ -287,6 +288,12 @@ void UUNiagaraDataInterfaceAuroraData::GetParameterDefinitionHLSL(const FNiagara
 		*ParamInfo.DataInterfaceHLSLSymbol, *ElectricFieldParamName);
 	OutHLSL.Appendf(TEXT("int3 %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *NodeCountsParamName);
+}
+
+UUNiagaraDataInterfaceAuroraData::UUNiagaraDataInterfaceAuroraData()
+{
+	FNiagaraDataInterfaceAuroraProxy* Proxy = new FNiagaraDataInterfaceAuroraProxy();
+	Proxy->InitialiseBuffers();
 }
 
 bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL)
@@ -533,4 +540,6 @@ void UUNiagaraDataInterfaceAuroraData::SetShaderParameters(const FNiagaraDataInt
 
 }
 
-
+FNiagaraDataInterfaceAuroraProxy::FNiagaraDataInterfaceAuroraProxy()
+{
+}

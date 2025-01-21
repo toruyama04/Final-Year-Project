@@ -12,6 +12,7 @@ void EmptyLinkFunctionForGeneratedCodeUNiagaraDataInterfaceAuroraData() {}
 // Begin Cross Module References
 AURORASIM_API UClass* Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData();
 AURORASIM_API UClass* Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_NoRegister();
+COREUOBJECT_API UScriptStruct* Z_Construct_UScriptStruct_FIntVector();
 NIAGARA_API UClass* Z_Construct_UClass_UNiagaraDataInterface();
 UPackage* Z_Construct_UPackage__Script_AuroraSim();
 // End Cross Module References
@@ -33,16 +34,35 @@ struct Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics
 #if !UE_BUILD_SHIPPING
 		{ "Comment", "/**\n * \n */" },
 #endif
+		{ "DisplayName", "Grid Data Interface" },
 		{ "IncludePath", "UNiagaraDataInterfaceAuroraData.h" },
 		{ "ModuleRelativePath", "Public/UNiagaraDataInterfaceAuroraData.h" },
 	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_GridSize_MetaData[] = {
+		{ "Category", "Grid" },
+		{ "ModuleRelativePath", "Public/UNiagaraDataInterfaceAuroraData.h" },
+	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_CellSize_MetaData[] = {
+		{ "Category", "Grid" },
+		{ "ModuleRelativePath", "Public/UNiagaraDataInterfaceAuroraData.h" },
+	};
 #endif // WITH_METADATA
+	static const UECodeGen_Private::FStructPropertyParams NewProp_GridSize;
+	static const UECodeGen_Private::FFloatPropertyParams NewProp_CellSize;
+	static const UECodeGen_Private::FPropertyParamsBase* const PropPointers[];
 	static UObject* (*const DependentSingletons[])();
 	static constexpr FCppClassTypeInfoStatic StaticCppClassTypeInfo = {
 		TCppClassTypeTraits<UUNiagaraDataInterfaceAuroraData>::IsAbstract,
 	};
 	static const UECodeGen_Private::FClassParams ClassParams;
 };
+const UECodeGen_Private::FStructPropertyParams Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_GridSize = { "GridSize", nullptr, (EPropertyFlags)0x0020080000000001, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UUNiagaraDataInterfaceAuroraData, GridSize), Z_Construct_UScriptStruct_FIntVector, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_GridSize_MetaData), NewProp_GridSize_MetaData) };
+const UECodeGen_Private::FFloatPropertyParams Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_CellSize = { "CellSize", nullptr, (EPropertyFlags)0x0020080000000001, UECodeGen_Private::EPropertyGenFlags::Float, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UUNiagaraDataInterfaceAuroraData, CellSize), METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_CellSize_MetaData), NewProp_CellSize_MetaData) };
+const UECodeGen_Private::FPropertyParamsBase* const Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::PropPointers[] = {
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_GridSize,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_CellSize,
+};
+static_assert(UE_ARRAY_COUNT(Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::PropPointers) < 2048);
 UObject* (*const Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::DependentSingletons[])() = {
 	(UObject* (*)())Z_Construct_UClass_UNiagaraDataInterface,
 	(UObject* (*)())Z_Construct_UPackage__Script_AuroraSim,
@@ -54,13 +74,13 @@ const UECodeGen_Private::FClassParams Z_Construct_UClass_UUNiagaraDataInterfaceA
 	&StaticCppClassTypeInfo,
 	DependentSingletons,
 	nullptr,
-	nullptr,
+	Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::PropPointers,
 	nullptr,
 	UE_ARRAY_COUNT(DependentSingletons),
 	0,
+	UE_ARRAY_COUNT(Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::PropPointers),
 	0,
-	0,
-	0x001010A0u,
+	0x000010A0u,
 	METADATA_PARAMS(UE_ARRAY_COUNT(Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::Class_MetaDataParams), Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::Class_MetaDataParams)
 };
 UClass* Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData()
@@ -75,7 +95,6 @@ template<> AURORASIM_API UClass* StaticClass<UUNiagaraDataInterfaceAuroraData>()
 {
 	return UUNiagaraDataInterfaceAuroraData::StaticClass();
 }
-UUNiagaraDataInterfaceAuroraData::UUNiagaraDataInterfaceAuroraData() {}
 DEFINE_VTABLE_PTR_HELPER_CTOR(UUNiagaraDataInterfaceAuroraData);
 UUNiagaraDataInterfaceAuroraData::~UUNiagaraDataInterfaceAuroraData() {}
 // End Class UUNiagaraDataInterfaceAuroraData
@@ -84,10 +103,10 @@ UUNiagaraDataInterfaceAuroraData::~UUNiagaraDataInterfaceAuroraData() {}
 struct Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_Statics
 {
 	static constexpr FClassRegisterCompiledInInfo ClassInfo[] = {
-		{ Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData, UUNiagaraDataInterfaceAuroraData::StaticClass, TEXT("UUNiagaraDataInterfaceAuroraData"), &Z_Registration_Info_UClass_UUNiagaraDataInterfaceAuroraData, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UUNiagaraDataInterfaceAuroraData), 3633732875U) },
+		{ Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData, UUNiagaraDataInterfaceAuroraData::StaticClass, TEXT("UUNiagaraDataInterfaceAuroraData"), &Z_Registration_Info_UClass_UUNiagaraDataInterfaceAuroraData, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UUNiagaraDataInterfaceAuroraData), 1625068225U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_150420250(TEXT("/Script/AuroraSim"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_1796743457(TEXT("/Script/AuroraSim"),
 	Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_Statics::ClassInfo),
 	nullptr, 0,
 	nullptr, 0);

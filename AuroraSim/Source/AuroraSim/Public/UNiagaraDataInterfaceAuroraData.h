@@ -14,39 +14,30 @@
 */
 struct FNiagaraDataInterfaceAuroraProxy : public FNiagaraDataInterfaceProxy
 {
-	// initialise GPU buffers
 	FNiagaraDataInterfaceAuroraProxy();
-
-	// release GPU buffers
 	virtual ~FNiagaraDataInterfaceAuroraProxy();
 
-	FReadBuffer PlasmaPotential1Buffer;
-	FReadBuffer PlasmaPotential2Buffer;
-	FReadBuffer ChargeDensityBuffer;
-	FReadBuffer ElectricFieldBuffer;
+	// gpu buffers
 
-	// to implement
-	// reset data on GPU
-	virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
-	// prepare data for GPU compute stage
-	virtual void PreStage(const FNDIGpuComputePreStageContext& Context) override;
-	// handle data after GPU compute stage
-	virtual void PostStage(const FNDIGpuComputePostStageContext& Context) override;
-	// finalise simulation on the GPU
-	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
-	// finalise pre-stage and post-stage operatios
-	virtual void FinalizePreStage(FRDGBuilder& GraphBuilder, const FNiagaraGpuComputeDispatchInterface& ComputeDispatchInterface) override;
-	virtual void FinalizePostStage(FRDGBuilder& GraphBuilder, const FNiagaraGpuComputeDispatchInterface& ComputeDispatchInterface) override;
+	// function to resize buffers
+
+	// function to sychronise data
+	
+	// shader parameter bindings
+
+private:
+	FIntVector GridDimensions;
+	float CellSize;
 };
 
 
 /**
  * 
  */
-UCLASS(EditInlineNew, Category = "Aurora")
-class AURORASIM_API UUNiagaraDataInterfaceAuroraData : public UNiagaraDataInterface
+UCLASS(EditInlineNew, Category = "Aurora", meta = (DisplayName = "Grid Data Interface"))
+class UUNiagaraDataInterfaceAuroraData : public UNiagaraDataInterface
 {
-	GENERATED_BODY()
+	GENERATED_UCLASS_BODY()
 
 	// add unit_to_uv vec3?
 	BEGIN_SHADER_PARAMETER_STRUCT(FAuroraShaderParameters, )
@@ -78,6 +69,11 @@ public:
 	void ClearChargeDensity(FVectorVMExternalFunctionContext& Context);
 	void GridIndexToLinear(FVectorVMExternalFunctionContext& Context);
 
+	//UObject Interface
+	 // register our custom DI to niagara
+	virtual void PostInitProperties() override;
+	//UObject Interface End
+
 	// Allows Niagara to use functions we declared in Niagara graphs/scratch pad modules
 	virtual void GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc) override;
 	
@@ -88,24 +84,32 @@ public:
 	}
 
 	// HLSL definitions for GPU
+#if WITH_EDITORONLY_DATA
 	virtual void GetParameterDefinitionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, FString& OutHLSL) override;
-
 	virtual bool GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL) override;
-
+#endif
 	virtual void BuildShaderParameters(FNiagaraShaderParametersBuilder& ShaderParametersBuilder) const override;
-
 	virtual void SetShaderParameters(const FNiagaraDataInterfaceSetShaderParametersContext& Context) const override;
 
-	UPROPERTY(EditAnywhere, Category = "Grid Info")
-	int32 NodeCountInX;
-	UPROPERTY(EditAnywhere, Category = "Grid Info")
-	int32 NodeCountInY;
-	UPROPERTY(EditAnywhere, Category = "Grid Info")
-	int32 NodeCountInZ;
-	UPROPERTY(Category = "Grid Info")
-	int32 TotalNodeCount;
+	// Init per instance data
+	// destroy per instance data
+	// get proxy
+	virtual bool Equals(const UNiagaraDataInterface* Other) const override;
 
 protected:
-	virtual void GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const override;
 
+	UPROPERTY(EditAnywhere, Category = "Grid")
+	FIntVector GridSize;
+	
+	UPROPERTY(EditAnywhere, Category = "Grid")
+	float CellSize;
+
+#if WITH_EDITORONLY_DATA
+	virtual void GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const override;
+#endif
+	
+	virtual bool CopyToInternal(UNiagaraDataInterface* Destination) const override;
+
+private:
+	FNiagaraDataInterfaceAuroraProxy Proxy;
 };
