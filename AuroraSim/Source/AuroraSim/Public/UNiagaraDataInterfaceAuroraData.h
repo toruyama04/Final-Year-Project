@@ -4,47 +4,48 @@
 
 #include "CoreMinimal.h"
 #include "NiagaraDataInterface.h"
-#include "NiagaraDataInterfaceRW.h"
 #include "UNiagaraDataInterfaceAuroraData.generated.h"
 
-
-/**
-*  Called before PreStage to get the dispatch arguments
-*/
-struct FNiagaraDataInterfaceAuroraProxy : public FNiagaraDataInterfaceProxyRW
+struct FNiagaraDataInterfaceAuroraProxy : public FNiagaraDataInterfaceProxy
 {
 	FNiagaraDataInterfaceAuroraProxy();
+	// initialise buffers, other attributes
 
-	// gpu buffers
-	TSharedPtr<FRDGBuffer, ESPMode::ThreadSafe> PlasmaPotentialBufferA;
-	TSharedPtr<FRDGBuffer, ESPMode::ThreadSafe> PlasmaPotentialBufferB;
-	TSharedPtr<FRDGBuffer, ESPMode::ThreadSafe> ElectricFieldBuffer;
-	TSharedPtr<FRDGBuffer, ESPMode::ThreadSafe> ChargeDensityBuffer;
+	~FNiagaraDataInterfaceAuroraProxy();
 
-	// function to resize buffers
-	virtual void GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context) override;
+	void InitialiseBuffers();
 
-	// function to sychronise data
-	// check proxy_data is not null, clear buffers
 	virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
-	// if requires buffering? beginsimulate(), if element count aren't same as node counts
-	//  if you need to clearBeforeIterationStage, if destinationData is true, clear buffers
+	// resets all buffers to 0
+
 	virtual void PreStage(const FNDIGpuComputePreStageContext& Context) override;
-	// if requires buffering, endsimulate
+	// buffer swaps
+
 	virtual void PostStage(const FNDIGpuComputePostStageContext& Context) override;
-	// check stuff - see code
-	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
-	// BeginSimulate(), EndSimulate()
-	
-	// shader parameter bindings
+	// not sure
+
+	// virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
+	// for debugging/render target stuff - wont implement yet
 
 	// managing grid data
 	void ResizeGrid(FIntVector NewGridSize);
-	void ResetGrid();
+	// resize buffers and adjust other attributes
+	// safe copying and prevent memory leaks from old buffers
+	// run function when variables in editor exposed area changes (events)
 
-private:
-	FIntVector GridDimensions;
-	float CellSize;
+
+		// gpu buffers
+	TUniquePtr < FRWBufferStructured> PlasmaPotentialBufferA = nullptr;
+	TUniquePtr < FRWBufferStructured> PlasmaPotentialBufferB = nullptr;
+	TUniquePtr < FRWBufferStructured> ElectricFieldBuffer = nullptr;
+	TUniquePtr < FRWBufferStructured> ChargeDensityBuffer = nullptr;
+
+	// other attributes
+	FIntVector NumCells = FIntVector(1, 1, 1);
+	FVector WorldBoxSize = FVector::ZeroVector;
+	FVector CellSize = FVector::ZeroVector;
+	bool bUseBufferA = true;
+	bool bResizeGrid = false;
 };
 
 
@@ -58,8 +59,8 @@ class UUNiagaraDataInterfaceAuroraData : public UNiagaraDataInterface
 
 	// add unit_to_uv vec3?
 	BEGIN_SHADER_PARAMETER_STRUCT(FGridDataInterfaceParameters, )
-		SHADER_PARAMETER_SRV(Buffer<float>,  PlasmaPotential1)
-		SHADER_PARAMETER_SRV(Buffer<float>,  PlasmaPotential2)
+		SHADER_PARAMETER_SRV(Buffer<float>,  PlasmaPotentialA)
+		SHADER_PARAMETER_SRV(Buffer<float>,  PlasmaPotentialB)
 		SHADER_PARAMETER_SRV(Buffer<float>,  ChargeDensity)
 		SHADER_PARAMETER_SRV(Buffer<float4>, ElectricField)
 		SHADER_PARAMETER(FIntVector,         NodeCounts)
@@ -68,66 +69,58 @@ class UUNiagaraDataInterfaceAuroraData : public UNiagaraDataInterface
 
 public:
 
-	// Define properties and instance variables
-
-	// Define the function overrides
+	// FOR CPU
+	/////////////////////////
 	void GetChargeDensity(FVectorVMExternalFunctionContext& Context);
-	void GetPlasmaPotential1(FVectorVMExternalFunctionContext& Context);
-	void GetPlasmaPotential2(FVectorVMExternalFunctionContext& Context);
+	void GetPlasmaPotentialA(FVectorVMExternalFunctionContext& Context);
+	void GetPlasmaPotentialB(FVectorVMExternalFunctionContext& Context);
 	void GetElectricField(FVectorVMExternalFunctionContext& Context);
-	void SolvePlasmaPotential1(FVectorVMExternalFunctionContext& Context);
-	void SolvePlasmaPotential2(FVectorVMExternalFunctionContext& Context);
+	void SolvePlasmaPotentialA(FVectorVMExternalFunctionContext& Context);
+	void SolvePlasmaPotentialB(FVectorVMExternalFunctionContext& Context);
 	void SolveElectricField(FVectorVMExternalFunctionContext& Context);
 	void Gather(FVectorVMExternalFunctionContext& Context);
 	void Scatter(FVectorVMExternalFunctionContext& Context);
 	void SetChargeDensity(FVectorVMExternalFunctionContext& Context);
-	void SetPlasmaPotential1(FVectorVMExternalFunctionContext& Context);
-	void SetPlasmaPotential2(FVectorVMExternalFunctionContext& Context);
+	void SetPlasmaPotentialA(FVectorVMExternalFunctionContext& Context);
+	void SetPlasmaPotentialB(FVectorVMExternalFunctionContext& Context);
 	void SetElectricField(FVectorVMExternalFunctionContext& Context);
 	void ClearChargeDensity(FVectorVMExternalFunctionContext& Context);
 	void GridIndexToLinear(FVectorVMExternalFunctionContext& Context);
 
-	//UObject Interface
-	 // register our custom DI to niagara
-	virtual void PostInitProperties() override;
-	//UObject Interface End
-
-	// Allows Niagara to use functions we declared in Niagara graphs/scratch pad modules
 	virtual void GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc) override;
-	
-	// Let Niagara understand where our functions are to be exected
-	virtual bool CanExecuteOnTarget(ENiagaraSimTarget Target) const override
-	{
-		return Target == ENiagaraSimTarget::GPUComputeSim;
-	}
 
-	// HLSL definitions for GPU
+	// FOR GPU
+	/////////////////////////
 #if WITH_EDITORONLY_DATA
 	virtual void GetParameterDefinitionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, FString& OutHLSL) override;
 	virtual bool GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL) override;
 #endif
-	// shader parameter binding
+	virtual void ProvidePerInstanceDataForRenderThread(void* DataForRenderThread, void* PerInstanceData, const FNiagaraSystemInstanceID& SystemInstance) override;
+
 	virtual void BuildShaderParameters(FNiagaraShaderParametersBuilder& ShaderParametersBuilder) const override;
 	virtual void SetShaderParameters(const FNiagaraDataInterfaceSetShaderParametersContext& Context) const override;
 
+
+	// HELPER FUNCTIONS
 	// Init per instance data
 	// destroy per instance data
 	virtual bool Equals(const UNiagaraDataInterface* Other) const override;
+	virtual void PostInitProperties() override;
+	virtual bool CanExecuteOnTarget(ENiagaraSimTarget Target) const override
+	{
+		return Target == ENiagaraSimTarget::GPUComputeSim;
+	}
+	virtual bool CopyToInternal(UNiagaraDataInterface* Destination) const override;
 
 protected:
+
+#if WITH_EDITORONLY_DATA
+	virtual void GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const override;
+#endif
 
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	FIntVector GridSize;
 	
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	float CellSize;
-
-#if WITH_EDITORONLY_DATA
-	virtual void GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const override;
-#endif
-	
-	virtual bool CopyToInternal(UNiagaraDataInterface* Destination) const override;
-
-private:
-	FNiagaraDataInterfaceAuroraProxy Proxy;
 };
