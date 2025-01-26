@@ -11,9 +11,6 @@
 struct FNiagaraDataInterfaceAuroraProxy : public FNiagaraDataInterfaceProxy
 {
 	FNiagaraDataInterfaceAuroraProxy(FIntVector NumCells, FVector CellSize, FVector EmitterOrigin, FVector EmitterSize);
-	// initialise buffers, other attributes
-
-	~FNiagaraDataInterfaceAuroraProxy();
 
 	void InitialiseBuffers();
 	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;

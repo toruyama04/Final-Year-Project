@@ -17,11 +17,10 @@ static const FName SetElectricFieldFunctionName("SetElectricField");
 static const FName ClearChargeDensityFunctionName("ClearChargeDensity");
 static const FName SolvePlasmaPotentialFunctionName("SolvePlasmaPotential");
 static const FName SolveElectricFieldFunctionName("SolveElectricField");
-static const FName GridIndexToLinearFunctionName("GridIndexToLinear");
 static const FName GatherFunctionName("Gather");
 static const FName ScatterFunctionName("Scatter");
 static const FName OneDToThreeDFunctionName("OneDToThreeD");
-static const FName GridIndexAndWeightFunctionName("GridIndexAndWeight");
+static const FName WorldToGridFunctionName("WorldToGrid");
 
 // Global variable prefixes, used in HLSL parameter declarations
 static const FString PlasmaPotentialReadParamName(TEXT("PlasmaPotentialRead"));
@@ -45,8 +44,8 @@ DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, SolvePlasmaPoten
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, SolveElectricField);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, Gather);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, Scatter);
-DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, GridIndexToLinear);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, OneDToThreeD);
+DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, WorldToGrid);
 
 #if WITH_EDITORONLY_DATA
 bool UUNiagaraDataInterfaceAuroraData::AppendCompileHash(FNiagaraCompileHashVisitor* InVisitor) const
@@ -103,7 +102,7 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		FNiagaraFunctionSignature GetElectricFieldSig;
 		GetElectricFieldSig.Name = GetElectricFieldFunctionName;
 		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("Index")));
 		GetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutElectricField")));
 		GetElectricFieldSig.bMemberFunction = true;
 		GetElectricFieldSig.bRequiresContext = false;
@@ -200,24 +199,13 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		ScatterSig.Name = ScatterFunctionName;
 		ScatterSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
 		ScatterSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InPosition")));
+		ScatterSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("InCharge")));
 		ScatterSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		ScatterSig.bMemberFunction = true;
 		ScatterSig.bRequiresContext = false;
 		ScatterSig.bSupportsCPU = false;
 		ScatterSig.bSupportsGPU = true;
 		OutFunctions.Add(ScatterSig);
-	}
-	{
-		FNiagaraFunctionSignature GridIndexToLinearSig;
-		GridIndexToLinearSig.Name = GridIndexToLinearFunctionName;
-		GridIndexToLinearSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GridIndexToLinearSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InIndices")));
-		GridIndexToLinearSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("OutLinearIndex")));
-		GridIndexToLinearSig.bMemberFunction = true;
-		GridIndexToLinearSig.bRequiresContext = false;
-		GridIndexToLinearSig.bSupportsCPU = false;
-		GridIndexToLinearSig.bSupportsGPU = true;
-		OutFunctions.Add(GridIndexToLinearSig);
 	}
 	{
 		FNiagaraFunctionSignature OneDToThreeDSig;
@@ -232,11 +220,17 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		OutFunctions.Add(OneDToThreeDSig);
 	}
 	{
-		FNiagaraFunctionSignature GridIndexAndWeightSig;
-		GridIndexAndWeightSig.Name = GridIndexAndWeightFunctionName;
-		GridIndexAndWeightSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GridIndexAndWeightSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InPosition")));
-		
+		FNiagaraFunctionSignature WorldToGridFunctionNameSig;
+		WorldToGridFunctionNameSig.Name = WorldToGridFunctionName;
+		WorldToGridFunctionNameSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		WorldToGridFunctionNameSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InPosition")));
+		WorldToGridFunctionNameSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("OutGridIndex")));
+		WorldToGridFunctionNameSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutWeights")));
+		WorldToGridFunctionNameSig.bMemberFunction = true;
+		WorldToGridFunctionNameSig.bRequiresContext = false;
+		WorldToGridFunctionNameSig.bSupportsCPU = false;
+		WorldToGridFunctionNameSig.bSupportsGPU = true;
+		OutFunctions.Add(WorldToGridFunctionNameSig);
 	}
 }
 #endif
@@ -286,10 +280,6 @@ void UUNiagaraDataInterfaceAuroraData::GetVMExternalFunction(const FVMExternalFu
 	{
 		NDI_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, Scatter)::Bind(this, OutFunc);
 	}
-	else if (BindingInfo.Name == GridIndexToLinearFunctionName)
-	{
-		NDI_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, GridIndexToLinear)::Bind(this, OutFunc);
-	}
 	else
 	{
 		ensureMsgf(false, TEXT("Error! Function defined for this class but not bound"));
@@ -331,12 +321,12 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(int Index, out float OutChargeDensity)
 			{
-				OutChargeDensity = {ChargeDensityBuffer}[Index];
+				OutChargeDensity = {ChargeDensity}[Index];
 			}
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
-			{TEXT("FunctionName}"), FStringFormatArg(FunctionInfo.InstanceName)},
-			{TEXT("ChargeDensityBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName)},
+			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
+			{TEXT("ChargeDensity"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -346,11 +336,12 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(int Index, out float OutPlasmaPotential)
 			{
-				OutPlasmaPotential = {PlasmaPotentialBuffer}[Index];
+				OutPlasmaPotential = {PlasmaPotentialRead}[Index];
+			}
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
-			{TEXT("FunctionName}"), FStringFormatArg(FunctionInfo.InstanceName)},
-			{TEXT("PlasmaPotentialBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialReadParamName)},
+			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
+			{TEXT("PlasmaPotentialRead"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialReadParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -360,11 +351,12 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(int Index, out float OutPlasmaPotential)
 			{
-				OutPlasmaPotential = {PlasmaPotentialBuffer}[Index];
+				OutPlasmaPotential = {PlasmaPotentialWrite}[Index];
+			}
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
-			{TEXT("FunctionName}"), FStringFormatArg(FunctionInfo.InstanceName)},
-			{TEXT("PlasmaPotentialBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName)},
+			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
+			{TEXT("PlasmaPotentialWrite"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -372,50 +364,33 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 	else if (FunctionInfo.DefinitionName == GetElectricFieldFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(int Index, out float3 OutElectricField)
+			void GetElectricField(int3 Index, out float3 OutElectricField)
 			{
-				OutElectricField = {ElectricFieldBuffer}[Index].xyz;
+				int3 GridSize = {NodeCounts};
+				Index = clamp(Index, int3(0, 0, 0), GridSize - int3(1, 1, 1));
+				int idx = Index.x + Index.y * GridSize.x + Index.z * GridSize.x * GridSize.y;
+				OutElectricField = {ElectricField}[idx].xyz;
 			}
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
-			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
-			{TEXT("ElectricFieldBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
+			{TEXT("ElectricField"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
+			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
 	}
-	/*else if (FunctionInfo.DefinitionName == ClearChargeDensityFunctionName)
-	{
-		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(out bool OutSuccess)
-			{
-				for (int i = 0; i < {TotalNodeCount}; ++i)
-				{
-					{ChargeDensityBuffer}[i] = 0.0f;
-				}
-				OutSuccess = true;
-			}
-		)");
-		const TMap<FString, FStringFormatArg> ArgsBounds = {
-			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
-			{TEXT("TotalNodeCount"), FStringFormatArg(TotalNodeCount)},
-			{TEXT("ChargeDensityBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName)},
-		};
-		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
-		return true;
-	}*/
 	else if (FunctionInfo.DefinitionName == SetChargeDensityFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(int Index, in float InChargeDensity, out bool OutSuccess)
 			{
-				{ChargeDensityBuffer}[Index] = InChargeDensity;
+				{ChargeDensity}[Index] = InChargeDensity;
 				OutSuccess = true;
 			}
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
-			{TEXT("ChargeDensityBuffer}"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName)},
+			{TEXT("ChargeDensity"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -425,13 +400,13 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(int Index, in float InPlasmaPotential, out bool OutSuccess)
 			{
-				{PlasmaPotentialBuffer}[Index] = InPlasmaPotential;
+				{PlasmaPotentialWrite}[Index] = InPlasmaPotential;
 				OutSuccess = true;
 			}
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
-			{TEXT("PlasmaPotentialBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName)},
+			{TEXT("PlasmaPotentialWrite"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -441,13 +416,13 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(int Index, in float3 InElectricField, out bool OutSuccess)
 			{
-				{ElectricFieldBuffer}[Index].xyz = InElectricField;
+				{ElectricField}[Index].xyz = InElectricField;
 				OutSuccess = true;
 			}
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
-			{TEXT("ElectricFieldBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
+			{TEXT("ElectricField"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -483,7 +458,6 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 					ThreeI.y > 0 && ThreeI.y < GridSize.y - 1 &&
 					ThreeI.z > 0 && ThreeI.z < GridSize.z - 1)
 				{
-					// Compute neighboring indices
 					int indexXNeg = Index - 1;
 					int indexXPos = Index + 1;
 					int indexYNeg = Index - GridSize.x;
@@ -491,7 +465,6 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 					int indexZNeg = Index - GridSize.x * GridSize.y;
 					int indexZPos = Index + GridSize.x * GridSize.y;
 
-					// Sum of neighboring potentials
 					float sum = {PlasmaPotentialRead}[indexXNeg] +
 								{PlasmaPotentialRead}[indexXPos] +
 								{PlasmaPotentialRead}[indexYNeg] +
@@ -500,11 +473,10 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 								{PlasmaPotentialRead}[indexZPos];
 					float CellVolume = {CellSize}.x * {CellSize}.y * {CellSize}.z;
 
-					// Update potential
-					{PlasmaPotentialWrite}[Index] = (sum - {ChargeDensityBuffer}[Index] * CellVolume) / 6.0;
+					{PlasmaPotentialWrite}[Index] = (sum - {ChargeDensity}[Index] * CellVolume) / 6.0;
+				}
 				else
 				{
-					// Handle boundary conditions
 					{PlasmaPotentialWrite}[Index] = {PlasmaPotentialRead}[Index];
 				}
 				OutSuccess = true;
@@ -515,7 +487,7 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
 			{TEXT("PlasmaPotentialRead"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialReadParamName)},
 			{TEXT("PlasmaPotentialWrite"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName)},
-			{TEXT("ChargeDensityBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName)},
+			{TEXT("ChargeDensity"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName)},
 			{TEXT("CellSize"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + CellSizeParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
@@ -575,33 +547,86 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 					int index_kp1 = Index + GridSize.x * GridSize.y;
 					ef_z = -({PlasmaPotentialWrite}[index_kp1] - {PlasmaPotentialWrite}[index_km1]) / (2 * dz);
 				}
-				{ElectricFieldBuffer}[Index] = float4(ef_x, ef_y, ef_z, 0.0);
+				{ElectricField}[Index] = float4(ef_x, ef_y, ef_z, 0.0);
 				OutSuccess = true;
 			}
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
 			{TEXT("PlasmaPotentialWrite"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName)},
-			{TEXT("ElectricFieldBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
+			{TEXT("ElectricField"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
 			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
 			{TEXT("CellSize"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + CellSizeParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
 	}
-	else if (FunctionInfo.DefinitionName == )
+	else if (FunctionInfo.DefinitionName == WorldToGridFunctionName)
+	{
+		static const TCHAR* FormatBounds = TEXT(R"(
+			void WorldToGrid(float3 InPosition, out int3 OutGridIndex, out float3 OutWeights)
+			{
+				float3 RelativePos = (InPosition - {EmitterOrigin}) / {CellSize};
+				float3 GridResolution = (float3)({NodeCounts} - 1);
+				RelativePos = clamp(RelativePos, 0.0, GridResolution);
+				float3 IndexF = floor(RelativePos);
+				OutGridIndex = int3(IndexF);
+				OutWeights = RelativePos - IndexF;
+			}
+		)");
+		const TMap<FString, FStringFormatArg> ArgsBounds = {
+			{TEXT("EmitterOrigin"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + EmitterOriginParamName)},
+			{TEXT("CellSize"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + CellSizeParamName)},
+			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
+		};
+		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
+		return true;
+	}
 	else if (FunctionInfo.DefinitionName == GatherFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(float3 InPosition, out float3 OutVector)
-			{
-				
-			}
+        {
+            int3 GridIndex;
+            float3 Weights;
+            WorldToGrid(InPosition, GridIndex, Weights);
+
+            int3 GridSize = {NodeCounts};
+
+            GridIndex = clamp(GridIndex, int3(0, 0, 0), GridSize - int3(2, 2, 2));
+
+            float3 E000;
+			GetElectricField(GridIndex + int3(0, 0, 0), E000);
+            float3 E100;
+			GetElectricField(GridIndex + int3(1, 0, 0), E100);
+            float3 E010;
+			GetElectricField(GridIndex + int3(0, 1, 0), E010);
+            float3 E110;
+			GetElectricField(GridIndex + int3(1, 1, 0), E110);
+            float3 E001;
+			GetElectricField(GridIndex + int3(0, 0, 1), E001);
+            float3 E101;
+			GetElectricField(GridIndex + int3(1, 0, 1), E101);
+            float3 E011;
+			GetElectricField(GridIndex + int3(0, 1, 1), E011);
+            float3 E111;
+			GetElectricField(GridIndex + int3(1, 1, 1), E111);
+
+            float3 C00 = lerp(E000, E100, Weights.x);
+            float3 C10 = lerp(E010, E110, Weights.x);
+            float3 C01 = lerp(E001, E101, Weights.x);
+            float3 C11 = lerp(E011, E111, Weights.x);
+
+            float3 C0 = lerp(C00, C10, Weights.y);
+            float3 C1 = lerp(C01, C11, Weights.y);
+
+            OutVector = lerp(C0, C1, Weights.z);
+        }
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
 			{TEXT("ElectricFieldBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
-			
+			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -609,32 +634,63 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 	else if (FunctionInfo.DefinitionName == ScatterFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(float3 InPosition, out bool OutSuccess)
-			{
-				
-			}
-		)");
+        void {FunctionName}(float3 InPosition, float InCharge, out bool OutSuccess)
+        {
+            int3 GridIndex;
+            float3 Weights;
+            WorldToGrid(InPosition, GridIndex, Weights);
+
+            int3 GridSize = {NodeCounts};
+
+            GridIndex = clamp(GridIndex, int3(0, 0, 0), GridSize - int3(2, 2, 2));
+
+            float w000 = (1.0 - Weights.x) * (1.0 - Weights.y) * (1.0 - Weights.z);
+            float w100 = Weights.x * (1.0 - Weights.y) * (1.0 - Weights.z);
+            float w010 = (1.0 - Weights.x) * Weights.y * (1.0 - Weights.z);
+            float w110 = Weights.x * Weights.y * (1.0 - Weights.z);
+            float w001 = (1.0 - Weights.x) * (1.0 - Weights.y) * Weights.z;
+            float w101 = Weights.x * (1.0 - Weights.y) * Weights.z;
+            float w011 = (1.0 - Weights.x) * Weights.y * Weights.z;
+            float w111 = Weights.x * Weights.y * Weights.z;
+
+            int3 idx000 = GridIndex + int3(0, 0, 0);
+            int3 idx100 = GridIndex + int3(1, 0, 0);
+            int3 idx010 = GridIndex + int3(0, 1, 0);
+            int3 idx110 = GridIndex + int3(1, 1, 0);
+            int3 idx001 = GridIndex + int3(0, 0, 1);
+            int3 idx101 = GridIndex + int3(1, 0, 1);
+            int3 idx011 = GridIndex + int3(0, 1, 1);
+            int3 idx111 = GridIndex + int3(1, 1, 1);
+
+            int linIdx000 = idx000.x + idx000.y * GridSize.x + idx000.z * GridSize.x * GridSize.y;
+            int linIdx100 = idx100.x + idx100.y * GridSize.x + idx100.z * GridSize.x * GridSize.y;
+            int linIdx010 = idx010.x + idx010.y * GridSize.x + idx010.z * GridSize.x * GridSize.y;
+            int linIdx110 = idx110.x + idx110.y * GridSize.x + idx110.z * GridSize.x * GridSize.y;
+            int linIdx001 = idx001.x + idx001.y * GridSize.x + idx001.z * GridSize.x * GridSize.y;
+            int linIdx101 = idx101.x + idx101.y * GridSize.x + idx101.z * GridSize.x * GridSize.y;
+            int linIdx011 = idx011.x + idx011.y * GridSize.x + idx011.z * GridSize.x * GridSize.y;
+            int linIdx111 = idx111.x + idx111.y * GridSize.x + idx111.z * GridSize.x * GridSize.y;
+
+            InterlockedAdd({ChargeDensity}[linIdx000], InCharge * w000);
+            InterlockedAdd({ChargeDensity}[linIdx100], InCharge * w100);
+            InterlockedAdd({ChargeDensity}[linIdx010], InCharge * w010);
+            InterlockedAdd({ChargeDensity}[linIdx110], InCharge * w110);
+            InterlockedAdd({ChargeDensity}[linIdx001], InCharge * w001);
+            InterlockedAdd({ChargeDensity}[linIdx101], InCharge * w101);
+            InterlockedAdd({ChargeDensity}[linIdx011], InCharge * w011);
+            InterlockedAdd({ChargeDensity}[linIdx111], InCharge * w111);
+
+            OutSuccess = true;
+        }
+    )");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
-		};
-		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
-		return true;
-	}
-	else if (FunctionInfo.DefinitionName == GridIndexToLinearFunctionName)
-	{
-		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(int3 InPosition, out int OutLinearIndex)
-			{
-				OutLinearIndex = InPosition.x + InPosition.y * {NodeCounts}[0] + InPosition.z * ({NodeCounts}[1] * {NodeCounts}[2]);
-			}
-		)");
-		const TMap<FString, FStringFormatArg> ArgsBounds = {
-			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
+			{TEXT("ChargeDensity"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName)},
 			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
-		}
+	}
 	else
 	{
 		return false;
@@ -801,19 +857,15 @@ void UUNiagaraDataInterfaceAuroraData::PostEditChangeProperty(FPropertyChangedEv
 
 // PROXY
 
-FNiagaraDataInterfaceAuroraProxy::FNiagaraDataInterfaceAuroraProxy(FIntVector NumCells, FVector CellSize, FVector EmitterOrigin, FVector EmitterSize)
+FNiagaraDataInterfaceAuroraProxy::FNiagaraDataInterfaceAuroraProxy(FIntVector InNumCells, FVector InCellSize, FVector InEmitterOrigin, FVector InEmitterSize)
+	: NumCells(InNumCells)
+	, CellSize(InCellSize)
+	, EmitterOrigin(InEmitterOrigin)
+	, EmitterSize(InEmitterSize)
 {	
 	InitialiseBuffers();
 	ResizeGrid(NumCells);
 	UpdateBounds(EmitterOrigin, EmitterSize);
-}
-
-FNiagaraDataInterfaceAuroraProxy::~FNiagaraDataInterfaceAuroraProxy()
-{
-	PlasmaPotentialBufferRead->Release();
-	PlasmaPotentialBufferWrite->Release();
-	ElectricFieldBuffer->Release();
-	ChargeDensityBuffer->Release();
 }
 
 void FNiagaraDataInterfaceAuroraProxy::InitialiseBuffers()
@@ -890,6 +942,10 @@ void FNiagaraDataInterfaceAuroraProxy::ResizeGrid(FIntVector NewGridSize)
 			PlasmaPotentialBufferWrite->Release();
 			ElectricFieldBuffer->Release();
 			ChargeDensityBuffer->Release();
+			PlasmaPotentialBufferRead.Reset();
+			PlasmaPotentialBufferWrite.Reset();
+			ElectricFieldBuffer.Reset();
+			ChargeDensityBuffer.Reset();
 
 			PlasmaPotentialBufferRead = MakeUnique<FRWBufferStructured>();
 			PlasmaPotentialBufferRead->Initialize(
