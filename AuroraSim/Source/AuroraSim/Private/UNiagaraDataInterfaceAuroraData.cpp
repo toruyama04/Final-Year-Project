@@ -1,9 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "UNiagaraDataInterfaceAuroraData.h"
 #include "CoreTypes.h"
 #include "NiagaraSystemInstance.h"
+#include "NiagaraShaderParametersBuilder.h"
 
 
 // Global VM function names, also used by the shaders code generation methods
@@ -14,7 +13,6 @@ static const FName GetElectricFieldFunctionName("GetElectricField");
 static const FName SetChargeDensityFunctionName("SetChargeDensity");
 static const FName SetPlasmaPotentialWriteFunctionName("SetPlasmaPotentialWrite");
 static const FName SetElectricFieldFunctionName("SetElectricField");
-static const FName ClearChargeDensityFunctionName("ClearChargeDensity");
 static const FName SolvePlasmaPotentialFunctionName("SolvePlasmaPotential");
 static const FName SolveElectricFieldFunctionName("SolveElectricField");
 static const FName GatherFunctionName("Gather");
@@ -39,7 +37,6 @@ DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, GetElectricField
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, SetChargeDensity);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, SetPlasmaPotentialWrite);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, SetElectricField);
-DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, ClearChargeDensity);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, SolvePlasmaPotential);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, SolveElectricField);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, Gather);
@@ -48,6 +45,7 @@ DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, OneDToThreeD);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, WorldToGrid);
 
 #if WITH_EDITORONLY_DATA
+// what's this for again?
 bool UUNiagaraDataInterfaceAuroraData::AppendCompileHash(FNiagaraCompileHashVisitor* InVisitor) const
 {
 	if (!Super::AppendCompileHash(InVisitor))
@@ -58,10 +56,9 @@ bool UUNiagaraDataInterfaceAuroraData::AppendCompileHash(FNiagaraCompileHashVisi
 	return true;
 }
 
+//  function signatures
 void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const
 {
-	Super::GetFunctionsInternal(OutFunctions);
-
 	{
 		FNiagaraFunctionSignature GetChargeDensitySig;
 		GetChargeDensitySig.Name = GetChargeDensityFunctionName;
@@ -119,6 +116,7 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		SetChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		SetChargeDensitySig.bMemberFunction = true;
 		SetChargeDensitySig.bRequiresContext = false;
+		SetChargeDensitySig.bWriteFunction = true;
 		SetChargeDensitySig.bSupportsCPU = false;
 		SetChargeDensitySig.bSupportsGPU = true;
 		OutFunctions.Add(SetChargeDensitySig);
@@ -132,6 +130,7 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		SetPlasmaPotentialWriteSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		SetPlasmaPotentialWriteSig.bMemberFunction = true;
 		SetPlasmaPotentialWriteSig.bRequiresContext = false;
+		SetPlasmaPotentialWriteSig.bWriteFunction = true;
 		SetPlasmaPotentialWriteSig.bSupportsCPU = false;
 		SetPlasmaPotentialWriteSig.bSupportsGPU = true;
 		OutFunctions.Add(SetPlasmaPotentialWriteSig);
@@ -145,19 +144,11 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		SetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		SetElectricFieldSig.bMemberFunction = true;
 		SetElectricFieldSig.bRequiresContext = false;
+		SetElectricFieldSig.bWriteFunction = true;
 		SetElectricFieldSig.bSupportsCPU = false;
 		SetElectricFieldSig.bSupportsGPU = true;
 		OutFunctions.Add(SetElectricFieldSig);
 	}
-	/* {
-		FNiagaraFunctionSignature ClearChargeDensitySig;
-		ClearChargeDensitySig.Name = ClearChargeDensityFunctionName;
-		ClearChargeDensitySig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		ClearChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
-		ClearChargeDensitySig.bMemberFunction = true;
-		ClearChargeDensitySig.bRequiresContext = false;
-		OutFunctions.Add(ClearChargeDensitySig);
-	}*/
 	{
 		FNiagaraFunctionSignature SolvePlasmaPotentialSig;
 		SolvePlasmaPotentialSig.Name = SolvePlasmaPotentialFunctionName;
@@ -166,6 +157,7 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		SolvePlasmaPotentialSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		SolvePlasmaPotentialSig.bMemberFunction = true;
 		SolvePlasmaPotentialSig.bRequiresContext = false;
+		SolvePlasmaPotentialSig.bWriteFunction = true;
 		SolvePlasmaPotentialSig.bSupportsCPU = false;
 		SolvePlasmaPotentialSig.bSupportsGPU = true;
 		OutFunctions.Add(SolvePlasmaPotentialSig);
@@ -178,6 +170,7 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		SolveElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		SolveElectricFieldSig.bMemberFunction = true;
 		SolveElectricFieldSig.bRequiresContext = false;
+		SolveElectricFieldSig.bWriteFunction = true;
 		SolveElectricFieldSig.bSupportsCPU = false;
 		SolveElectricFieldSig.bSupportsGPU = true;
 		OutFunctions.Add(SolveElectricFieldSig);
@@ -204,6 +197,7 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		ScatterSig.bMemberFunction = true;
 		ScatterSig.bRequiresContext = false;
 		ScatterSig.bSupportsCPU = false;
+		ScatterSig.bWriteFunction = true;
 		ScatterSig.bSupportsGPU = true;
 		OutFunctions.Add(ScatterSig);
 	}
@@ -234,6 +228,8 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 	}
 }
 #endif
+
+// for cpu - will keep for now
 void UUNiagaraDataInterfaceAuroraData::GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc)
 {
 	if (BindingInfo.Name == GetChargeDensityFunctionName)
@@ -280,42 +276,46 @@ void UUNiagaraDataInterfaceAuroraData::GetVMExternalFunction(const FVMExternalFu
 	{
 		NDI_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, Scatter)::Bind(this, OutFunc);
 	}
+	else if (BindingInfo.Name == OneDToThreeDFunctionName)
+	{
+		NDI_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, OneDToThreeD)::Bind(this, OutFunc);
+	}
+	else if (BindingInfo.Name == WorldToGridFunctionName)
+	{
+		NDI_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, WorldToGrid)::Bind(this, OutFunc);
+	}
 	else
 	{
 		ensureMsgf(false, TEXT("Error! Function defined for this class but not bound"));
 	}
 }
 
-// GPU - related
-
+// specifying shader parameters - should i make them structured?
 void UUNiagaraDataInterfaceAuroraData::GetParameterDefinitionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, FString& OutHLSL)
 {
 	Super::GetParameterDefinitionHLSL(ParamInfo, OutHLSL);
 
-	OutHLSL.Appendf(TEXT("RWBuffer<float> %s%s;\n"),
+	OutHLSL.Appendf(TEXT("RWBuffer<float>  %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialReadParamName);
-	OutHLSL.Appendf(TEXT("RWBuffer<float> %s%s;\n"),
+	OutHLSL.Appendf(TEXT("RWBuffer<float>  %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialWriteParamName);
-	OutHLSL.Appendf(TEXT("RWBuffer<float> %s%s;\n"),
+	OutHLSL.Appendf(TEXT("RWBuffer<float>  %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *ChargeDensityParamName);
 	OutHLSL.Appendf(TEXT("RWBuffer<float4> %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *ElectricFieldParamName);
-	OutHLSL.Appendf(TEXT("int3 %s%s;\n"),
+	OutHLSL.Appendf(TEXT("int3             %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *NodeCountsParamName);
-	OutHLSL.Appendf(TEXT("float3 %s%s;\n"),
+	OutHLSL.Appendf(TEXT("float3           %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *CellSizeParamName);
-	OutHLSL.Appendf(TEXT("float3 %s%s;\n"),
+	OutHLSL.Appendf(TEXT("float3           %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *EmitterOriginParamName);
-	OutHLSL.Appendf(TEXT("float3 %s%s;\n"),
+	OutHLSL.Appendf(TEXT("float3           %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *EmitterSizeParamName);
 }
 
+// hlsl for all functions used on gpu
 bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL)
 {
-	if (Super::GetFunctionHLSL(ParamInfo, FunctionInfo, FunctionInstanceIndex, OutHLSL))
-	{
-		return true;
-	}
 	if (FunctionInfo.DefinitionName == GetChargeDensityFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
@@ -702,21 +702,20 @@ void UUNiagaraDataInterfaceAuroraData::BuildShaderParameters(FNiagaraShaderParam
 	ShaderParametersBuilder.AddNestedStruct<FShaderParameters>();
 }
 
+// setting shader parameters
 void UUNiagaraDataInterfaceAuroraData::SetShaderParameters(const FNiagaraDataInterfaceSetShaderParametersContext& Context) const
 {
 	FNiagaraDataInterfaceAuroraProxy& DIProxy = Context.GetProxy<FNiagaraDataInterfaceAuroraProxy>();
 
 	FShaderParameters* ShaderParameters = Context.GetParameterNestedStruct<FShaderParameters>();
-	ShaderParameters->PlasmaPotentialRead = DIProxy.PlasmaPotentialBufferRead->UAV;
-	ShaderParameters->PlasmaPotentialWrite = DIProxy.PlasmaPotentialBufferWrite->UAV;
-	ShaderParameters->ChargeDensity = DIProxy.ChargeDensityBuffer->UAV;
-	ShaderParameters->ElectricField = DIProxy.ElectricFieldBuffer->UAV;
-	ShaderParameters->NodeCounts = NumCells;
-	ShaderParameters->CellSize = static_cast<FVector3f>(CellSize);
-	ShaderParameters->EmitterOrigin = static_cast<FVector3f>(EmitterOrigin);
-	ShaderParameters->EmitterSize = static_cast<FVector3f>(EmitterSize);
+	// todo: set the buffers in the shader parameters
+	ShaderParameters->NodeCounts = DIProxy.NumCells;
+	ShaderParameters->CellSize = static_cast<FVector3f>(DIProxy.CellSize);
+	ShaderParameters->EmitterOrigin = static_cast<FVector3f>(DIProxy.EmitterOrigin);
+	ShaderParameters->EmitterSize = static_cast<FVector3f>(DIProxy.EmitterSize);
 }
 
+// what's this for again?
 bool UUNiagaraDataInterfaceAuroraData::Equals(const UNiagaraDataInterface* Other) const
 {
 	const UUNiagaraDataInterfaceAuroraData* CastedOther = Cast<const UUNiagaraDataInterfaceAuroraData>(Other);
@@ -737,6 +736,7 @@ bool UUNiagaraDataInterfaceAuroraData::Equals(const UNiagaraDataInterface* Other
 		&& FMath::IsNearlyEqual(CastedOther->EmitterSize.Z, EmitterSize.Z)
 }
 
+// register the NDI
 void UUNiagaraDataInterfaceAuroraData::PostInitProperties()
 {
 	Super::PostInitProperties();
@@ -748,6 +748,7 @@ void UUNiagaraDataInterfaceAuroraData::PostInitProperties()
 	}
 }
 
+// check default data
 UUNiagaraDataInterfaceAuroraData::UUNiagaraDataInterfaceAuroraData(FObjectInitializer const& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, NumCells({10,10,10})
@@ -758,9 +759,9 @@ UUNiagaraDataInterfaceAuroraData::UUNiagaraDataInterfaceAuroraData(FObjectInitia
 	Proxy = TUniquePtr<FNiagaraDataInterfaceAuroraProxy>(new FNiagaraDataInterfaceAuroraProxy({10,10,10}, FVector::ZeroVector, FVector::ZeroVector, FVector::ZeroVector));
 }
 
+// what's this for again?
 bool UUNiagaraDataInterfaceAuroraData::CopyToInternal(UNiagaraDataInterface* Destination) const
 {
-	Super::CopyToInternal(Destination);
 	UUNiagaraDataInterfaceAuroraData* CastedDestination = Cast<UUNiagaraDataInterfaceAuroraData>(Destination);
 	if (CastedDestination)
 	{
@@ -774,6 +775,7 @@ bool UUNiagaraDataInterfaceAuroraData::CopyToInternal(UNiagaraDataInterface* Des
 	return true;
 }
 
+// is this needed?
 void UUNiagaraDataInterfaceAuroraData::PostLoad()
 {
 	Super::PostLoad();
@@ -781,6 +783,7 @@ void UUNiagaraDataInterfaceAuroraData::PostLoad()
 	GetProxyAs<FNiagaraDataInterfaceAuroraProxy>()->UpdateBounds(EmitterOrigin, EmitterSize);
 }
 
+// is this needed?
 void UUNiagaraDataInterfaceAuroraData::UpdateEmitterBounds(FNiagaraSystemInstance* SystemInstance)
 {
 	if (SystemInstance)
@@ -793,6 +796,8 @@ void UUNiagaraDataInterfaceAuroraData::UpdateEmitterBounds(FNiagaraSystemInstanc
 	}
 }
 
+// initialisation of the EmitterOrigins/EmitterSize (is this needed if PerInstanceTick does this already?)
+// getting emitter bounds requires predetermined emitter name
 bool UUNiagaraDataInterfaceAuroraData::InitPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance)
 {
 	if (SystemInstance)
@@ -806,50 +811,41 @@ bool UUNiagaraDataInterfaceAuroraData::InitPerInstanceData(void* PerInstanceData
 	return false;
 }
 
+// if emitter fixed bounds change, propagate that through to render_thread
+// getting emitter bounds requires predetermined emitter name
 bool UUNiagaraDataInterfaceAuroraData::PerInstanceTick(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds)
 {
+	bool bDataChanged = false;
 	if (SystemInstance)
 	{
-		const FBox Bounds = SystemInstance->GetSystemFixedBounds();
+		const FBox Bounds = SystemInstance->GetEmitterFixedBounds(FName("Grid"));
 		FVector NewOrigin = Bounds.Min;
 		FVector NewSize = Bounds.GetSize();
-		if (NewOrigin != EmitterOrigin)
+		if (NewOrigin != EmitterOrigin || NewSize != EmitterSize)
 		{
 			EmitterOrigin = NewOrigin;
-			GetProxyAs<FNiagaraDataInterfaceAuroraProxy>()->UpdateBounds(EmitterOrigin, EmitterSize);
-		}
-		if (NewSize != EmitterSize)
-		{
 			EmitterSize = NewSize;
 			GetProxyAs<FNiagaraDataInterfaceAuroraProxy>()->UpdateBounds(EmitterOrigin, EmitterSize);
+			bDataChanged = true;
 		}
 	}
-	return false;
+	return bDataChanged;
 }
 
 #if WITH_EDITOR
+// if NumCells property changes, propagate that through to the render_thread
 void UUNiagaraDataInterfaceAuroraData::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 	static FName NumCellsFName = GET_MEMBER_NAME_CHECKED(UUNiagaraDataInterfaceAuroraData, NumCells);
-	static FName EmitterOriginFName = GET_MEMBER_NAME_CHECKED(UUNiagaraDataInterfaceAuroraData, EmitterOrigin);
-	static FName EmitterSizeFName = GET_MEMBER_NAME_CHECKED(UUNiagaraDataInterfaceAuroraData, EmitterSize);
-
 
 	if (FProperty* PropertyThatChanged = PropertyChangedEvent.Property)
 	{
 		const FName& Name = PropertyThatChanged->GetFName();
 		if (Name == NumCellsFName)
 		{
+			MarkRenderDataDirty();
 			GetProxyAs<FNiagaraDataInterfaceAuroraProxy>()->ResizeGrid(NumCells);
-		}
-		else if (Name == EmitterOriginFName)
-		{
-			GetProxyAs<FNiagaraDataInterfaceAuroraProxy>()->UpdateBounds(EmitterOrigin, EmitterSize);
-		}
-		else if (Name == EmitterSizeFName)
-		{
-			GetProxyAs<FNiagaraDataInterfaceAuroraProxy>()->UpdateBounds(EmitterOrigin, EmitterSize);
 		}
 	}
 }
@@ -857,155 +853,49 @@ void UUNiagaraDataInterfaceAuroraData::PostEditChangeProperty(FPropertyChangedEv
 
 // PROXY
 
+// check default data
 FNiagaraDataInterfaceAuroraProxy::FNiagaraDataInterfaceAuroraProxy(FIntVector InNumCells, FVector InCellSize, FVector InEmitterOrigin, FVector InEmitterSize)
 	: NumCells(InNumCells)
 	, CellSize(InCellSize)
 	, EmitterOrigin(InEmitterOrigin)
 	, EmitterSize(InEmitterSize)
 {	
-	InitialiseBuffers();
 	ResizeGrid(NumCells);
 	UpdateBounds(EmitterOrigin, EmitterSize);
 }
 
-void FNiagaraDataInterfaceAuroraProxy::InitialiseBuffers()
+// reset the buffers, find how we can call this function from others
+void FNiagaraDataInterfaceAuroraProxy::ResetData(const FNDIGpuComputeResetContext& Context)
 {
-	int32 NumElements = NumCells.X * NumCells.Y * NumCells.Z;
-
-	ENQUEUE_RENDER_COMMAND(InitialiseAuroraBuffers)(
-		[this, NumElements](FRHICommandListImmediate& RHICmdList)
-		{
-			PlasmaPotentialBufferRead = MakeUnique<FRWBufferStructured>();
-			PlasmaPotentialBufferRead->Initialize(
-				RHICmdList,
-				TEXT("PlasmaPotentialBufferRead"),
-				sizeof(float),
-				NumElements,
-				BUF_UnorderedAccess,
-				false,
-				false,
-				ERHIAccess::UAVMask
-			);
-
-			PlasmaPotentialBufferWrite = MakeUnique<FRWBufferStructured>();
-			PlasmaPotentialBufferWrite->Initialize(
-				RHICmdList,
-				TEXT("PlasmaPotentialBufferB"),
-				sizeof(float),
-				NumElements,
-				BUF_UnorderedAccess,
-				false,
-				false,
-				ERHIAccess::UAVMask
-			);
-
-			ElectricFieldBuffer = MakeUnique<FRWBufferStructured>();
-			ElectricFieldBuffer->Initialize(
-				RHICmdList,
-				TEXT("ElectricFieldBuffer"),
-				sizeof(FVector4f),
-				NumElements,
-				BUF_UnorderedAccess,
-				false,
-				false,
-				ERHIAccess::UAVMask
-			);
-
-			ChargeDensityBuffer = MakeUnique<FRWBufferStructured>();
-			ChargeDensityBuffer->Initialize(
-				RHICmdList,
-				TEXT("ChargeDensityBuffer"),
-				sizeof(float),
-				NumElements,
-				BUF_UnorderedAccess,
-				false,
-				false,
-				ERHIAccess::UAVMask
-			);
-		}
-		);
+	
 }
 
 void FNiagaraDataInterfaceAuroraProxy::PostSimulate(const FNDIGpuComputePostSimulateContext& Context)
 {
-	Swap(PlasmaPotentialBufferRead, PlasmaPotentialBufferWrite);
+
+	// we want to swap the buffers safely, Swap(PlasmaPotentialBufferRead, PlasmaPotentialBufferWrite);
+
 }
 
+// could this be part of ResetData()?
 void FNiagaraDataInterfaceAuroraProxy::ResizeGrid(FIntVector NewGridSize)
 {
-	NumCells = NewGridSize;
 	int32 NumElements = NumCells.X * NumCells.Y * NumCells.Z;
-	ENQUEUE_RENDER_COMMAND(InitialiseAuroraBuffers)(
-		[this, NumElements](FRHICommandListImmediate& RHICmdList)
-		{
-			PlasmaPotentialBufferRead->Release();
-			PlasmaPotentialBufferWrite->Release();
-			ElectricFieldBuffer->Release();
-			ChargeDensityBuffer->Release();
-			PlasmaPotentialBufferRead.Reset();
-			PlasmaPotentialBufferWrite.Reset();
-			ElectricFieldBuffer.Reset();
-			ChargeDensityBuffer.Reset();
 
-			PlasmaPotentialBufferRead = MakeUnique<FRWBufferStructured>();
-			PlasmaPotentialBufferRead->Initialize(
-				RHICmdList,
-				TEXT("PlasmaPotentialBufferRead"),
-				sizeof(float),
-				NumElements,
-				BUF_UnorderedAccess,
-				false,
-				false,
-				ERHIAccess::UAVMask
-			);
+	// reset the buffers and reinitialise so that they have the new size
 
-			PlasmaPotentialBufferWrite = MakeUnique<FRWBufferStructured>();
-			PlasmaPotentialBufferWrite->Initialize(
-				RHICmdList,
-				TEXT("PlasmaPotentialBufferB"),
-				sizeof(float),
-				NumElements,
-				BUF_UnorderedAccess,
-				false,
-				false,
-				ERHIAccess::UAVMask
-			);
-
-			ElectricFieldBuffer = MakeUnique<FRWBufferStructured>();
-			ElectricFieldBuffer->Initialize(
-				RHICmdList,
-				TEXT("ElectricFieldBuffer"),
-				sizeof(FVector4f),
-				NumElements,
-				BUF_UnorderedAccess,
-				false,
-				false,
-				ERHIAccess::UAVMask
-			);
-
-			ChargeDensityBuffer = MakeUnique<FRWBufferStructured>();
-			ChargeDensityBuffer->Initialize(
-				RHICmdList,
-				TEXT("ChargeDensityBuffer"),
-				sizeof(float),
-				NumElements,
-				BUF_UnorderedAccess,
-				false,
-				false,
-				ERHIAccess::UAVMask
-			);
-		}
-		);
 }
 
 void FNiagaraDataInterfaceAuroraProxy::UpdateBounds(FVector Origin, FVector Size)
 {
-	ENQUEUE_RENDER_COMMAND(UpdateAuroraBounds)(
-		[this, Origin, Size](FRHICommandListImmediate& RHICmdList)
-		{
-			EmitterOrigin = Origin;
-			EmitterSize = Size;
-		}
-		);
+	ENQUEUE_RENDER_COMMAND(UpdateAuroraBounds)([this, Origin, Size](FRHICommandListImmediate& RHICmdList) {
+		this->EmitterOrigin = Origin;
+		this->EmitterSize = Size;
+		this->CellSize = FVector{
+			EmitterSize.X / NumCells.X,
+			EmitterSize.Y / NumCells.Y,
+			EmitterSize.Z / NumCells.Z
+		};
+		});
 }
 
