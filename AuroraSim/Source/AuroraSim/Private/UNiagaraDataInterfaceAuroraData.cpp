@@ -3,6 +3,7 @@
 #include "CoreTypes.h"
 #include "NiagaraSystemInstance.h"
 #include "NiagaraShaderParametersBuilder.h"
+#include "RenderGraphUtils.h"
 
 
 // Global VM function names, also used by the shaders code generation methods
@@ -44,19 +45,35 @@ DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, Scatter);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, OneDToThreeD);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, WorldToGrid);
 
+
+UUNiagaraDataInterfaceAuroraData::UUNiagaraDataInterfaceAuroraData(FObjectInitializer const& ObjectInitializer)
+	: NumCells({20,20,20})
+	, CellSize(FVector::ZeroVector)
+	, EmitterOrigin(FVector::ZeroVector)
+	, EmitterSize(FVector::ZeroVector)
+{
+	Proxy.Reset(new FNiagaraDataInterfaceAuroraProxy());
+}
+
 #if WITH_EDITORONLY_DATA
-// what's this for again?
+// Changes in the NDI are reflected in the shader's compile hash
+// required if NDI exposes shader parameters and NDI changes trigger shader recompilation
 bool UUNiagaraDataInterfaceAuroraData::AppendCompileHash(FNiagaraCompileHashVisitor* InVisitor) const
 {
 	if (!Super::AppendCompileHash(InVisitor))
 	{
 		return false;
 	}
+	// hash shader parameters and NDI properties
 	InVisitor->UpdateShaderParameters<FShaderParameters>();
+	InVisitor->UpdatePOD(TEXT("NumCells"), NumCells);
+	InVisitor->UpdatePOD(TEXT("CellSize"), CellSize);
+	InVisitor->UpdatePOD(TEXT("EmitterOrigin"), EmitterOrigin);
+	InVisitor->UpdatePOD(TEXT("EmitterSize"), EmitterSize);
 	return true;
 }
 
-//  function signatures
+//  Function Signatures (add descriptions to the signatures?)
 void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const
 {
 	{
@@ -748,17 +765,6 @@ void UUNiagaraDataInterfaceAuroraData::PostInitProperties()
 	}
 }
 
-// check default data
-UUNiagaraDataInterfaceAuroraData::UUNiagaraDataInterfaceAuroraData(FObjectInitializer const& ObjectInitializer)
-	: Super(ObjectInitializer)
-	, NumCells({10,10,10})
-	, CellSize(FVector::ZeroVector)
-	, EmitterOrigin(FVector::ZeroVector)
-	, EmitterSize(FVector::ZeroVector)
-{
-	Proxy = TUniquePtr<FNiagaraDataInterfaceAuroraProxy>(new FNiagaraDataInterfaceAuroraProxy({10,10,10}, FVector::ZeroVector, FVector::ZeroVector, FVector::ZeroVector));
-}
-
 // what's this for again?
 bool UUNiagaraDataInterfaceAuroraData::CopyToInternal(UNiagaraDataInterface* Destination) const
 {
@@ -811,6 +817,10 @@ bool UUNiagaraDataInterfaceAuroraData::InitPerInstanceData(void* PerInstanceData
 	return false;
 }
 
+void UUNiagaraDataInterfaceAuroraData::DestroyPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance)
+{
+}
+
 // if emitter fixed bounds change, propagate that through to render_thread
 // getting emitter bounds requires predetermined emitter name
 bool UUNiagaraDataInterfaceAuroraData::PerInstanceTick(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds)
@@ -830,6 +840,11 @@ bool UUNiagaraDataInterfaceAuroraData::PerInstanceTick(void* PerInstanceData, FN
 		}
 	}
 	return bDataChanged;
+}
+
+bool UUNiagaraDataInterfaceAuroraData::PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds)
+{
+	return false;
 }
 
 #if WITH_EDITOR
@@ -853,49 +868,84 @@ void UUNiagaraDataInterfaceAuroraData::PostEditChangeProperty(FPropertyChangedEv
 
 // PROXY
 
-// check default data
-FNiagaraDataInterfaceAuroraProxy::FNiagaraDataInterfaceAuroraProxy(FIntVector InNumCells, FVector InCellSize, FVector InEmitterOrigin, FVector InEmitterSize)
-	: NumCells(InNumCells)
-	, CellSize(InCellSize)
-	, EmitterOrigin(InEmitterOrigin)
-	, EmitterSize(InEmitterSize)
-{	
-	ResizeGrid(NumCells);
-	UpdateBounds(EmitterOrigin, EmitterSize);
-}
-
-// reset the buffers, find how we can call this function from others
+// Resetting the charge density at the start of every tick
 void FNiagaraDataInterfaceAuroraProxy::ResetData(const FNDIGpuComputeResetContext& Context)
 {
-	
+	FNDIAuroraInstaceData* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
+	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
+	AddClearUAVFloatPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0.0f);
 }
 
+// swaps buffers, releases buffers if final frame. (COULD ADD GPUCOMPUTEDEBUGINTERFACE)
 void FNiagaraDataInterfaceAuroraProxy::PostSimulate(const FNDIGpuComputePostSimulateContext& Context)
 {
+	FNDIAuroraInstaceData& ProxyData = SystemInstancesToProxyData.FindChecked(Context.GetSystemInstanceID());
 
-	// we want to swap the buffers safely, Swap(PlasmaPotentialBufferRead, PlasmaPotentialBufferWrite);
+	// add GpuComputeDebugInterface??
+	// or copy data to a render target??
 
+	ProxyData.SwapBuffers();
+	if (Context.IsFinalPostSimulate())
+	{
+		ProxyData.PlasmaPotentialBufferRead.EndGraphUsage();
+		ProxyData.PlasmaPotentialBufferWrite.EndGraphUsage();
+		ProxyData.ElectricFieldBuffer.EndGraphUsage();
+		ProxyData.ChargeDensityBuffer.EndGraphUsage();
+	}
 }
 
-// could this be part of ResetData()?
-void FNiagaraDataInterfaceAuroraProxy::ResizeGrid(FIntVector NewGridSize)
+// Runs before any sim stage, checks if buffers need resizing (CHECK FOR BOUNDS CHANGING IMPLEMENTATION)
+void FNiagaraDataInterfaceAuroraProxy::PreStage(const FNDIGpuComputePreStageContext& Context)
 {
-	int32 NumElements = NumCells.X * NumCells.Y * NumCells.Z;
-
-	// reset the buffers and reinitialise so that they have the new size
-
+	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
+	FNDIAuroraInstaceData& ProxyData = SystemInstancesToProxyData.FindChecked(Context.GetSystemInstanceID());
+	if (ProxyData.bResizeBuffer)
+	{
+		RDG_RHI_EVENT_SCOPE(GraphBuilder, NiagaraAuroraBufferResizedInfo);
+		ProxyData.ResizeGrid(GraphBuilder);
+	}
 }
 
-void FNiagaraDataInterfaceAuroraProxy::UpdateBounds(FVector Origin, FVector Size)
+// Setting the dispatch count, this is based on the number of cells (may have to change to totalcellcount maybe??)
+void FNiagaraDataInterfaceAuroraProxy::GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context)
 {
-	ENQUEUE_RENDER_COMMAND(UpdateAuroraBounds)([this, Origin, Size](FRHICommandListImmediate& RHICmdList) {
-		this->EmitterOrigin = Origin;
-		this->EmitterSize = Size;
-		this->CellSize = FVector{
-			EmitterSize.X / NumCells.X,
-			EmitterSize.Y / NumCells.Y,
-			EmitterSize.Z / NumCells.Z
-		};
-		});
+	if (const FNDIAuroraInstaceData* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID()))
+	{
+		Context.SetDirect(ProxyData->NumCells);
+	}
 }
+
+void FNiagaraDataInterfaceAuroraProxy::ConsumePerInstanceDataFromGameThread(void* PerInstanceData, const FNiagaraSystemInstanceID& Instance)
+{
+}
+
+// PER INSTANCE DATA
+
+void FNDIAuroraInstaceData::ResizeGrid(FRDGBuilder& GraphBuilder)
+{
+	const uint32 CellCount = NumCells.X * NumCells.Y * NumCells.Z;
+	bResizeBuffer = false;
+	PlasmaPotentialBufferRead.Release();
+	PlasmaPotentialBufferWrite.Release();
+	ElectricFieldBuffer.Release();
+	ChargeDensityBuffer.Release();
+
+	PlasmaPotentialBufferRead.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferRead"), EPixelFormat::PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess);
+	PlasmaPotentialBufferWrite.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferWrite"), EPixelFormat::PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess);
+	ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), EPixelFormat::PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess);
+	ElectricFieldBuffer.Initialize(GraphBuilder, TEXT("ElectricFieldBuffer"), EPixelFormat::PF_A32B32G32R32F, sizeof(FVector4f), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess);
+}
+
+void FNDIAuroraInstaceData::SwapBuffers()
+{
+	Swap(PlasmaPotentialBufferRead, PlasmaPotentialBufferWrite);
+}
+
+// needed?
+/*void FNDIAuroraInstaceData::UpdateBounds()
+{
+	bBoundsChanged = false;
+	EmitterOrigin = Origin;
+	EmitterSize = Size;
+}*/
 

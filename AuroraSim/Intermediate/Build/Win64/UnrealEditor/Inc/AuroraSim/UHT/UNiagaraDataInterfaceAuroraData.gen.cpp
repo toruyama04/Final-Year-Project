@@ -31,11 +31,12 @@ struct Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics
 {
 #if WITH_METADATA
 	static constexpr UECodeGen_Private::FMetaDataPairParam Class_MetaDataParams[] = {
+		{ "BlueprintType", "true" },
 		{ "Category", "Aurora" },
 #if !UE_BUILD_SHIPPING
 		{ "Comment", "/**\n * \n */" },
 #endif
-		{ "DisplayName", "Grid Data Interface" },
+		{ "DisplayName", "Aurora Grid Data Interface" },
 		{ "IncludePath", "UNiagaraDataInterfaceAuroraData.h" },
 		{ "ModuleRelativePath", "Public/UNiagaraDataInterfaceAuroraData.h" },
 		{ "ObjectInitializerConstructorDeclared", "" },
@@ -96,7 +97,7 @@ const UECodeGen_Private::FClassParams Z_Construct_UClass_UUNiagaraDataInterfaceA
 	0,
 	UE_ARRAY_COUNT(Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::PropPointers),
 	0,
-	0x000010A0u,
+	0x000810A0u,
 	METADATA_PARAMS(UE_ARRAY_COUNT(Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::Class_MetaDataParams), Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::Class_MetaDataParams)
 };
 UClass* Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData()
@@ -119,10 +120,10 @@ UUNiagaraDataInterfaceAuroraData::~UUNiagaraDataInterfaceAuroraData() {}
 struct Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_Statics
 {
 	static constexpr FClassRegisterCompiledInInfo ClassInfo[] = {
-		{ Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData, UUNiagaraDataInterfaceAuroraData::StaticClass, TEXT("UUNiagaraDataInterfaceAuroraData"), &Z_Registration_Info_UClass_UUNiagaraDataInterfaceAuroraData, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UUNiagaraDataInterfaceAuroraData), 1731156276U) },
+		{ Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData, UUNiagaraDataInterfaceAuroraData::StaticClass, TEXT("UUNiagaraDataInterfaceAuroraData"), &Z_Registration_Info_UClass_UUNiagaraDataInterfaceAuroraData, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UUNiagaraDataInterfaceAuroraData), 2483078922U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_2578352934(TEXT("/Script/AuroraSim"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_2966773122(TEXT("/Script/AuroraSim"),
 	Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_Statics::ClassInfo),
 	nullptr, 0,
 	nullptr, 0);

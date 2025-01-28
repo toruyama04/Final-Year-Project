@@ -14,35 +14,35 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 #endif
 #define AURORASIM_UNiagaraDataInterfaceAuroraData_generated_h
 
-#define FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_56_INCLASS \
+#define FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_64_INCLASS \
 private: \
 	static void StaticRegisterNativesUUNiagaraDataInterfaceAuroraData(); \
 	friend struct Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics; \
 public: \
-	DECLARE_CLASS(UUNiagaraDataInterfaceAuroraData, UNiagaraDataInterface, COMPILED_IN_FLAGS(0), CASTCLASS_None, TEXT("/Script/AuroraSim"), NO_API) \
+	DECLARE_CLASS(UUNiagaraDataInterfaceAuroraData, UNiagaraDataInterface, COMPILED_IN_FLAGS(0), CASTCLASS_None, TEXT("/Script/AuroraSim"), AURORASIM_API) \
 	DECLARE_SERIALIZER(UUNiagaraDataInterfaceAuroraData)
 
 
-#define FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_56_STANDARD_CONSTRUCTORS \
+#define FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_64_STANDARD_CONSTRUCTORS \
 	/** Standard constructor, called after all reflected properties have been initialized */ \
-	NO_API UUNiagaraDataInterfaceAuroraData(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get()); \
+	AURORASIM_API UUNiagaraDataInterfaceAuroraData(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get()); \
 	DEFINE_DEFAULT_OBJECT_INITIALIZER_CONSTRUCTOR_CALL(UUNiagaraDataInterfaceAuroraData) \
-	DECLARE_VTABLE_PTR_HELPER_CTOR(NO_API, UUNiagaraDataInterfaceAuroraData); \
+	DECLARE_VTABLE_PTR_HELPER_CTOR(AURORASIM_API, UUNiagaraDataInterfaceAuroraData); \
 	DEFINE_VTABLE_PTR_HELPER_CTOR_CALLER(UUNiagaraDataInterfaceAuroraData); \
 private: \
 	/** Private move- and copy-constructors, should never be used */ \
 	UUNiagaraDataInterfaceAuroraData(UUNiagaraDataInterfaceAuroraData&&); \
 	UUNiagaraDataInterfaceAuroraData(const UUNiagaraDataInterfaceAuroraData&); \
 public: \
-	NO_API virtual ~UUNiagaraDataInterfaceAuroraData();
+	AURORASIM_API virtual ~UUNiagaraDataInterfaceAuroraData();
 
 
-#define FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_53_PROLOG
-#define FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_56_GENERATED_BODY_LEGACY \
+#define FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_61_PROLOG
+#define FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_64_GENERATED_BODY_LEGACY \
 PRAGMA_DISABLE_DEPRECATION_WARNINGS \
 public: \
-	FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_56_INCLASS \
-	FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_56_STANDARD_CONSTRUCTORS \
+	FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_64_INCLASS \
+	FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_64_STANDARD_CONSTRUCTORS \
 public: \
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
 
