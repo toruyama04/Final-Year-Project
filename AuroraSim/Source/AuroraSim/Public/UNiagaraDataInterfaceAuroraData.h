@@ -21,12 +21,10 @@ struct FNDIAuroraInstaceData
 
 	// other attributes (shader parameters)
 	FIntVector NumCells = FIntVector::ZeroValue;
-	FVector CellSize = FVector::ZeroVector;
-	FVector EmitterOrigin = FVector::ZeroVector;
-	FVector EmitterSize = FVector::ZeroVector;
+	FVector3f EmitterOrigin = FVector3f::ZeroVector;
+	FVector3f EmitterSize = FVector3f::ZeroVector;
 
 	bool bResizeBuffer = false;
-	bool bBoundsChanged = false;
 
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
@@ -64,10 +62,10 @@ class UUNiagaraDataInterfaceAuroraData : public UNiagaraDataInterface
 	GENERATED_UCLASS_BODY()
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FShaderParameters, )
-		SHADER_PARAMETER_UAV(RWStructuredBuffer<float>,  PlasmaPotentialRead)
-		SHADER_PARAMETER_UAV(RWStructuredBuffer<float>,  PlasmaPotentialWrite)
-		SHADER_PARAMETER_UAV(RWStructuredBuffer<float>,  ChargeDensity)
-		SHADER_PARAMETER_UAV(RWStructuredBuffer<float4>, ElectricField)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,  PlasmaPotentialRead)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,  PlasmaPotentialWrite)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,  ChargeDensity)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float4>, ElectricField)
 		SHADER_PARAMETER(FIntVector,           NodeCounts)
 		SHADER_PARAMETER(FVector3f,            CellSize)
 		SHADER_PARAMETER(FVector3f,            EmitterOrigin)
@@ -110,23 +108,28 @@ public:
 	virtual void ProvidePerInstanceDataForRenderThread(void* DataForRenderThread, void* PerInstanceData, const FNiagaraSystemInstanceID& SystemInstance) override {}
 	virtual bool InitPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;	
 	virtual void DestroyPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;	
-	virtual bool PerInstanceTick(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
-	// virtual int32 PerInstanceDataSize()const override { return sizeof(FNDINeighborGrid3DInstanceData_GT); }
 	virtual bool PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
+	// virtual int32 PerInstanceDataSize()const override { return sizeof(FNDINeighborGrid3DInstanceData_GT); }
 	virtual bool HasPostSimulateTick() const override { return true; }
 	virtual bool HasPreSimulateTick() const override { return true; }
-	virtual bool HasPostStageTick(ENiagaraScriptUsage Usage) const override { return true; }
 
 	virtual bool CanExecuteOnTarget(ENiagaraSimTarget Target) const override
 	{
 		return Target == ENiagaraSimTarget::GPUComputeSim;
 	}
-	virtual void PostLoad() override;
 	void UpdateEmitterBounds(FNiagaraSystemInstance* SystemInstance);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+
 	// virtual ENiagaraGpuDispatchType GetGpuDispatchType() const override { return ENiagaraGpuDispatchType::ThreeD; }
+	virtual TArray<FNiagaraDataInterfaceError> GetErrors() override
+	{
+		// TODO(mv): Improve error messages?
+		TArray<FNiagaraDataInterfaceError> Errors;
+
+		return Errors;
+	}
 #endif
 
 protected:
@@ -138,13 +141,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	FIntVector NumCells;
-	
-	UPROPERTY(BlueprintReadOnly, Category = "Grid")
-	FVector CellSize;
 
-	UPROPERTY(EditAnywhere, Category = "Grid")
-	FVector EmitterOrigin;
+	FVector3f EmitterOrigin;
+	FVector3f EmitterSize;
 
-	UPROPERTY(EditAnywhere, Category = "Grid")
-	FVector EmitterSize;
+	bool bNeedsRealloc = false;
 };

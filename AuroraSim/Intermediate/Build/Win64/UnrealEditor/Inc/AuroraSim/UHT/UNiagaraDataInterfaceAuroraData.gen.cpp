@@ -13,7 +13,6 @@ void EmptyLinkFunctionForGeneratedCodeUNiagaraDataInterfaceAuroraData() {}
 AURORASIM_API UClass* Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData();
 AURORASIM_API UClass* Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_NoRegister();
 COREUOBJECT_API UScriptStruct* Z_Construct_UScriptStruct_FIntVector();
-COREUOBJECT_API UScriptStruct* Z_Construct_UScriptStruct_FVector();
 NIAGARA_API UClass* Z_Construct_UClass_UNiagaraDataInterface();
 UPackage* Z_Construct_UPackage__Script_AuroraSim();
 // End Cross Module References
@@ -45,23 +44,8 @@ struct Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics
 		{ "Category", "Grid" },
 		{ "ModuleRelativePath", "Public/UNiagaraDataInterfaceAuroraData.h" },
 	};
-	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_CellSize_MetaData[] = {
-		{ "Category", "Grid" },
-		{ "ModuleRelativePath", "Public/UNiagaraDataInterfaceAuroraData.h" },
-	};
-	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_EmitterOrigin_MetaData[] = {
-		{ "Category", "Grid" },
-		{ "ModuleRelativePath", "Public/UNiagaraDataInterfaceAuroraData.h" },
-	};
-	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_EmitterSize_MetaData[] = {
-		{ "Category", "Grid" },
-		{ "ModuleRelativePath", "Public/UNiagaraDataInterfaceAuroraData.h" },
-	};
 #endif // WITH_METADATA
 	static const UECodeGen_Private::FStructPropertyParams NewProp_NumCells;
-	static const UECodeGen_Private::FStructPropertyParams NewProp_CellSize;
-	static const UECodeGen_Private::FStructPropertyParams NewProp_EmitterOrigin;
-	static const UECodeGen_Private::FStructPropertyParams NewProp_EmitterSize;
 	static const UECodeGen_Private::FPropertyParamsBase* const PropPointers[];
 	static UObject* (*const DependentSingletons[])();
 	static constexpr FCppClassTypeInfoStatic StaticCppClassTypeInfo = {
@@ -70,14 +54,8 @@ struct Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics
 	static const UECodeGen_Private::FClassParams ClassParams;
 };
 const UECodeGen_Private::FStructPropertyParams Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_NumCells = { "NumCells", nullptr, (EPropertyFlags)0x0020080000000001, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UUNiagaraDataInterfaceAuroraData, NumCells), Z_Construct_UScriptStruct_FIntVector, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_NumCells_MetaData), NewProp_NumCells_MetaData) };
-const UECodeGen_Private::FStructPropertyParams Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_CellSize = { "CellSize", nullptr, (EPropertyFlags)0x0020080000000014, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UUNiagaraDataInterfaceAuroraData, CellSize), Z_Construct_UScriptStruct_FVector, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_CellSize_MetaData), NewProp_CellSize_MetaData) };
-const UECodeGen_Private::FStructPropertyParams Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_EmitterOrigin = { "EmitterOrigin", nullptr, (EPropertyFlags)0x0020080000000001, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UUNiagaraDataInterfaceAuroraData, EmitterOrigin), Z_Construct_UScriptStruct_FVector, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_EmitterOrigin_MetaData), NewProp_EmitterOrigin_MetaData) };
-const UECodeGen_Private::FStructPropertyParams Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_EmitterSize = { "EmitterSize", nullptr, (EPropertyFlags)0x0020080000000001, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UUNiagaraDataInterfaceAuroraData, EmitterSize), Z_Construct_UScriptStruct_FVector, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_EmitterSize_MetaData), NewProp_EmitterSize_MetaData) };
 const UECodeGen_Private::FPropertyParamsBase* const Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::PropPointers[] = {
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_NumCells,
-	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_CellSize,
-	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_EmitterOrigin,
-	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::NewProp_EmitterSize,
 };
 static_assert(UE_ARRAY_COUNT(Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::PropPointers) < 2048);
 UObject* (*const Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData_Statics::DependentSingletons[])() = {
@@ -120,10 +98,10 @@ UUNiagaraDataInterfaceAuroraData::~UUNiagaraDataInterfaceAuroraData() {}
 struct Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_Statics
 {
 	static constexpr FClassRegisterCompiledInInfo ClassInfo[] = {
-		{ Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData, UUNiagaraDataInterfaceAuroraData::StaticClass, TEXT("UUNiagaraDataInterfaceAuroraData"), &Z_Registration_Info_UClass_UUNiagaraDataInterfaceAuroraData, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UUNiagaraDataInterfaceAuroraData), 2483078922U) },
+		{ Z_Construct_UClass_UUNiagaraDataInterfaceAuroraData, UUNiagaraDataInterfaceAuroraData::StaticClass, TEXT("UUNiagaraDataInterfaceAuroraData"), &Z_Registration_Info_UClass_UUNiagaraDataInterfaceAuroraData, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UUNiagaraDataInterfaceAuroraData), 1567944279U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_2966773122(TEXT("/Script/AuroraSim"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_4249891118(TEXT("/Script/AuroraSim"),
 	Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_AuroraSim_Source_AuroraSim_Public_UNiagaraDataInterfaceAuroraData_h_Statics::ClassInfo),
 	nullptr, 0,
 	nullptr, 0);
