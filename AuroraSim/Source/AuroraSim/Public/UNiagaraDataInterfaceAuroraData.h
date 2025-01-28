@@ -142,7 +142,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Grid")
 	FIntVector NumCells;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Grid")
 	FVector3f EmitterOrigin;
+	UPROPERTY(BlueprintReadOnly, Category = "Grid")
 	FVector3f EmitterSize;
 
 	bool bNeedsRealloc = false;

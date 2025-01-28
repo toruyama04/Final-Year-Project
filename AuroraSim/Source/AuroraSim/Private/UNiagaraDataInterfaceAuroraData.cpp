@@ -463,31 +463,61 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 				int3 ThreeI;
 				OneDToThree(Index, ThreeI);
 				int3 GridSize = {NodeCounts};
-				if (ThreeI.x > 0 && ThreeI.x < GridSize.x - 1 &&
-					ThreeI.y > 0 && ThreeI.y < GridSize.y - 1 &&
-					ThreeI.z > 0 && ThreeI.z < GridSize.z - 1)
-				{
+				float CellVolume = {CellSize}.x * {CellSize}.y * {CellSize}.z;
+
+				float sum = 0.0;
+				int neighborCount = 0;
+
+				if (ThreeI.x > 0) {
 					int indexXNeg = Index - 1;
+					sum += {PlasmaPotentialRead}[indexXNeg];
+					neighborCount++;
+				} else {
+					sum += {PlasmaPotentialRead}[Index];
+					neighborCount++;
+				} 
+				if (ThreeI.x < GridSize.x - 1) {
 					int indexXPos = Index + 1;
+					sum += {PlasmaPotentialRead}[indexXPos];
+					neighborCount++;
+				} else {
+					sum += {PlasmaPotentialRead}[Index];
+					neighborCount++;
+				} 
+				if (ThreeI.y > 0) {
 					int indexYNeg = Index - GridSize.x;
+					sum += {PlasmaPotentialRead}[indexYNeg];
+					neighborCount++;
+				} else {
+					sum += {PlasmaPotentialRead}[Index];
+					neighborCount++;
+				}
+				if (ThreeI.y < GridSize.y - 1) {
 					int indexYPos = Index + GridSize.x;
+					sum += {PlasmaPotentialRead}[indexYPos];
+					neighborCount++;
+				} else {
+					sum += {PlasmaPotentialRead}[Index];
+					neighborCount++;
+				}
+				if (ThreeI.z > 0) {
 					int indexZNeg = Index - GridSize.x * GridSize.y;
+					sum += {PlasmaPotentialRead}[indexZNeg];
+					neighborCount++;
+				} else {
+					sum += {PlasmaPotentialRead}[Index];
+					neighborCount++;
+				}
+				if (ThreeI.z < GridSize.z - 1) {
 					int indexZPos = Index + GridSize.x * GridSize.y;
-
-					float sum = {PlasmaPotentialRead}[indexXNeg] +
-								{PlasmaPotentialRead}[indexXPos] +
-								{PlasmaPotentialRead}[indexYNeg] +
-								{PlasmaPotentialRead}[indexYPos] +
-								{PlasmaPotentialRead}[indexZNeg] +
-								{PlasmaPotentialRead}[indexZPos];
-					float CellVolume = {CellSize}.x * {CellSize}.y * {CellSize}.z;
-
-					{PlasmaPotentialWrite}[Index] = (sum - {ChargeDensity}[Index] * CellVolume) / 6.0;
+					sum += {PlasmaPotentialRead}[indexZPos];
+					neighborCount++;
+				} else {
+					sum += {PlasmaPotentialRead}[Index];
+					neighborCount++;
 				}
-				else
-				{
-					{PlasmaPotentialWrite}[Index] = {PlasmaPotentialRead}[Index];
-				}
+
+				{PlasmaPotentialWrite}[Index] = (sum - {ChargeDensity}[Index] * CellVolume) / float(neighborCount);
 				OutSuccess = true;
 			}
 		)");
@@ -512,50 +542,52 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 				int3 GridSize = {NodeCounts};
 				float dx = {CellSize}.x;
 				float dy = {CellSize}.y;
-				float dz = {CellSize}.z
+				float dz = {CellSize}.z;
+
+				float ef_x = 0.0;
+				float ef_y = 0.0;
+				float ef_z = 0.0;
+
 				if (ThreeI.x == 0) {
 					int index_i = Index;
 					int index_ip1 = Index + 1;
-					int index_ip2 = Index + 2;
-					ef_x = -(-3 * {PlasmaPotentialWrite}[index_i] + 4 * {PlasmaPotentialWrite}[index_ip1] - {PlasmaPotentialWrite}[index_ip2]) / (2 * dx);
+					ef_x = -({PlasmaPotentialWrite}[index_ip1] - {PlasmaPotentialWrite}[index_i]) / dx;
 				} else if (ThreeI.x == GridSize.x - 1) {
-					int index_im2 = Index - 2;
-					int index_im1 = Index - 1;
 					int index_i = Index;
-					ef_x = -({PlasmaPotentialWrite}[index_im2] - 4 * {PlasmaPotentialWrite}[index_im1] + 3 * {PlasmaPotentialWrite}[index_i]) / (2 * dx);
-				} else  // Central difference{
+					int index_im1 = Index - 1;
+					ef_x = -({PlasmaPotentialWrite}[index_i] - {PlasmaPotentialWrite}[index_im1]) / dx;
+				} else {
 					int index_im1 = Index - 1;
 					int index_ip1 = Index + 1;
-					ef_x = -({PlasmaPotentialWrite}[index_ip1] - {PlasmaPotentialWrite}[index_im1]) / (2 * dx);
-				} if (ThreeI.y == 0) {
-					int index_i = Index;
-					int index_jp1 = Index + GridSize.x;
-					int index_jp2 = Index + 2 * GridSize.x;
-					ef_y = -(-3 * {PlasmaPotentialWrite}[index_i] + 4 * {PlasmaPotentialWrite}[index_jp1] - {PlasmaPotentialWrite}[index_jp2]) / (2 * dy);
-				} else if (ThreeI.y == GridSize.y - 1) {
-					int index_jm2 = Index - 2 * GridSize.x;
-					int index_jm1 = Index - GridSize.x;
-					int index_i = Index;
-					ef_y = -({PlasmaPotentialWrite}[index_jm2] - 4 * {PlasmaPotentialWrite}[index_jm1] + 3 * {PlasmaPotentialWrite}[index_i]) / (2 * dy);
-				} else {
-					int index_jm1 = Index - GridSize.x;
-					int index_jp1 = Index + GridSize.x;
-					ef_y = -({PlasmaPotentialWrite}[index_jp1] - {PlasmaPotentialWrite}[index_jm1]) / (2 * dy);
-				} if (ThreeI.z == 0) {
-					int index_i = Index;
-					int index_kp1 = Index + GridSize.x * GridSize.y;
-					int index_kp2 = Index + 2 * GridSize.x * GridSize.y;
-					ef_z = -(-3 * {PlasmaPotentialWrite}[index_i] + 4 * {PlasmaPotentialWrite}[index_kp1] - {PlasmaPotentialWrite}[index_kp2]) / (2 * dz);
-				} else if (ThreeI.z == GridSize.z - 1) {
-					int index_km2 = Index - 2 * GridSize.x * GridSize.y;
-					int index_km1 = Index - GridSize.x * GridSize.y;
-					int index_i = Index;
-					ef_z = -({PlasmaPotentialWrite}[index_km2] - 4 * {PlasmaPotentialWrite}[index_km1] + 3 * {PlasmaPotentialWrite}[index_i]) / (2 * dz);
-				} else {
-					int index_km1 = Index - GridSize.x * GridSize.y;
-					int index_kp1 = Index + GridSize.x * GridSize.y;
-					ef_z = -({PlasmaPotentialWrite}[index_kp1] - {PlasmaPotentialWrite}[index_km1]) / (2 * dz);
+					ef_x = -({PlasmaPotentialWrite}[index_ip1] - {PlasmaPotentialWrite}[index_im1]) / (2.0 * dx);
 				}
+				if (ThreeI.y == 0) {
+					int index_i = Index;
+					int index_jp1 = Index + GridSize.x;
+					ef_y = -({PlasmaPotentialWrite}[index_jp1] - {PlasmaPotentialWrite}[index_i]) / dy;
+				} else if (ThreeI.y == GridSize.y - 1) {
+					int index_i = Index;
+					int index_jm1 = Index - GridSize.x;
+					ef_y = -({PlasmaPotentialWrite}[index_i] - {PlasmaPotentialWrite}[index_jm1]) / dy;
+				} else {
+					int index_jm1 = Index - GridSize.x;
+					int index_jp1 = Index + GridSize.x;
+					ef_y = -({PlasmaPotentialWrite}[index_jp1] - {PlasmaPotentialWrite}[index_jm1]) / (2.0 * dy);
+				}
+				if (ThreeI.z == 0) {
+					int index_i = Index;
+					int index_kp1 = Index + GridSize.x * GridSize.y;
+					ef_z = -({PlasmaPotentialWrite}[index_kp1] - {PlasmaPotentialWrite}[index_i]) / dz;
+				} else if (ThreeI.z == GridSize.z - 1) {
+					int index_i = Index;
+					int index_km1 = Index - GridSize.x * GridSize.y;
+					ef_z = -({PlasmaPotentialWrite}[index_i] - {PlasmaPotentialWrite}[index_km1]) / dz;
+				} else {
+					int index_km1 = Index - GridSize.x * GridSize.y;
+					int index_kp1 = Index + GridSize.x * GridSize.y;
+					ef_z = -({PlasmaPotentialWrite}[index_kp1] - {PlasmaPotentialWrite}[index_km1]) / (2.0 * dz);
+				}
+
 				{ElectricField}[Index] = float4(ef_x, ef_y, ef_z, 0.0);
 				OutSuccess = true;
 			}
