@@ -14,6 +14,7 @@ public class AuroraSim : ModuleRules
 			"Engine",
 			"EnhancedInput", 
 			"Niagara", 
+			"NiagaraCore",
 			"RenderCore", 
 			"RHI" 
 		});

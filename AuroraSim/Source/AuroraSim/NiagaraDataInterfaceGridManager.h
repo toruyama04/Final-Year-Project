@@ -2,7 +2,5 @@
 
 #pragma once
 
-#include "NiagaraDataInterfaceGridManager.generated.h"
-
 
 

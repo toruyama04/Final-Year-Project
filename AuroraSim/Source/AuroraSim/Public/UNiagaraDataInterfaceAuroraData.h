@@ -6,11 +6,7 @@
 #include "NiagaraCommon.h"
 #include "NiagaraDataInterface.h"
 #include "NiagaraDataInterfaceRW.h"
-#include "NiagaraSystemInstance.h"
-#include "NiagaraSimStageData.h"
 #include "NiagaraRenderGraphUtils.h"
-#include "RenderGraphBuilder.h"
-#include "NiagaraGpuComputeDispatchInterface.h"
 
 #include "UNiagaraDataInterfaceAuroraData.generated.h"
 

@@ -1,8 +1,9 @@
 
 #include "UNiagaraDataInterfaceAuroraData.h"
-#include "CoreTypes.h"
-#include "NiagaraSystemInstance.h"
+
 #include "NiagaraShaderParametersBuilder.h"
+#include "NiagaraGpuComputeDispatchInterface.h"
+#include "NiagaraSystemInstance.h"
 #include "RenderGraphUtils.h"
 
 // Global VM function names, also used by the shaders code generation methods
