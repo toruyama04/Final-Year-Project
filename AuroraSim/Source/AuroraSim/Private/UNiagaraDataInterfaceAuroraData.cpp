@@ -5,6 +5,7 @@
 #include "NiagaraShaderParametersBuilder.h"
 #include "RenderGraphUtils.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(NiagaraDataInterfaceNeighborGrid3D)
 
 // Global VM function names, also used by the shaders code generation methods
 static const FName GetChargeDensityFunctionName("GetChargeDensity");
@@ -18,18 +19,12 @@ static const FName SolvePlasmaPotentialFunctionName("SolvePlasmaPotential");
 static const FName SolveElectricFieldFunctionName("SolveElectricField");
 static const FName GatherFunctionName("Gather");
 static const FName ScatterFunctionName("Scatter");
-static const FName OneDToThreeDFunctionName("OneDToThreeD");
-static const FName WorldToGridFunctionName("WorldToGrid");
 
 // Global variable prefixes, used in HLSL parameter declarations
 static const FString PlasmaPotentialReadParamName(TEXT("PlasmaPotentialRead"));
 static const FString PlasmaPotentialWriteParamName(TEXT("PlasmaPotentialWrite"));
 static const FString ChargeDensityParamName(TEXT("ChargeDensity"));
 static const FString ElectricFieldParamName(TEXT("ElectricField"));
-static const FString NodeCountsParamName(TEXT("NodeCounts"));
-static const FString CellSizeParamName(TEXT("CellSize"));
-static const FString EmitterOriginParamName(TEXT("EmitterOrigin"));
-static const FString EmitterSizeParamName(TEXT("EmitterSize"));
 
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, GetChargeDensity);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, GetPlasmaPotentialRead);
@@ -42,15 +37,10 @@ DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, SolvePlasmaPoten
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, SolveElectricField);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, Gather);
 DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, Scatter);
-DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, OneDToThreeD);
-DEFINE_NDI_DIRECT_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, WorldToGrid);
 
 
 UUNiagaraDataInterfaceAuroraData::UUNiagaraDataInterfaceAuroraData(FObjectInitializer const& ObjectInitializer)
-	: NumCells({20,20,20})
-	, CellSize(FVector::ZeroVector)
-	, EmitterOrigin(FVector::ZeroVector)
-	, EmitterSize(FVector::ZeroVector)
+	: Super(ObjectInitializer)
 {
 	Proxy.Reset(new FNiagaraDataInterfaceAuroraProxy());
 }
@@ -64,15 +54,13 @@ bool UUNiagaraDataInterfaceAuroraData::AppendCompileHash(FNiagaraCompileHashVisi
 	}
 	// hash shader parameters and NDI properties
 	InVisitor->UpdateShaderParameters<FShaderParameters>();
-	InVisitor->UpdatePOD(TEXT("NumCells"), NumCells);
-	InVisitor->UpdatePOD(TEXT("EmitterOrigin"), EmitterOrigin);
-	InVisitor->UpdatePOD(TEXT("EmitterSize"), EmitterSize);
 	return true;
 }
 
 //  TODO: add descriptions to each function?
 void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const
 {
+	Super::GetFunctionsInternal(OutFunctions);
 	{
 		FNiagaraFunctionSignature GetChargeDensitySig;
 		GetChargeDensitySig.Name = GetChargeDensityFunctionName;
@@ -113,7 +101,9 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		FNiagaraFunctionSignature GetElectricFieldSig;
 		GetElectricFieldSig.Name = GetElectricFieldFunctionName;
 		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("Index")));
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexX")));
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexY")));
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexZ")));
 		GetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutElectricField")));
 		GetElectricFieldSig.bMemberFunction = true;
 		GetElectricFieldSig.bRequiresContext = false;
@@ -153,7 +143,9 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		FNiagaraFunctionSignature SetElectricFieldSig;
 		SetElectricFieldSig.Name = SetElectricFieldFunctionName;
 		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexX")));
+		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexY")));
+		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexZ")));
 		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InElectricField")));
 		SetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		SetElectricFieldSig.bMemberFunction = true;
@@ -167,7 +159,9 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		FNiagaraFunctionSignature SolvePlasmaPotentialSig;
 		SolvePlasmaPotentialSig.Name = SolvePlasmaPotentialFunctionName;
 		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexX")));
+		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexY")));
+		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexZ")));
 		SolvePlasmaPotentialSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		SolvePlasmaPotentialSig.bMemberFunction = true;
 		SolvePlasmaPotentialSig.bRequiresContext = false;
@@ -180,7 +174,9 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		FNiagaraFunctionSignature SolveElectricFieldSig;
 		SolveElectricFieldSig.Name = SolveElectricFieldFunctionName;
 		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexX")));
+		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexY")));
+		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexZ")));
 		SolveElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		SolveElectricFieldSig.bMemberFunction = true;
 		SolveElectricFieldSig.bRequiresContext = false;
@@ -193,7 +189,7 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		FNiagaraFunctionSignature GatherSig;
 		GatherSig.Name = GatherFunctionName;
 		GatherSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GatherSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InPosition")));
+		GatherSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InLogicalCoordinate")));
 		GatherSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutVector")));
 		GatherSig.bMemberFunction = true;
 		GatherSig.bRequiresContext = false;
@@ -205,7 +201,7 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		FNiagaraFunctionSignature ScatterSig;
 		ScatterSig.Name = ScatterFunctionName;
 		ScatterSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		ScatterSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InPosition")));
+		ScatterSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InLogicalCoordinate")));
 		ScatterSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("InCharge")));
 		ScatterSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		ScatterSig.bMemberFunction = true;
@@ -215,36 +211,12 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		ScatterSig.bSupportsGPU = true;
 		OutFunctions.Add(ScatterSig);
 	}
-	{
-		FNiagaraFunctionSignature OneDToThreeDSig;
-		OneDToThreeDSig.Name = OneDToThreeDFunctionName;
-		OneDToThreeDSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		OneDToThreeDSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("InOneDIndex")));
-		OneDToThreeDSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutThreeDIndex")));
-		OneDToThreeDSig.bMemberFunction = true;
-		OneDToThreeDSig.bRequiresContext = false;
-		OneDToThreeDSig.bSupportsCPU = false;
-		OneDToThreeDSig.bSupportsGPU = true;
-		OutFunctions.Add(OneDToThreeDSig);
-	}
-	{
-		FNiagaraFunctionSignature WorldToGridFunctionNameSig;
-		WorldToGridFunctionNameSig.Name = WorldToGridFunctionName;
-		WorldToGridFunctionNameSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		WorldToGridFunctionNameSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InPosition")));
-		WorldToGridFunctionNameSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("OutGridIndex")));
-		WorldToGridFunctionNameSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutWeights")));
-		WorldToGridFunctionNameSig.bMemberFunction = true;
-		WorldToGridFunctionNameSig.bRequiresContext = false;
-		WorldToGridFunctionNameSig.bSupportsCPU = false;
-		WorldToGridFunctionNameSig.bSupportsGPU = true;
-		OutFunctions.Add(WorldToGridFunctionNameSig);
-	}
 }
 #endif
 
 void UUNiagaraDataInterfaceAuroraData::GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc)
 {
+	Super::GetVMExternalFunction(BindingInfo, InstanceData, OutFunc);
 	if (BindingInfo.Name == GetChargeDensityFunctionName)
 	{
 		NDI_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, GetChargeDensity)::Bind(this, OutFunc);
@@ -289,14 +261,6 @@ void UUNiagaraDataInterfaceAuroraData::GetVMExternalFunction(const FVMExternalFu
 	{
 		NDI_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, Scatter)::Bind(this, OutFunc);
 	}
-	else if (BindingInfo.Name == OneDToThreeDFunctionName)
-	{
-		NDI_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, OneDToThreeD)::Bind(this, OutFunc);
-	}
-	else if (BindingInfo.Name == WorldToGridFunctionName)
-	{
-		NDI_FUNC_BINDER(UUNiagaraDataInterfaceAuroraData, WorldToGrid)::Bind(this, OutFunc);
-	}
 	else
 	{
 		ensureMsgf(false, TEXT("Error! Function defined for this class but not bound"));
@@ -305,26 +269,26 @@ void UUNiagaraDataInterfaceAuroraData::GetVMExternalFunction(const FVMExternalFu
 
 void UUNiagaraDataInterfaceAuroraData::GetParameterDefinitionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, FString& OutHLSL)
 {
+	Super::GetParameterDefinitionHLSL(ParamInfo, OutHLSL);
+
 	OutHLSL.Appendf(TEXT("RWBuffer<float>  %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialReadParamName);
 	OutHLSL.Appendf(TEXT("RWBuffer<float>  %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialWriteParamName);
 	OutHLSL.Appendf(TEXT("RWBuffer<float>  %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *ChargeDensityParamName);
-	OutHLSL.Appendf(TEXT("RWBuffer<float4> %s%s;\n"),
+	OutHLSL.Appendf(TEXT("RWTexture3D<float4> %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *ElectricFieldParamName);
-	OutHLSL.Appendf(TEXT("int3             %s%s;\n"),
-		*ParamInfo.DataInterfaceHLSLSymbol, *NodeCountsParamName);
-	OutHLSL.Appendf(TEXT("float3           %s%s;\n"),
-		*ParamInfo.DataInterfaceHLSLSymbol, *CellSizeParamName);
-	OutHLSL.Appendf(TEXT("float3           %s%s;\n"),
-		*ParamInfo.DataInterfaceHLSLSymbol, *EmitterOriginParamName);
-	OutHLSL.Appendf(TEXT("float3           %s%s;\n"),
-		*ParamInfo.DataInterfaceHLSLSymbol, *EmitterSizeParamName);
 }
 
 bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL)
 {
+	bool ParentRet = Super::GetFunctionHLSL(ParamInfo, FunctionInfo, FunctionInstanceIndex, OutHLSL);
+	if (ParentRet)
+	{
+		return true;
+	}
+
 	if (FunctionInfo.DefinitionName == GetChargeDensityFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
@@ -373,17 +337,14 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 	else if (FunctionInfo.DefinitionName == GetElectricFieldFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-			void GetElectricField(int3 Index, out float3 OutElectricField)
-			{
-				int3 GridSize = {NodeCounts};
-				Index = clamp(Index, int3(0, 0, 0), GridSize - int3(1, 1, 1));
-				int idx = Index.x + Index.y * GridSize.x + Index.z * GridSize.x * GridSize.y;
-				OutElectricField = {ElectricField}[idx].xyz;
-			}
+			void GetElectricField(int IndexX, int IndexY, int IndexZ, out float3 OutElectricField)
+            {
+                int3 Index = int3(IndexX, IndexY, IndexZ);
+				OutElectricField = ElectricField[Index].xyz;
+            }
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("ElectricField"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
-			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -423,34 +384,15 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 	else if (FunctionInfo.DefinitionName == SetElectricFieldFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(int Index, in float3 InElectricField, out bool OutSuccess)
-			{
-				{ElectricField}[Index].xyz = InElectricField;
-				OutSuccess = true;
-			}
+			void {FunctionName}(int IndexX, int IndexY, int IndexZ, in float3 InElectricField, out bool OutSuccess)
+            {
+                int3 Index = int3(IndexX, IndexY, IndexZ);
+				ElectricField[Index] = float4(InElectricField, 1.0);
+            }
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
 			{TEXT("ElectricField"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
-		};
-		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
-		return true;
-	}
-	else if (FunctionInfo.DefinitionName == OneDToThreeDFunctionName)
-	{
-		static const TCHAR* FormatBounds = TEXT(R"(
-			void OneDToThree(int Index, out int3 OutThreeD)
-			{
-				int3 GridSize = {NodeCounts};
-				OutThreeD.x = Index % GridSize.x;
-				int tempIndex = Index / GridSize.x;
-				OutThreeD.y = tempIndex % GridSize.y;
-				OutThreeD.z = tempIndex / GridSize.y;
-			}
-
-		)");
-		const TMap<FString, FStringFormatArg> ArgsBounds = {
-			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -458,76 +400,58 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 	else if (FunctionInfo.DefinitionName == SolvePlasmaPotentialFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(int Index, out bool OutSuccess)
+			void {FunctionName}(int IndexX, int IndexY, int IndexZ, out bool OutSuccess)
 			{
-				int3 ThreeI;
-				OneDToThree(Index, ThreeI);
 				int3 GridSize = {NodeCounts};
+				int Index = IndexX + GridSize.x * (IndexY + GridSize.y * IndexZ);
+
 				float CellVolume = {CellSize}.x * {CellSize}.y * {CellSize}.z;
-
 				float sum = 0.0;
-				int neighborCount = 0;
 
-				if (ThreeI.x > 0) {
-					int indexXNeg = Index - 1;
-					sum += {PlasmaPotentialRead}[indexXNeg];
-					neighborCount++;
+				if (IndexX > 0) {
+					sum += {PlasmaPotentialRead}[Index - 1];
 				} else {
 					sum += {PlasmaPotentialRead}[Index];
-					neighborCount++;
-				} 
-				if (ThreeI.x < GridSize.x - 1) {
-					int indexXPos = Index + 1;
-					sum += {PlasmaPotentialRead}[indexXPos];
-					neighborCount++;
-				} else {
-					sum += {PlasmaPotentialRead}[Index];
-					neighborCount++;
-				} 
-				if (ThreeI.y > 0) {
-					int indexYNeg = Index - GridSize.x;
-					sum += {PlasmaPotentialRead}[indexYNeg];
-					neighborCount++;
-				} else {
-					sum += {PlasmaPotentialRead}[Index];
-					neighborCount++;
 				}
-				if (ThreeI.y < GridSize.y - 1) {
-					int indexYPos = Index + GridSize.x;
-					sum += {PlasmaPotentialRead}[indexYPos];
-					neighborCount++;
+				if (IndexX < GridSize.x - 1) {
+					sum += {PlasmaPotentialRead}[Index + 1];
 				} else {
 					sum += {PlasmaPotentialRead}[Index];
-					neighborCount++;
-				}
-				if (ThreeI.z > 0) {
-					int indexZNeg = Index - GridSize.x * GridSize.y;
-					sum += {PlasmaPotentialRead}[indexZNeg];
-					neighborCount++;
-				} else {
-					sum += {PlasmaPotentialRead}[Index];
-					neighborCount++;
-				}
-				if (ThreeI.z < GridSize.z - 1) {
-					int indexZPos = Index + GridSize.x * GridSize.y;
-					sum += {PlasmaPotentialRead}[indexZPos];
-					neighborCount++;
-				} else {
-					sum += {PlasmaPotentialRead}[Index];
-					neighborCount++;
 				}
 
-				{PlasmaPotentialWrite}[Index] = (sum - {ChargeDensity}[Index] * CellVolume) / float(neighborCount);
+				if (IndexY > 0) {
+					sum += {PlasmaPotentialRead}[Index - GridSize.x];
+				} else {
+					sum += {PlasmaPotentialRead}[Index];
+				}
+				if (IndexY < GridSize.y - 1) {
+					sum += {PlasmaPotentialRead}[Index + GridSize.x];
+				} else {
+					sum += {PlasmaPotentialRead}[Index];
+				}
+
+				if (IndexZ > 0) {
+					sum += {PlasmaPotentialRead}[Index - GridSize.x * GridSize.y];
+				} else {
+					sum += {PlasmaPotentialRead}[Index];
+				}
+				if (IndexZ < GridSize.z - 1) {
+					sum += {PlasmaPotentialRead}[Index + GridSize.x * GridSize.y];
+				} else {
+					sum += {PlasmaPotentialRead}[Index];
+				}
+
+				{PlasmaPotentialWrite}[Index] = (sum - {ChargeDensity}[Index] * CellVolume) / 6.0;
 				OutSuccess = true;
 			}
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
-			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
+			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NumCellsName)},
 			{TEXT("PlasmaPotentialRead"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialReadParamName)},
 			{TEXT("PlasmaPotentialWrite"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName)},
 			{TEXT("ChargeDensity"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName)},
-			{TEXT("CellSize"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + CellSizeParamName)},
+			{TEXT("CellSize"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + CellSizeName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -535,90 +459,69 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 	else if (FunctionInfo.DefinitionName == SolveElectricFieldFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(int Index, out bool OutSuccess)
-			{
-				int3 ThreeI;
-				OneDToThree(Index, ThreeI);
-				int3 GridSize = {NodeCounts};
-				float dx = {CellSize}.x;
-				float dy = {CellSize}.y;
-				float dz = {CellSize}.z;
+		void {FunctionName}(int IndexX, int IndexY, int IndexZ, out bool OutSuccess)
+		{
+			int3 GridSize = {NodeCounts};
+			float dx = {CellSize}.x;
+			float dy = {CellSize}.y;
+			float dz = {CellSize}.z;
 
-				float ef_x = 0.0;
-				float ef_y = 0.0;
-				float ef_z = 0.0;
+			float ef_x = 0.0;
+			float ef_y = 0.0;
+			float ef_z = 0.0;
 
-				if (ThreeI.x == 0) {
-					int index_i = Index;
-					int index_ip1 = Index + 1;
-					ef_x = -({PlasmaPotentialWrite}[index_ip1] - {PlasmaPotentialWrite}[index_i]) / dx;
-				} else if (ThreeI.x == GridSize.x - 1) {
-					int index_i = Index;
-					int index_im1 = Index - 1;
-					ef_x = -({PlasmaPotentialWrite}[index_i] - {PlasmaPotentialWrite}[index_im1]) / dx;
-				} else {
-					int index_im1 = Index - 1;
-					int index_ip1 = Index + 1;
-					ef_x = -({PlasmaPotentialWrite}[index_ip1] - {PlasmaPotentialWrite}[index_im1]) / (2.0 * dx);
-				}
-				if (ThreeI.y == 0) {
-					int index_i = Index;
-					int index_jp1 = Index + GridSize.x;
-					ef_y = -({PlasmaPotentialWrite}[index_jp1] - {PlasmaPotentialWrite}[index_i]) / dy;
-				} else if (ThreeI.y == GridSize.y - 1) {
-					int index_i = Index;
-					int index_jm1 = Index - GridSize.x;
-					ef_y = -({PlasmaPotentialWrite}[index_i] - {PlasmaPotentialWrite}[index_jm1]) / dy;
-				} else {
-					int index_jm1 = Index - GridSize.x;
-					int index_jp1 = Index + GridSize.x;
-					ef_y = -({PlasmaPotentialWrite}[index_jp1] - {PlasmaPotentialWrite}[index_jm1]) / (2.0 * dy);
-				}
-				if (ThreeI.z == 0) {
-					int index_i = Index;
-					int index_kp1 = Index + GridSize.x * GridSize.y;
-					ef_z = -({PlasmaPotentialWrite}[index_kp1] - {PlasmaPotentialWrite}[index_i]) / dz;
-				} else if (ThreeI.z == GridSize.z - 1) {
-					int index_i = Index;
-					int index_km1 = Index - GridSize.x * GridSize.y;
-					ef_z = -({PlasmaPotentialWrite}[index_i] - {PlasmaPotentialWrite}[index_km1]) / dz;
-				} else {
-					int index_km1 = Index - GridSize.x * GridSize.y;
-					int index_kp1 = Index + GridSize.x * GridSize.y;
-					ef_z = -({PlasmaPotentialWrite}[index_kp1] - {PlasmaPotentialWrite}[index_km1]) / (2.0 * dz);
-				}
+			int strideY = GridSize.x;
+			int strideZ = GridSize.x * GridSize.y;
 
-				{ElectricField}[Index] = float4(ef_x, ef_y, ef_z, 0.0);
-				OutSuccess = true;
+			float V_i = {PlasmaPotentialWrite}[IndexX + strideY * IndexY + strideZ * IndexZ];
+
+			if (IndexX == 0) {
+				float V_ip1 = {PlasmaPotentialWrite}[(IndexX + 1) + strideY * IndexY + strideZ * IndexZ];
+				ef_x = -(V_ip1 - V_i) / dx;
+			} else if (IndexX == GridSize.x - 1) {
+				float V_im1 = {PlasmaPotentialWrite}[(IndexX - 1) + strideY * IndexY + strideZ * IndexZ];
+				ef_x = -(V_i - V_im1) / dx;
+			} else {
+				float V_im1 = {PlasmaPotentialWrite}[(IndexX - 1) + strideY * IndexY + strideZ * IndexZ];
+				float V_ip1 = {PlasmaPotentialWrite}[(IndexX + 1) + strideY * IndexY + strideZ * IndexZ];
+				ef_x = -(V_ip1 - V_im1) / (2.0f * dx);
 			}
+
+			if (IndexY == 0) {
+				float V_jp1 = {PlasmaPotentialWrite}[IndexX + strideY * (IndexY + 1) + strideZ * IndexZ];
+				ef_y = -(V_jp1 - V_i) / dy;
+			} else if (IndexY == GridSize.y - 1) {
+				float V_jm1 = {PlasmaPotentialWrite}[IndexX + strideY * (IndexY - 1) + strideZ * IndexZ];
+				ef_y = -(V_i - V_jm1) / dy;
+			} else {
+				float V_jm1 = {PlasmaPotentialWrite}[IndexX + strideY * (IndexY - 1) + strideZ * IndexZ];
+				float V_jp1 = {PlasmaPotentialWrite}[IndexX + strideY * (IndexY + 1) + strideZ * IndexZ];
+				ef_y = -(V_jp1 - V_jm1) / (2.0f * dy);
+			}
+
+			if (IndexZ == 0) {
+				float V_kp1 = {PlasmaPotentialWrite}[IndexX + strideY * IndexY + strideZ * (IndexZ + 1)];
+				ef_z = -(V_kp1 - V_i) / dz;
+			} else if (IndexZ == GridSize.z - 1) {
+				float V_km1 = {PlasmaPotentialWrite}[IndexX + strideY * IndexY + strideZ * (IndexZ - 1)];
+				ef_z = -(V_i - V_km1) / dz;
+			} else {
+				float V_km1 = {PlasmaPotentialWrite}[IndexX + strideY * IndexY + strideZ * (IndexZ - 1)];
+				float V_kp1 = {PlasmaPotentialWrite}[IndexX + strideY * IndexY + strideZ * (IndexZ + 1)];
+				ef_z = -(V_kp1 - V_km1) / (2.0f * dz);
+			}
+
+			int3 Index = int3(IndexX, IndexY, IndexZ);
+			ElectricField[Index] = float4(ef_x, ef_y, ef_z, 0.0f);
+			OutSuccess = true;
+		}
 		)");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
 			{TEXT("PlasmaPotentialWrite"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName)},
 			{TEXT("ElectricField"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
-			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
-			{TEXT("CellSize"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + CellSizeParamName)},
-		};
-		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
-		return true;
-	}
-	else if (FunctionInfo.DefinitionName == WorldToGridFunctionName)
-	{
-		static const TCHAR* FormatBounds = TEXT(R"(
-			void WorldToGrid(float3 InPosition, out int3 OutGridIndex, out float3 OutWeights)
-			{
-				float3 RelativePos = (InPosition - {EmitterOrigin}) / {CellSize};
-				float3 GridResolution = (float3)({NodeCounts} - 1);
-				RelativePos = clamp(RelativePos, 0.0, GridResolution);
-				float3 IndexF = floor(RelativePos);
-				OutGridIndex = int3(IndexF);
-				OutWeights = RelativePos - IndexF;
-			}
-		)");
-		const TMap<FString, FStringFormatArg> ArgsBounds = {
-			{TEXT("EmitterOrigin"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + EmitterOriginParamName)},
-			{TEXT("CellSize"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + CellSizeParamName)},
-			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
+			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NumCellsName)},
+			{TEXT("CellSize"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + CellSizeName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -626,48 +529,41 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 	else if (FunctionInfo.DefinitionName == GatherFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(float3 InPosition, out float3 OutVector)
+        void {FunctionName}(float3 InLogicalCoordinate, out float3 OutVector)
         {
-            int3 GridIndex;
-            float3 Weights;
-            WorldToGrid(InPosition, GridIndex, Weights);
+            int i = (int)InLogicalCoordinate.x;
+            float di = InLogicalCoordinate.x - i;
+            
+            int j = (int)InLogicalCoordinate.y;
+            float dj = InLogicalCoordinate.y - j;
 
-            int3 GridSize = {NodeCounts};
+            int k = (int)InLogicalCoordinate.z;
+            float dk = InLogicalCoordinate.z - k;
 
-            GridIndex = clamp(GridIndex, int3(0, 0, 0), GridSize - int3(2, 2, 2));
+            float3 value000 = (i >= 0 && i < {NodeCounts}.x && j >= 0 && j < {NodeCounts}.y && k >= 0 && k < {NodeCounts}.z) ? {ElectricFieldBuffer}[i, j, k].xyz : float3(0, 0, 0);
+            float3 value100 = (i + 1 >= 0 && i + 1 < {NodeCounts}.x && j >= 0 && j < {NodeCounts}.y && k >= 0 && k < {NodeCounts}.z) ? {ElectricFieldBuffer}[i + 1, j, k].xyz : float3(0, 0, 0);
+            float3 value110 = (i + 1 >= 0 && i + 1 < {NodeCounts}.x && j + 1 >= 0 && j + 1 < {NodeCounts}.y && k >= 0 && k < {NodeCounts}.z) ? {ElectricFieldBuffer}[i + 1, j + 1, k].xyz : float3(0, 0, 0);
+            float3 value010 = (i >= 0 && i < {NodeCounts}.x && j + 1 >= 0 && j + 1 < {NodeCounts}.y && k >= 0 && k < {NodeCounts}.z) ? {ElectricFieldBuffer}[i, j + 1, k].xyz : float3(0, 0, 0);
+            float3 value001 = (i >= 0 && i < {NodeCounts}.x && j >= 0 && j < {NodeCounts}.y && k + 1 >= 0 && k + 1 < {NodeCounts}.z) ? {ElectricFieldBuffer}[i, j, k + 1].xyz : float3(0, 0, 0);
+            float3 value101 = (i + 1 >= 0 && i + 1 < {NodeCounts}.x && j >= 0 && j < {NodeCounts}.y && k + 1 >= 0 && k + 1 < {NodeCounts}.z) ? {ElectricFieldBuffer}[i + 1, j, k + 1].xyz : float3(0, 0, 0);
+            float3 value111 = (i + 1 >= 0 && i + 1 < {NodeCounts}.x && j + 1 >= 0 && j + 1 < {NodeCounts}.y && k + 1 >= 0 && k + 1 < {NodeCounts}.z) ? {ElectricFieldBuffer}[i + 1, j + 1, k + 1].xyz : float3(0, 0, 0);
+            float3 value011 = (i >= 0 && i < {NodeCounts}.x && j + 1 >= 0 && j + 1 < {NodeCounts}.y && k + 1 >= 0 && k + 1 < {NodeCounts}.z) ? {ElectricFieldBuffer}[i, j + 1, k + 1].xyz : float3(0, 0, 0);
 
-            float3 E000;
-			GetElectricField(GridIndex + int3(0, 0, 0), E000);
-            float3 E100;
-			GetElectricField(GridIndex + int3(1, 0, 0), E100);
-            float3 E010;
-			GetElectricField(GridIndex + int3(0, 1, 0), E010);
-            float3 E110;
-			GetElectricField(GridIndex + int3(1, 1, 0), E110);
-            float3 E001;
-			GetElectricField(GridIndex + int3(0, 0, 1), E001);
-            float3 E101;
-			GetElectricField(GridIndex + int3(1, 0, 1), E101);
-            float3 E011;
-			GetElectricField(GridIndex + int3(0, 1, 1), E011);
-            float3 E111;
-			GetElectricField(GridIndex + int3(1, 1, 1), E111);
-
-            float3 C00 = lerp(E000, E100, Weights.x);
-            float3 C10 = lerp(E010, E110, Weights.x);
-            float3 C01 = lerp(E001, E101, Weights.x);
-            float3 C11 = lerp(E011, E111, Weights.x);
-
-            float3 C0 = lerp(C00, C10, Weights.y);
-            float3 C1 = lerp(C01, C11, Weights.y);
-
-            OutVector = lerp(C0, C1, Weights.z);
+            OutVector = 
+                value000 * (1.0 - di) * (1.0 - dj) * (1.0 - dk) +
+                value100 * di * (1.0 - dj) * (1.0 - dk) +
+                value110 * di * dj * (1.0 - dk) +
+                value010 * (1.0 - di) * dj * (1.0 - dk) +
+                value001 * (1.0 - di) * (1.0 - dj) * dk +
+                value101 * di * (1.0 - dj) * dk +
+                value111 * di * dj * dk +
+                value011 * (1.0 - di) * dj * dk;
         }
-		)");
+    )");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
 			{TEXT("ElectricFieldBuffer"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName)},
-			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
+			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NumCellsName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
@@ -675,63 +571,44 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 	else if (FunctionInfo.DefinitionName == ScatterFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-        void {FunctionName}(float3 InPosition, float InCharge, out bool OutSuccess)
+        void {FunctionName}(float3 InLogicalCoordinate, float InCharge, out bool OutSuccess)
         {
-            int3 GridIndex;
-            float3 Weights;
-            WorldToGrid(InPosition, GridIndex, Weights);
+            int i = (int)InLogicalCoordinate.x;
+            float di = InLogicalCoordinate.x - i;
+            
+            int j = (int)InLogicalCoordinate.y;
+            float dj = InLogicalCoordinate.y - j;
 
-            int3 GridSize = {NodeCounts};
+            int k = (int)InLogicalCoordinate.z;
+            float dk = InLogicalCoordinate.z - k;
 
-            GridIndex = clamp(GridIndex, int3(0, 0, 0), GridSize - int3(2, 2, 2));
-
-            float w000 = (1.0 - Weights.x) * (1.0 - Weights.y) * (1.0 - Weights.z);
-            float w100 = Weights.x * (1.0 - Weights.y) * (1.0 - Weights.z);
-            float w010 = (1.0 - Weights.x) * Weights.y * (1.0 - Weights.z);
-            float w110 = Weights.x * Weights.y * (1.0 - Weights.z);
-            float w001 = (1.0 - Weights.x) * (1.0 - Weights.y) * Weights.z;
-            float w101 = Weights.x * (1.0 - Weights.y) * Weights.z;
-            float w011 = (1.0 - Weights.x) * Weights.y * Weights.z;
-            float w111 = Weights.x * Weights.y * Weights.z;
-
-            int3 idx000 = GridIndex + int3(0, 0, 0);
-            int3 idx100 = GridIndex + int3(1, 0, 0);
-            int3 idx010 = GridIndex + int3(0, 1, 0);
-            int3 idx110 = GridIndex + int3(1, 1, 0);
-            int3 idx001 = GridIndex + int3(0, 0, 1);
-            int3 idx101 = GridIndex + int3(1, 0, 1);
-            int3 idx011 = GridIndex + int3(0, 1, 1);
-            int3 idx111 = GridIndex + int3(1, 1, 1);
-
-            int linIdx000 = idx000.x + idx000.y * GridSize.x + idx000.z * GridSize.x * GridSize.y;
-            int linIdx100 = idx100.x + idx100.y * GridSize.x + idx100.z * GridSize.x * GridSize.y;
-            int linIdx010 = idx010.x + idx010.y * GridSize.x + idx010.z * GridSize.x * GridSize.y;
-            int linIdx110 = idx110.x + idx110.y * GridSize.x + idx110.z * GridSize.x * GridSize.y;
-            int linIdx001 = idx001.x + idx001.y * GridSize.x + idx001.z * GridSize.x * GridSize.y;
-            int linIdx101 = idx101.x + idx101.y * GridSize.x + idx101.z * GridSize.x * GridSize.y;
-            int linIdx011 = idx011.x + idx011.y * GridSize.x + idx011.z * GridSize.x * GridSize.y;
-            int linIdx111 = idx111.x + idx111.y * GridSize.x + idx111.z * GridSize.x * GridSize.y;
-
-            InterlockedAdd({ChargeDensity}[linIdx000], InCharge * w000);
-            InterlockedAdd({ChargeDensity}[linIdx100], InCharge * w100);
-            InterlockedAdd({ChargeDensity}[linIdx010], InCharge * w010);
-            InterlockedAdd({ChargeDensity}[linIdx110], InCharge * w110);
-            InterlockedAdd({ChargeDensity}[linIdx001], InCharge * w001);
-            InterlockedAdd({ChargeDensity}[linIdx101], InCharge * w101);
-            InterlockedAdd({ChargeDensity}[linIdx011], InCharge * w011);
-            InterlockedAdd({ChargeDensity}[linIdx111], InCharge * w111);
-
+            if (i >= 0 && i < {NodeCounts}.x && j >= 0 && j < {NodeCounts}.y && k >= 0 && k < {NodeCounts}.z)
+            { InterlockedAdd({ChargeDensity}[i, j, k], InCharge * (1.0 - di) * (1.0 - dj) * (1.0 - dk)); }
+            if (i + 1 >= 0 && i + 1 < {NodeCounts}.x && j >= 0 && j < {NodeCounts}.y && k >= 0 && k < {NodeCounts}.z)
+            { InterlockedAdd({ChargeDensity}[i + 1, j, k], InCharge * di * (1.0 - dj) * (1.0 - dk)); }
+            if (i + 1 >= 0 && i + 1 < {NodeCounts}.x && j + 1 >= 0 && j + 1 < {NodeCounts}.y && k >= 0 && k < {NodeCounts}.z)
+            { InterlockedAdd({ChargeDensity}[i + 1, j + 1, k], InCharge * di * dj * (1.0 - dk)); }
+            if (i >= 0 && i < {NodeCounts}.x && j + 1 >= 0 && j + 1 < {NodeCounts}.y && k >= 0 && k < {NodeCounts}.z)
+            { InterlockedAdd({ChargeDensity}[i, j + 1, k], InCharge * (1.0 - di) * dj * (1.0 - dk)); }
+            if (i >= 0 && i < {NodeCounts}.x && j >= 0 && j < {NodeCounts}.y && k + 1 >= 0 && k + 1 < {NodeCounts}.z)
+            {InterlockedAdd({ChargeDensity}[i, j, k + 1], InCharge * (1.0 - di) * (1.0 - dj) * dk); }
+            if (i + 1 >= 0 && i + 1 < {NodeCounts}.x && j >= 0 && j < {NodeCounts}.y && k + 1 >= 0 && k + 1 < {NodeCounts}.z)
+            { InterlockedAdd({ChargeDensity}[i + 1, j, k + 1], InCharge * di * (1.0 - dj) * dk); }
+            if (i + 1 >= 0 && i + 1 < {NodeCounts}.x && j + 1 >= 0 && j + 1 < {NodeCounts}.y && k + 1 >= 0 && k + 1 < {NodeCounts}.z)
+            { InterlockedAdd({ChargeDensity}[i + 1, j + 1, k + 1], InCharge * di * dj * dk); }
+            if (i >= 0 && i < {NodeCounts}.x && j + 1 >= 0 && j + 1 < {NodeCounts}.y && k + 1 >= 0 && k + 1 < {NodeCounts}.z)
+            { InterlockedAdd({ChargeDensity}[i, j + 1, k + 1], InCharge * (1.0 - di) * dj * dk); }
             OutSuccess = true;
         }
     )");
 		const TMap<FString, FStringFormatArg> ArgsBounds = {
 			{TEXT("FunctionName"), FStringFormatArg(FunctionInfo.InstanceName)},
 			{TEXT("ChargeDensity"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName)},
-			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NodeCountsParamName)},
+			{TEXT("NodeCounts"), FStringFormatArg(ParamInfo.DataInterfaceHLSLSymbol + NumCellsName)},
 		};
 		OutHLSL += FString::Format(FormatBounds, ArgsBounds);
 		return true;
-	}
+		}
 	else
 	{
 		return false;
@@ -754,27 +631,28 @@ void UUNiagaraDataInterfaceAuroraData::SetShaderParameters(const FNiagaraDataInt
 
 	if (ProxyData && ProxyData->PlasmaPotentialBufferRead.IsValid())
 	{
+		ShaderParameters->NumCells = ProxyData->NumCells;
+		ShaderParameters->UnitToUV = FVector3f(1.0f) / FVector3f(ProxyData->NumCells);
+		ShaderParameters->CellSize.X = float(ProxyData->WorldBBoxSize.X / double(ProxyData->NumCells.X));
+		ShaderParameters->CellSize.Y = float(ProxyData->WorldBBoxSize.Y / double(ProxyData->NumCells.Y));
+		ShaderParameters->CellSize.Z = float(ProxyData->WorldBBoxSize.Z / double(ProxyData->NumCells.Z));
+		ShaderParameters->WorldBBoxSize = FVector3f(ProxyData->WorldBBoxSize);
 		ShaderParameters->PlasmaPotentialRead = ProxyData->PlasmaPotentialBufferRead.GetOrCreateUAV(GraphBuilder);
 		ShaderParameters->PlasmaPotentialWrite = ProxyData->PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder);
 		ShaderParameters->ChargeDensity = ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder);
-		ShaderParameters->ElectricField = ProxyData->ElectricFieldBuffer.GetOrCreateUAV(GraphBuilder);
-		ShaderParameters->NodeCounts = ProxyData->NumCells;
-		ShaderParameters->CellSize.X = ProxyData->EmitterSize.X / float(ProxyData->NumCells.X);
-		ShaderParameters->CellSize.Y = ProxyData->EmitterSize.Y / float(ProxyData->NumCells.Y);
-		ShaderParameters->CellSize.Z = ProxyData->EmitterSize.Z / float(ProxyData->NumCells.Z);
-		ShaderParameters->EmitterOrigin = static_cast<FVector3f>(ProxyData->EmitterOrigin);
-		ShaderParameters->EmitterSize = static_cast<FVector3f>(ProxyData->EmitterSize);
+		ShaderParameters->ElectricField = ProxyData->ElectricFieldTexture.GetOrCreateUAV(GraphBuilder);
 	}
 	else
 	{
+		ShaderParameters->NumCells = FIntVector::ZeroValue;
+		ShaderParameters->UnitToUV = FVector3f::ZeroVector;
+		ShaderParameters->CellSize = FVector3f::ZeroVector;
+		ShaderParameters->WorldBBoxSize = FVector3f::ZeroVector;
 		ShaderParameters->PlasmaPotentialRead = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 		ShaderParameters->PlasmaPotentialWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 		ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
-		ShaderParameters->ElectricField = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_A32B32G32R32F);
-		ShaderParameters->NodeCounts = FIntVector::ZeroValue;
-		ShaderParameters->CellSize = FVector3f::ZeroVector;
-		ShaderParameters->EmitterOrigin = FVector3f::ZeroVector;
-		ShaderParameters->EmitterSize = FVector3f::ZeroVector;
+		ShaderParameters->ElectricField = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_A32B32G32R32F, ETextureDimension::Texture3D);
+
 	}
 }
 
@@ -784,17 +662,7 @@ bool UUNiagaraDataInterfaceAuroraData::Equals(const UNiagaraDataInterface* Other
 	{
 		return false;
 	}
-
-	const UUNiagaraDataInterfaceAuroraData* CastedOther = Cast<const UUNiagaraDataInterfaceAuroraData>(Other);
-
-	return CastedOther != nullptr
-		&& CastedOther->NumCells == NumCells
-		&& FMath::IsNearlyEqual(CastedOther->EmitterOrigin.X, EmitterOrigin.X)
-		&& FMath::IsNearlyEqual(CastedOther->EmitterOrigin.Y, EmitterOrigin.Y)
-		&& FMath::IsNearlyEqual(CastedOther->EmitterOrigin.Z, EmitterOrigin.Z)
-		&& FMath::IsNearlyEqual(CastedOther->EmitterSize.X, EmitterSize.X)
-		&& FMath::IsNearlyEqual(CastedOther->EmitterSize.Y, EmitterSize.Y)
-		&& FMath::IsNearlyEqual(CastedOther->EmitterSize.Z, EmitterSize.Z);
+	return true;
 }
 
 void UUNiagaraDataInterfaceAuroraData::PostInitProperties()
@@ -814,13 +682,6 @@ bool UUNiagaraDataInterfaceAuroraData::CopyToInternal(UNiagaraDataInterface* Des
 	{
 		return false;
 	}
-	UUNiagaraDataInterfaceAuroraData* CastedDestination = Cast<UUNiagaraDataInterfaceAuroraData>(Destination);
-	if (CastedDestination)
-	{
-		CastedDestination->NumCells = NumCells;
-		CastedDestination->EmitterOrigin = EmitterOrigin;
-		CastedDestination->EmitterSize = EmitterSize;
-	}
 	return true;
 }
 
@@ -828,17 +689,10 @@ bool UUNiagaraDataInterfaceAuroraData::InitPerInstanceData(void* PerInstanceData
 {
 	FNiagaraDataInterfaceAuroraProxy* Proxy = GetProxyAs<FNiagaraDataInterfaceAuroraProxy>();
 	FIntVector RT_NumCells = NumCells;
-	FVector3f RT_EmitterOrigin = EmitterOrigin;
-	FVector3f RT_EmitterSize = EmitterSize;
+	FVector RT_WorldBBoxSize = WorldBBoxSize;
+	FVector3f::FReal CellSize = RT_WorldBBoxSize[0] / RT_NumCells[0];
 
-	if (SystemInstance)
-	{
-		const FBox FixedBounds = SystemInstance->GetEmitterFixedBounds(FName("Grid"));
-		EmitterOrigin = static_cast<FVector3f>(FixedBounds.Min);
-		EmitterSize = static_cast<FVector3f>(FixedBounds.GetSize());
-	}
-	FVector3f::FReal CellSize = RT_EmitterSize[0] / RT_NumCells[0];
-	
+
 	if ((NumCells.X * NumCells.Y * NumCells.Z) == 0 || (NumCells.X * NumCells.Y * NumCells.Z) > GetMaxBufferDimension())
 	{
 		UE_LOG(LogNiagara, Error, TEXT("UUNiagaraDataInterfaceAuroraData - Invalid NumCells count"));
@@ -846,14 +700,13 @@ bool UUNiagaraDataInterfaceAuroraData::InitPerInstanceData(void* PerInstanceData
 	}
 
 	ENQUEUE_RENDER_COMMAND(FUpdateData)(
-		[Proxy, RT_NumCells, RT_EmitterSize, RT_EmitterOrigin, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
+		[Proxy, RT_NumCells, RT_WorldBBoxSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
 		{
 			check(!Proxy->SystemInstancesToProxyData.Contains(InstanceID));
 			FNDIAuroraInstaceData* TargetData = &Proxy->SystemInstancesToProxyData.Add(InstanceID);
 
 			TargetData->NumCells = RT_NumCells;
-			TargetData->EmitterOrigin = RT_EmitterOrigin;
-			TargetData->EmitterSize = RT_EmitterSize;
+			TargetData->WorldBBoxSize = RT_WorldBBoxSize;
 			TargetData->bResizeBuffer = true;
 		}
 		);
@@ -878,31 +731,20 @@ void UUNiagaraDataInterfaceAuroraData::DestroyPerInstanceData(void* PerInstanceD
 bool UUNiagaraDataInterfaceAuroraData::PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds)
 {
 	FNiagaraDataInterfaceAuroraProxy* Proxy = GetProxyAs<FNiagaraDataInterfaceAuroraProxy>();
-	if (SystemInstance)
-	{
-		const FBox Bounds = SystemInstance->GetEmitterFixedBounds(FName("Grid"));
-		FVector3f NewOrigin = static_cast<FVector3f>(Bounds.Min);
-		FVector3f NewSize = static_cast<FVector3f>(Bounds.GetSize());
-		if (NewOrigin != EmitterOrigin || NewSize != EmitterSize)
-		{
-			EmitterOrigin = NewOrigin;
-			EmitterSize = NewSize;
-		}
-	}
 	bool bDataChanged = false;
 	if (bNeedsRealloc)
 	{
 		bDataChanged = true;
 		bNeedsRealloc = false;
 	}
+	float InCellSize = float((WorldBBoxSize / FVector(NumCells.X, NumCells.Y, NumCells.Z))[0]);
 	ENQUEUE_RENDER_COMMAND(FUpdateData)(
-		[Proxy, bDataChanged, RT_NumCells = NumCells, RT_EmitterOrigin = EmitterOrigin, RT_EmitterSize = EmitterSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
+		[Proxy, bDataChanged, RT_NumCells = NumCells, InCellSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
 		{
 			check(Proxy->SystemInstancesToProxyData.Contains(InstanceID));
 			FNDIAuroraInstaceData* TargetData = &Proxy->SystemInstancesToProxyData.Add(InstanceID);
 			TargetData->NumCells = RT_NumCells;
-			TargetData->EmitterOrigin = RT_EmitterOrigin;
-			TargetData->EmitterSize = RT_EmitterSize;
+			TargetData->CellSize = InCellSize;
 			if (bDataChanged)
 			{
 				TargetData->bResizeBuffer = true;
@@ -931,6 +773,8 @@ void UUNiagaraDataInterfaceAuroraData::PostEditChangeProperty(FPropertyChangedEv
 }
 #endif
 
+
+
 ///////////////////////
 /////// PROXY /////////
 ///////////////////////
@@ -951,11 +795,12 @@ void FNiagaraDataInterfaceAuroraProxy::PostSimulate(const FNDIGpuComputePostSimu
 	// or copy data to a render target??
 
 	ProxyData.SwapBuffers();
+
 	if (Context.IsFinalPostSimulate())
 	{
 		ProxyData.PlasmaPotentialBufferRead.EndGraphUsage();
 		ProxyData.PlasmaPotentialBufferWrite.EndGraphUsage();
-		ProxyData.ElectricFieldBuffer.EndGraphUsage();
+		ProxyData.ElectricFieldTexture.EndGraphUsage();
 		ProxyData.ChargeDensityBuffer.EndGraphUsage();
 	}
 }
@@ -964,6 +809,7 @@ void FNiagaraDataInterfaceAuroraProxy::PreStage(const FNDIGpuComputePreStageCont
 {
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
 	FNDIAuroraInstaceData& ProxyData = SystemInstancesToProxyData.FindChecked(Context.GetSystemInstanceID());
+
 	if (ProxyData.bResizeBuffer)
 	{
 		RDG_RHI_EVENT_SCOPE(GraphBuilder, NiagaraAuroraBufferResizedInfo);
@@ -980,7 +826,7 @@ void FNiagaraDataInterfaceAuroraProxy::GetDispatchArgs(const FNDIGpuComputeDispa
 	}
 }
 
-void FNiagaraDataInterfaceAuroraProxy::ConsumePerInstanceDataFromGameThread(void* PerInstanceData, const FNiagaraSystemInstanceID& Instance) {}
+
 
 ///////////////////////
 // PER INSTANCE DATA //
@@ -993,13 +839,35 @@ void FNDIAuroraInstaceData::ResizeGrid(FRDGBuilder& GraphBuilder)
 	bResizeBuffer = false;
 	PlasmaPotentialBufferRead.Release();
 	PlasmaPotentialBufferWrite.Release();
-	ElectricFieldBuffer.Release();
+	ElectricFieldTexture.Release();
 	ChargeDensityBuffer.Release();
 
-	PlasmaPotentialBufferRead.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferRead"), EPixelFormat::PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess);
-	PlasmaPotentialBufferWrite.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferWrite"), EPixelFormat::PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess);
-	ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), EPixelFormat::PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess);
-	ElectricFieldBuffer.Initialize(GraphBuilder, TEXT("ElectricFieldBuffer"), EPixelFormat::PF_A32B32G32R32F, sizeof(FVector4f), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess);
+	// PlasmaPotentialWrite, PlasmaPotentialRead, ChargeDensity
+	{
+		FRDGBufferDesc FloatBufferDesc = FRDGBufferDesc::CreateBufferDesc(sizeof(float), CellCount);
+		FloatBufferDesc.Usage = EBufferUsageFlags::ShaderResource | EBufferUsageFlags::UnorderedAccess;
+
+		PlasmaPotentialBufferRead.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferRead"), PF_R32_FLOAT, FloatBufferDesc);
+		PlasmaPotentialBufferWrite.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferWrite"), PF_R32_FLOAT, FloatBufferDesc);
+		ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), PF_R32_FLOAT, FloatBufferDesc);
+
+		const float DefaultValue = 0.0f;
+		FRDGBufferUAVRef PlasmaPotentialReadUAV = PlasmaPotentialBufferRead.GetOrCreateUAV(GraphBuilder);
+		FRDGBufferUAVRef PlasmaPotentialWriteUAV = PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder);
+		FRDGBufferUAVRef ChargeDensityUAV = ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder);
+
+		AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialReadUAV, DefaultValue);
+		AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialWriteUAV, DefaultValue);
+		AddClearUAVFloatPass(GraphBuilder, ChargeDensityUAV, DefaultValue);
+	}
+	// ElectricField
+	{
+		FRDGTextureDesc TextureDesc = FRDGTextureDesc::Create3D(NumCells, PF_A32B32G32R32F, FClearValueBinding::None, TexCreate_ShaderResource | TexCreate_UAV);
+		ElectricFieldTexture.Initialize(GraphBuilder, TEXT("ElectricFieldTexture"), TextureDesc);
+
+		FRDGTextureUAVRef ElectricFieldUAV = ElectricFieldTexture.GetOrCreateUAV(GraphBuilder);
+		AddClearUAVPass(GraphBuilder, ElectricFieldUAV, FVector4f(ForceInitToZero));
+	}
 }
 
 void FNDIAuroraInstaceData::SwapBuffers()
@@ -1008,3 +876,48 @@ void FNDIAuroraInstaceData::SwapBuffers()
 }
 
 
+// CPU functions
+
+void UUNiagaraDataInterfaceAuroraData::GetChargeDensity(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UUNiagaraDataInterfaceAuroraData::GetPlasmaPotentialRead(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UUNiagaraDataInterfaceAuroraData::GetPlasmaPotentialWrite(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UUNiagaraDataInterfaceAuroraData::GetElectricField(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UUNiagaraDataInterfaceAuroraData::SolvePlasmaPotential(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UUNiagaraDataInterfaceAuroraData::SolveElectricField(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UUNiagaraDataInterfaceAuroraData::Gather(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UUNiagaraDataInterfaceAuroraData::Scatter(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UUNiagaraDataInterfaceAuroraData::SetChargeDensity(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UUNiagaraDataInterfaceAuroraData::SetPlasmaPotentialWrite(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UUNiagaraDataInterfaceAuroraData::SetElectricField(FVectorVMExternalFunctionContext& Context)
+{
+}

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "NiagaraCommon.h"
+#include "NiagaraDataInterface.h"
 #include "NiagaraDataInterfaceRW.h"
 #include "NiagaraSystemInstance.h"
 #include "NiagaraSimStageData.h"
@@ -17,18 +18,16 @@ struct FNDIAuroraInstaceData
 {
 	void ResizeGrid(FRDGBuilder& GraphBuilder);
 	void SwapBuffers();
-	// void UpdateBounds();
 
-	// other attributes (shader parameters)
 	FIntVector NumCells = FIntVector::ZeroValue;
-	FVector3f EmitterOrigin = FVector3f::ZeroVector;
-	FVector3f EmitterSize = FVector3f::ZeroVector;
+	float CellSize = 0.0f;
+	FVector WorldBBoxSize = FVector::ZeroVector;
 
 	bool bResizeBuffer = false;
 
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
-	FNiagaraPooledRWBuffer ElectricFieldBuffer;
+	FNiagaraPooledRWTexture ElectricFieldTexture;
 	FNiagaraPooledRWBuffer ChargeDensityBuffer;
 };
 
@@ -39,7 +38,6 @@ struct FNiagaraDataInterfaceAuroraProxy : public FNiagaraDataInterfaceProxyRW
 	virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
 	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
 	virtual void PreStage(const FNDIGpuComputePreStageContext& Context) override;
-	virtual void PostStage(const FNDIGpuComputePostStageContext& Context) override {};
 
 	virtual void GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context) override;
 
@@ -53,23 +51,20 @@ struct FNiagaraDataInterfaceAuroraProxy : public FNiagaraDataInterfaceProxyRW
 };
 
 
-/**
- * 
- */
-UCLASS(EditInlineNew, Category = "Aurora", meta = (DisplayName = "Aurora Grid Data Interface"), BlueprintType, MinimalAPI)
-class UUNiagaraDataInterfaceAuroraData : public UNiagaraDataInterface
+UCLASS(EditInlineNew, Category = "Aurora", meta = (DisplayName = "Aurora Grid Data Interface"), MinimalAPI)
+class UUNiagaraDataInterfaceAuroraData : public UNiagaraDataInterfaceGrid3D
 {
-	GENERATED_UCLASS_BODY()
+	GENERATED_BODY()
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FShaderParameters, )
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,  PlasmaPotentialRead)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,  PlasmaPotentialWrite)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,  ChargeDensity)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float4>, ElectricField)
-		SHADER_PARAMETER(FIntVector,           NodeCounts)
-		SHADER_PARAMETER(FVector3f,            CellSize)
-		SHADER_PARAMETER(FVector3f,            EmitterOrigin)
-		SHADER_PARAMETER(FVector3f,            EmitterSize)
+		SHADER_PARAMETER(FIntVector,                          NumCells)
+		SHADER_PARAMETER(FVector3f,                           UnitToUV)
+		SHADER_PARAMETER(FVector3f,                           CellSize)
+		SHADER_PARAMETER(FVector3f,                           WorldBBoxSize)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialRead)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      ChargeDensity)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, ElectricField)
 	END_SHADER_PARAMETER_STRUCT()
 
 public:
@@ -87,10 +82,6 @@ public:
 	void SetChargeDensity(FVectorVMExternalFunctionContext& Context);
 	void SetPlasmaPotentialWrite(FVectorVMExternalFunctionContext& Context);
 	void SetElectricField(FVectorVMExternalFunctionContext& Context);
-	void ClearChargeDensity(FVectorVMExternalFunctionContext& Context);
-	void GridIndexToLinear(FVectorVMExternalFunctionContext& Context);
-	void OneDToThreeD(FVectorVMExternalFunctionContext& Context);
-	void WorldToGrid(FVectorVMExternalFunctionContext& Context);
 
 	virtual void GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc) override;
 	virtual bool Equals(const UNiagaraDataInterface* Other) const override;
@@ -109,7 +100,6 @@ public:
 	virtual bool InitPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;	
 	virtual void DestroyPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;	
 	virtual bool PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
-	// virtual int32 PerInstanceDataSize()const override { return sizeof(FNDINeighborGrid3DInstanceData_GT); }
 	virtual bool HasPostSimulateTick() const override { return true; }
 	virtual bool HasPreSimulateTick() const override { return true; }
 
@@ -117,7 +107,6 @@ public:
 	{
 		return Target == ENiagaraSimTarget::GPUComputeSim;
 	}
-	void UpdateEmitterBounds(FNiagaraSystemInstance* SystemInstance);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -138,14 +127,6 @@ protected:
 #if WITH_EDITORONLY_DATA
 	virtual void GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const override;
 #endif
-
-	UPROPERTY(EditAnywhere, Category = "Grid")
-	FIntVector NumCells;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Grid")
-	FVector3f EmitterOrigin;
-	UPROPERTY(BlueprintReadOnly, Category = "Grid")
-	FVector3f EmitterSize;
 
 	bool bNeedsRealloc = false;
 };
