@@ -33,8 +33,6 @@ struct FNDIAuroraInstaceData
 
 struct FNiagaraDataInterfaceAuroraProxy : public FNiagaraDataInterfaceProxyRW
 {
-	FNiagaraDataInterfaceAuroraProxy() {}
-
 	virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
 	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
 	virtual void PreStage(const FNDIGpuComputePreStageContext& Context) override;
@@ -71,23 +69,10 @@ public:
 
 	UUNiagaraDataInterfaceAuroraData(FObjectInitializer const& ObjectInitializer);
 
-	void GetChargeDensity(FVectorVMExternalFunctionContext& Context);
-	void GetPlasmaPotentialRead(FVectorVMExternalFunctionContext& Context);
-	void GetPlasmaPotentialWrite(FVectorVMExternalFunctionContext& Context);
-	void GetElectricField(FVectorVMExternalFunctionContext& Context);
-	void SolvePlasmaPotential(FVectorVMExternalFunctionContext& Context);
-	void SolveElectricField(FVectorVMExternalFunctionContext& Context);
-	void Gather(FVectorVMExternalFunctionContext& Context);
-	void Scatter(FVectorVMExternalFunctionContext& Context);
-	void SetChargeDensity(FVectorVMExternalFunctionContext& Context);
-	void SetPlasmaPotentialWrite(FVectorVMExternalFunctionContext& Context);
-	void SetElectricField(FVectorVMExternalFunctionContext& Context);
-
 	virtual void GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc) override;
 	virtual bool Equals(const UNiagaraDataInterface* Other) const override;
 	virtual void PostInitProperties() override;
 
-	// GPU
 #if WITH_EDITORONLY_DATA
 	virtual void GetParameterDefinitionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, FString& OutHLSL) override;
 	virtual bool GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL)override;
@@ -102,7 +87,6 @@ public:
 	virtual bool PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
 	virtual bool HasPostSimulateTick() const override { return true; }
 	virtual bool HasPreSimulateTick() const override { return true; }
-
 	virtual bool CanExecuteOnTarget(ENiagaraSimTarget Target) const override
 	{
 		return Target == ENiagaraSimTarget::GPUComputeSim;
@@ -110,15 +94,6 @@ public:
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-
-	// virtual ENiagaraGpuDispatchType GetGpuDispatchType() const override { return ENiagaraGpuDispatchType::ThreeD; }
-	virtual TArray<FNiagaraDataInterfaceError> GetErrors() override
-	{
-		// TODO(mv): Improve error messages?
-		TArray<FNiagaraDataInterfaceError> Errors;
-
-		return Errors;
-	}
 #endif
 
 protected:
@@ -129,4 +104,17 @@ protected:
 #endif
 
 	bool bNeedsRealloc = false;
+
+public:
+	void GetChargeDensity(FVectorVMExternalFunctionContext& Context);
+	void GetPlasmaPotentialRead(FVectorVMExternalFunctionContext& Context);
+	void GetPlasmaPotentialWrite(FVectorVMExternalFunctionContext& Context);
+	void GetElectricField(FVectorVMExternalFunctionContext& Context);
+	void SolvePlasmaPotential(FVectorVMExternalFunctionContext& Context);
+	void SolveElectricField(FVectorVMExternalFunctionContext& Context);
+	void Gather(FVectorVMExternalFunctionContext& Context);
+	void Scatter(FVectorVMExternalFunctionContext& Context);
+	void SetChargeDensity(FVectorVMExternalFunctionContext& Context);
+	void SetPlasmaPotentialWrite(FVectorVMExternalFunctionContext& Context);
+	void SetElectricField(FVectorVMExternalFunctionContext& Context);
 };

@@ -1,4 +1,5 @@
 /I "."
+/I "C:\Users\toruy_iu\Documents\Y3 Modules\FYP\AuroraSim\AuroraSim\Source\AuroraSim\Private"
 /I "..\Plugins\FX\Niagara\Intermediate\Build\Win64\UnrealEditor\Inc\Niagara\UHT"
 /I "..\Plugins\FX\Niagara\Source"
 /I "..\Plugins\FX\Niagara\Source\Niagara\Classes"
@@ -301,6 +302,7 @@
 /I "..\Plugins\FX\Niagara\Source\NiagaraVertexFactories\Public"
 /I "C:\Users\toruy_iu\Documents\Y3 Modules\FYP\AuroraSim\AuroraSim\Intermediate\Build\Win64\UnrealEditor\Inc\AuroraSim\UHT"
 /I "C:\Users\toruy_iu\Documents\Y3 Modules\FYP\AuroraSim\AuroraSim\Source"
+/I "C:\Users\toruy_iu\Documents\Y3 Modules\FYP\AuroraSim\AuroraSim\Source\AuroraSim\Public"
 /I "..\Plugins\EnhancedInput\Intermediate\Build\Win64\UnrealEditor\Inc\EnhancedInput\UHT"
 /I "..\Plugins\EnhancedInput\Source"
 /I "..\Plugins\EnhancedInput\Source\EnhancedInput\Public"

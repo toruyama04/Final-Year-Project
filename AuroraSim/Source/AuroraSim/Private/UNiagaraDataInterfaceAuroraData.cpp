@@ -5,8 +5,6 @@
 #include "NiagaraShaderParametersBuilder.h"
 #include "RenderGraphUtils.h"
 
-#include UE_INLINE_GENERATED_CPP_BY_NAME(NiagaraDataInterfaceNeighborGrid3D)
-
 // Global VM function names, also used by the shaders code generation methods
 static const FName GetChargeDensityFunctionName("GetChargeDensity");
 static const FName GetPlasmaPotentialReadFunctionName("GetPlasmaPotentialRead");
@@ -44,175 +42,6 @@ UUNiagaraDataInterfaceAuroraData::UUNiagaraDataInterfaceAuroraData(FObjectInitia
 {
 	Proxy.Reset(new FNiagaraDataInterfaceAuroraProxy());
 }
-
-#if WITH_EDITORONLY_DATA
-bool UUNiagaraDataInterfaceAuroraData::AppendCompileHash(FNiagaraCompileHashVisitor* InVisitor) const
-{
-	if (!Super::AppendCompileHash(InVisitor))
-	{
-		return false;
-	}
-	// hash shader parameters and NDI properties
-	InVisitor->UpdateShaderParameters<FShaderParameters>();
-	return true;
-}
-
-//  TODO: add descriptions to each function?
-void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const
-{
-	Super::GetFunctionsInternal(OutFunctions);
-	{
-		FNiagaraFunctionSignature GetChargeDensitySig;
-		GetChargeDensitySig.Name = GetChargeDensityFunctionName;
-		GetChargeDensitySig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
-		GetChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("OutChargeDensity")));
-		GetChargeDensitySig.bMemberFunction = true;
-		GetChargeDensitySig.bRequiresContext = false;
-		GetChargeDensitySig.bSupportsCPU = false;
-		GetChargeDensitySig.bSupportsGPU = true;
-		OutFunctions.Add(GetChargeDensitySig);
-	}
-	{
-		FNiagaraFunctionSignature GetPlasmaPotentialReadSig;
-		GetPlasmaPotentialReadSig.Name = GetPlasmaPotentialReadFunctionName;
-		GetPlasmaPotentialReadSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GetPlasmaPotentialReadSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
-		GetPlasmaPotentialReadSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("OutPlasmaPotential")));
-		GetPlasmaPotentialReadSig.bMemberFunction = true;
-		GetPlasmaPotentialReadSig.bRequiresContext = false;
-		GetPlasmaPotentialReadSig.bSupportsCPU = false;
-		GetPlasmaPotentialReadSig.bSupportsGPU = true;
-		OutFunctions.Add(GetPlasmaPotentialReadSig);
-	}
-	{
-		FNiagaraFunctionSignature GetPlasmaPotentialWriteSig;
-		GetPlasmaPotentialWriteSig.Name = GetPlasmaPotentialWriteFunctionName;
-		GetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
-		GetPlasmaPotentialWriteSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("OutPlasmaPotential")));
-		GetPlasmaPotentialWriteSig.bMemberFunction = true;
-		GetPlasmaPotentialWriteSig.bRequiresContext = false;
-		GetPlasmaPotentialWriteSig.bSupportsCPU = false;
-		GetPlasmaPotentialWriteSig.bSupportsGPU = true;
-		OutFunctions.Add(GetPlasmaPotentialWriteSig);
-	}
-	{
-		FNiagaraFunctionSignature GetElectricFieldSig;
-		GetElectricFieldSig.Name = GetElectricFieldFunctionName;
-		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexX")));
-		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexY")));
-		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexZ")));
-		GetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutElectricField")));
-		GetElectricFieldSig.bMemberFunction = true;
-		GetElectricFieldSig.bRequiresContext = false;
-		GetElectricFieldSig.bSupportsCPU = false;
-		GetElectricFieldSig.bSupportsGPU = true;
-		OutFunctions.Add(GetElectricFieldSig);
-	}
-	{
-		FNiagaraFunctionSignature SetChargeDensitySig;
-		SetChargeDensitySig.Name = SetChargeDensityFunctionName;
-		SetChargeDensitySig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		SetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
-		SetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("InChargeDensity")));
-		SetChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
-		SetChargeDensitySig.bMemberFunction = true;
-		SetChargeDensitySig.bRequiresContext = false;
-		SetChargeDensitySig.bWriteFunction = true;
-		SetChargeDensitySig.bSupportsCPU = false;
-		SetChargeDensitySig.bSupportsGPU = true;
-		OutFunctions.Add(SetChargeDensitySig);
-	}
-	{
-		FNiagaraFunctionSignature SetPlasmaPotentialWriteSig;
-		SetPlasmaPotentialWriteSig.Name = SetPlasmaPotentialWriteFunctionName;
-		SetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		SetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
-		SetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("InPlasmaPotential")));
-		SetPlasmaPotentialWriteSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
-		SetPlasmaPotentialWriteSig.bMemberFunction = true;
-		SetPlasmaPotentialWriteSig.bRequiresContext = false;
-		SetPlasmaPotentialWriteSig.bWriteFunction = true;
-		SetPlasmaPotentialWriteSig.bSupportsCPU = false;
-		SetPlasmaPotentialWriteSig.bSupportsGPU = true;
-		OutFunctions.Add(SetPlasmaPotentialWriteSig);
-	}
-	{
-		FNiagaraFunctionSignature SetElectricFieldSig;
-		SetElectricFieldSig.Name = SetElectricFieldFunctionName;
-		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexX")));
-		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexY")));
-		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexZ")));
-		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InElectricField")));
-		SetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
-		SetElectricFieldSig.bMemberFunction = true;
-		SetElectricFieldSig.bRequiresContext = false;
-		SetElectricFieldSig.bWriteFunction = true;
-		SetElectricFieldSig.bSupportsCPU = false;
-		SetElectricFieldSig.bSupportsGPU = true;
-		OutFunctions.Add(SetElectricFieldSig);
-	}
-	{
-		FNiagaraFunctionSignature SolvePlasmaPotentialSig;
-		SolvePlasmaPotentialSig.Name = SolvePlasmaPotentialFunctionName;
-		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexX")));
-		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexY")));
-		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexZ")));
-		SolvePlasmaPotentialSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
-		SolvePlasmaPotentialSig.bMemberFunction = true;
-		SolvePlasmaPotentialSig.bRequiresContext = false;
-		SolvePlasmaPotentialSig.bWriteFunction = true;
-		SolvePlasmaPotentialSig.bSupportsCPU = false;
-		SolvePlasmaPotentialSig.bSupportsGPU = true;
-		OutFunctions.Add(SolvePlasmaPotentialSig);
-	}
-	{
-		FNiagaraFunctionSignature SolveElectricFieldSig;
-		SolveElectricFieldSig.Name = SolveElectricFieldFunctionName;
-		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexX")));
-		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexY")));
-		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexZ")));
-		SolveElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
-		SolveElectricFieldSig.bMemberFunction = true;
-		SolveElectricFieldSig.bRequiresContext = false;
-		SolveElectricFieldSig.bWriteFunction = true;
-		SolveElectricFieldSig.bSupportsCPU = false;
-		SolveElectricFieldSig.bSupportsGPU = true;
-		OutFunctions.Add(SolveElectricFieldSig);
-	}
-	{
-		FNiagaraFunctionSignature GatherSig;
-		GatherSig.Name = GatherFunctionName;
-		GatherSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GatherSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InLogicalCoordinate")));
-		GatherSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutVector")));
-		GatherSig.bMemberFunction = true;
-		GatherSig.bRequiresContext = false;
-		GatherSig.bSupportsCPU = false;
-		GatherSig.bSupportsGPU = true;
-		OutFunctions.Add(GatherSig);
-	}
-	{
-		FNiagaraFunctionSignature ScatterSig;
-		ScatterSig.Name = ScatterFunctionName;
-		ScatterSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		ScatterSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InLogicalCoordinate")));
-		ScatterSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("InCharge")));
-		ScatterSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
-		ScatterSig.bMemberFunction = true;
-		ScatterSig.bRequiresContext = false;
-		ScatterSig.bSupportsCPU = false;
-		ScatterSig.bWriteFunction = true;
-		ScatterSig.bSupportsGPU = true;
-		OutFunctions.Add(ScatterSig);
-	}
-}
-#endif
 
 void UUNiagaraDataInterfaceAuroraData::GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc)
 {
@@ -266,7 +95,37 @@ void UUNiagaraDataInterfaceAuroraData::GetVMExternalFunction(const FVMExternalFu
 		ensureMsgf(false, TEXT("Error! Function defined for this class but not bound"));
 	}
 }
+bool UUNiagaraDataInterfaceAuroraData::Equals(const UNiagaraDataInterface* Other) const
+{
+	if (Other == nullptr || Other->GetClass() != GetClass())
+	{
+		return false;
+	}
+	return true;
+}
+void UUNiagaraDataInterfaceAuroraData::PostInitProperties()
+{
+	Super::PostInitProperties();
 
+	if (HasAnyFlags(RF_ClassDefaultObject))
+	{
+		ENiagaraTypeRegistryFlags Flags = ENiagaraTypeRegistryFlags::AllowAnyVariable | ENiagaraTypeRegistryFlags::AllowParameter;
+		FNiagaraTypeRegistry::Register(FNiagaraTypeDefinition(GetClass()), Flags);
+	}
+}
+
+
+#if WITH_EDITORONLY_DATA
+bool UUNiagaraDataInterfaceAuroraData::AppendCompileHash(FNiagaraCompileHashVisitor* InVisitor) const
+{
+	if (!Super::AppendCompileHash(InVisitor))
+	{
+		return false;
+	}
+	// hash shader parameters and NDI properties
+	InVisitor->UpdateShaderParameters<FShaderParameters>();
+	return true;
+}
 void UUNiagaraDataInterfaceAuroraData::GetParameterDefinitionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, FString& OutHLSL)
 {
 	Super::GetParameterDefinitionHLSL(ParamInfo, OutHLSL);
@@ -280,7 +139,6 @@ void UUNiagaraDataInterfaceAuroraData::GetParameterDefinitionHLSL(const FNiagara
 	OutHLSL.Appendf(TEXT("RWTexture3D<float4> %s%s;\n"),
 		*ParamInfo.DataInterfaceHLSLSymbol, *ElectricFieldParamName);
 }
-
 bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL)
 {
 	bool ParentRet = Super::GetFunctionHLSL(ParamInfo, FunctionInfo, FunctionInstanceIndex, OutHLSL);
@@ -615,11 +473,167 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 	}
 }
 
+//  TODO: add descriptions to each function?
+void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const
+{
+	Super::GetFunctionsInternal(OutFunctions);
+	{
+		FNiagaraFunctionSignature GetChargeDensitySig;
+		GetChargeDensitySig.Name = GetChargeDensityFunctionName;
+		GetChargeDensitySig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		GetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+		GetChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("OutChargeDensity")));
+		GetChargeDensitySig.bMemberFunction = true;
+		GetChargeDensitySig.bRequiresContext = false;
+		GetChargeDensitySig.bSupportsCPU = false;
+		GetChargeDensitySig.bSupportsGPU = true;
+		OutFunctions.Add(GetChargeDensitySig);
+	}
+	{
+		FNiagaraFunctionSignature GetPlasmaPotentialReadSig;
+		GetPlasmaPotentialReadSig.Name = GetPlasmaPotentialReadFunctionName;
+		GetPlasmaPotentialReadSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		GetPlasmaPotentialReadSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+		GetPlasmaPotentialReadSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("OutPlasmaPotential")));
+		GetPlasmaPotentialReadSig.bMemberFunction = true;
+		GetPlasmaPotentialReadSig.bRequiresContext = false;
+		GetPlasmaPotentialReadSig.bSupportsCPU = false;
+		GetPlasmaPotentialReadSig.bSupportsGPU = true;
+		OutFunctions.Add(GetPlasmaPotentialReadSig);
+	}
+	{
+		FNiagaraFunctionSignature GetPlasmaPotentialWriteSig;
+		GetPlasmaPotentialWriteSig.Name = GetPlasmaPotentialWriteFunctionName;
+		GetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		GetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+		GetPlasmaPotentialWriteSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("OutPlasmaPotential")));
+		GetPlasmaPotentialWriteSig.bMemberFunction = true;
+		GetPlasmaPotentialWriteSig.bRequiresContext = false;
+		GetPlasmaPotentialWriteSig.bSupportsCPU = false;
+		GetPlasmaPotentialWriteSig.bSupportsGPU = true;
+		OutFunctions.Add(GetPlasmaPotentialWriteSig);
+	}
+	{
+		FNiagaraFunctionSignature GetElectricFieldSig;
+		GetElectricFieldSig.Name = GetElectricFieldFunctionName;
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexX")));
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexY")));
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexZ")));
+		GetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutElectricField")));
+		GetElectricFieldSig.bMemberFunction = true;
+		GetElectricFieldSig.bRequiresContext = false;
+		GetElectricFieldSig.bSupportsCPU = false;
+		GetElectricFieldSig.bSupportsGPU = true;
+		OutFunctions.Add(GetElectricFieldSig);
+	}
+	{
+		FNiagaraFunctionSignature SetChargeDensitySig;
+		SetChargeDensitySig.Name = SetChargeDensityFunctionName;
+		SetChargeDensitySig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		SetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+		SetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("InChargeDensity")));
+		SetChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
+		SetChargeDensitySig.bMemberFunction = true;
+		SetChargeDensitySig.bRequiresContext = false;
+		SetChargeDensitySig.bWriteFunction = true;
+		SetChargeDensitySig.bSupportsCPU = false;
+		SetChargeDensitySig.bSupportsGPU = true;
+		OutFunctions.Add(SetChargeDensitySig);
+	}
+	{
+		FNiagaraFunctionSignature SetPlasmaPotentialWriteSig;
+		SetPlasmaPotentialWriteSig.Name = SetPlasmaPotentialWriteFunctionName;
+		SetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		SetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+		SetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("InPlasmaPotential")));
+		SetPlasmaPotentialWriteSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
+		SetPlasmaPotentialWriteSig.bMemberFunction = true;
+		SetPlasmaPotentialWriteSig.bRequiresContext = false;
+		SetPlasmaPotentialWriteSig.bWriteFunction = true;
+		SetPlasmaPotentialWriteSig.bSupportsCPU = false;
+		SetPlasmaPotentialWriteSig.bSupportsGPU = true;
+		OutFunctions.Add(SetPlasmaPotentialWriteSig);
+	}
+	{
+		FNiagaraFunctionSignature SetElectricFieldSig;
+		SetElectricFieldSig.Name = SetElectricFieldFunctionName;
+		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexX")));
+		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexY")));
+		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexZ")));
+		SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InElectricField")));
+		SetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
+		SetElectricFieldSig.bMemberFunction = true;
+		SetElectricFieldSig.bRequiresContext = false;
+		SetElectricFieldSig.bWriteFunction = true;
+		SetElectricFieldSig.bSupportsCPU = false;
+		SetElectricFieldSig.bSupportsGPU = true;
+		OutFunctions.Add(SetElectricFieldSig);
+	}
+	{
+		FNiagaraFunctionSignature SolvePlasmaPotentialSig;
+		SolvePlasmaPotentialSig.Name = SolvePlasmaPotentialFunctionName;
+		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexX")));
+		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexY")));
+		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexZ")));
+		SolvePlasmaPotentialSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
+		SolvePlasmaPotentialSig.bMemberFunction = true;
+		SolvePlasmaPotentialSig.bRequiresContext = false;
+		SolvePlasmaPotentialSig.bWriteFunction = true;
+		SolvePlasmaPotentialSig.bSupportsCPU = false;
+		SolvePlasmaPotentialSig.bSupportsGPU = true;
+		OutFunctions.Add(SolvePlasmaPotentialSig);
+	}
+	{
+		FNiagaraFunctionSignature SolveElectricFieldSig;
+		SolveElectricFieldSig.Name = SolveElectricFieldFunctionName;
+		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexX")));
+		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexY")));
+		SolveElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexZ")));
+		SolveElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
+		SolveElectricFieldSig.bMemberFunction = true;
+		SolveElectricFieldSig.bRequiresContext = false;
+		SolveElectricFieldSig.bWriteFunction = true;
+		SolveElectricFieldSig.bSupportsCPU = false;
+		SolveElectricFieldSig.bSupportsGPU = true;
+		OutFunctions.Add(SolveElectricFieldSig);
+	}
+	{
+		FNiagaraFunctionSignature GatherSig;
+		GatherSig.Name = GatherFunctionName;
+		GatherSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		GatherSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InLogicalCoordinate")));
+		GatherSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutVector")));
+		GatherSig.bMemberFunction = true;
+		GatherSig.bRequiresContext = false;
+		GatherSig.bSupportsCPU = false;
+		GatherSig.bSupportsGPU = true;
+		OutFunctions.Add(GatherSig);
+	}
+	{
+		FNiagaraFunctionSignature ScatterSig;
+		ScatterSig.Name = ScatterFunctionName;
+		ScatterSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		ScatterSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("InLogicalCoordinate")));
+		ScatterSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("InCharge")));
+		ScatterSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
+		ScatterSig.bMemberFunction = true;
+		ScatterSig.bRequiresContext = false;
+		ScatterSig.bSupportsCPU = false;
+		ScatterSig.bWriteFunction = true;
+		ScatterSig.bSupportsGPU = true;
+		OutFunctions.Add(ScatterSig);
+	}
+}
+#endif
+
 void UUNiagaraDataInterfaceAuroraData::BuildShaderParameters(FNiagaraShaderParametersBuilder& ShaderParametersBuilder) const
 {
 	ShaderParametersBuilder.AddNestedStruct<FShaderParameters>();
 }
-
 void UUNiagaraDataInterfaceAuroraData::SetShaderParameters(const FNiagaraDataInterfaceSetShaderParametersContext& Context) const
 {
 	// Get Proxy data
@@ -656,42 +670,11 @@ void UUNiagaraDataInterfaceAuroraData::SetShaderParameters(const FNiagaraDataInt
 	}
 }
 
-bool UUNiagaraDataInterfaceAuroraData::Equals(const UNiagaraDataInterface* Other) const
-{
-	if (Other == nullptr || Other->GetClass() != GetClass())
-	{
-		return false;
-	}
-	return true;
-}
-
-void UUNiagaraDataInterfaceAuroraData::PostInitProperties()
-{
-	Super::PostInitProperties();
-
-	if (HasAnyFlags(RF_ClassDefaultObject))
-	{
-		ENiagaraTypeRegistryFlags Flags = ENiagaraTypeRegistryFlags::AllowAnyVariable | ENiagaraTypeRegistryFlags::AllowParameter;
-		FNiagaraTypeRegistry::Register(FNiagaraTypeDefinition(GetClass()), Flags);
-	}
-}
-
-bool UUNiagaraDataInterfaceAuroraData::CopyToInternal(UNiagaraDataInterface* Destination) const
-{
-	if (Destination == nullptr || Destination->GetClass() != GetClass())
-	{
-		return false;
-	}
-	return true;
-}
-
 bool UUNiagaraDataInterfaceAuroraData::InitPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance)
 {
-	FNiagaraDataInterfaceAuroraProxy* Proxy = GetProxyAs<FNiagaraDataInterfaceAuroraProxy>();
+	FNiagaraDataInterfaceAuroraProxy* LocalProxy = GetProxyAs<FNiagaraDataInterfaceAuroraProxy>();
 	FIntVector RT_NumCells = NumCells;
 	FVector RT_WorldBBoxSize = WorldBBoxSize;
-	FVector3f::FReal CellSize = RT_WorldBBoxSize[0] / RT_NumCells[0];
-
 
 	if ((NumCells.X * NumCells.Y * NumCells.Z) == 0 || (NumCells.X * NumCells.Y * NumCells.Z) > GetMaxBufferDimension())
 	{
@@ -700,10 +683,10 @@ bool UUNiagaraDataInterfaceAuroraData::InitPerInstanceData(void* PerInstanceData
 	}
 
 	ENQUEUE_RENDER_COMMAND(FUpdateData)(
-		[Proxy, RT_NumCells, RT_WorldBBoxSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
+		[LocalProxy, RT_NumCells, RT_WorldBBoxSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
 		{
-			check(!Proxy->SystemInstancesToProxyData.Contains(InstanceID));
-			FNDIAuroraInstaceData* TargetData = &Proxy->SystemInstancesToProxyData.Add(InstanceID);
+			check(!LocalProxy->SystemInstancesToProxyData.Contains(InstanceID));
+			FNDIAuroraInstaceData* TargetData = &LocalProxy->SystemInstancesToProxyData.Add(InstanceID);
 
 			TargetData->NumCells = RT_NumCells;
 			TargetData->WorldBBoxSize = RT_WorldBBoxSize;
@@ -712,25 +695,23 @@ bool UUNiagaraDataInterfaceAuroraData::InitPerInstanceData(void* PerInstanceData
 		);
 	return true;
 }
-
 void UUNiagaraDataInterfaceAuroraData::DestroyPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance)
 {
-	FNiagaraDataInterfaceAuroraProxy* Proxy = GetProxyAs<FNiagaraDataInterfaceAuroraProxy>();
-	if (!Proxy)
+	FNiagaraDataInterfaceAuroraProxy* LocalProxy = GetProxyAs<FNiagaraDataInterfaceAuroraProxy>();
+	if (!LocalProxy)
 	{
 		return;
 	}
 	ENQUEUE_RENDER_COMMAND(FNiagaraDIDestroyInstanceData) (
-		[Proxy, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& CmdList)
+		[LocalProxy, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& CmdList)
 		{
-			Proxy->SystemInstancesToProxyData.Remove(InstanceID);
+			LocalProxy->SystemInstancesToProxyData.Remove(InstanceID);
 		}
 		);
 }
-
 bool UUNiagaraDataInterfaceAuroraData::PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds)
 {
-	FNiagaraDataInterfaceAuroraProxy* Proxy = GetProxyAs<FNiagaraDataInterfaceAuroraProxy>();
+	FNiagaraDataInterfaceAuroraProxy* LocalProxy = GetProxyAs<FNiagaraDataInterfaceAuroraProxy>();
 	bool bDataChanged = false;
 	if (bNeedsRealloc)
 	{
@@ -739,10 +720,10 @@ bool UUNiagaraDataInterfaceAuroraData::PerInstanceTickPostSimulate(void* PerInst
 	}
 	float InCellSize = float((WorldBBoxSize / FVector(NumCells.X, NumCells.Y, NumCells.Z))[0]);
 	ENQUEUE_RENDER_COMMAND(FUpdateData)(
-		[Proxy, bDataChanged, RT_NumCells = NumCells, InCellSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
+		[LocalProxy, bDataChanged, RT_NumCells = NumCells, InCellSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
 		{
-			check(Proxy->SystemInstancesToProxyData.Contains(InstanceID));
-			FNDIAuroraInstaceData* TargetData = &Proxy->SystemInstancesToProxyData.Add(InstanceID);
+			check(LocalProxy->SystemInstancesToProxyData.Contains(InstanceID));
+			FNDIAuroraInstaceData* TargetData = &LocalProxy->SystemInstancesToProxyData.Add(InstanceID);
 			TargetData->NumCells = RT_NumCells;
 			TargetData->CellSize = InCellSize;
 			if (bDataChanged)
@@ -773,6 +754,14 @@ void UUNiagaraDataInterfaceAuroraData::PostEditChangeProperty(FPropertyChangedEv
 }
 #endif
 
+bool UUNiagaraDataInterfaceAuroraData::CopyToInternal(UNiagaraDataInterface* Destination) const
+{
+	if (Destination == nullptr || Destination->GetClass() != GetClass())
+	{
+		return false;
+	}
+	return true;
+}
 
 
 ///////////////////////
@@ -832,7 +821,6 @@ void FNiagaraDataInterfaceAuroraProxy::GetDispatchArgs(const FNDIGpuComputeDispa
 // PER INSTANCE DATA //
 ///////////////////////
 
-// TODO: add array parameter for the buffer data (ADD DEFAULT DATA VALUES)
 void FNDIAuroraInstaceData::ResizeGrid(FRDGBuilder& GraphBuilder)
 {
 	const uint32 CellCount = NumCells.X * NumCells.Y * NumCells.Z;
