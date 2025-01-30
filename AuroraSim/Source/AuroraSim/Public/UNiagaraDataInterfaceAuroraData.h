@@ -6,6 +6,8 @@
 #include "NiagaraCommon.h"
 #include "NiagaraDataInterface.h"
 #include "NiagaraDataInterfaceRW.h"
+#include "NiagaraRenderUtilities.h"
+#include "NiagaraTypes.h"
 #include "NiagaraRenderGraphUtils.h"
 
 #include "UNiagaraDataInterfaceAuroraData.generated.h"
@@ -45,8 +47,8 @@ struct FNiagaraDataInterfaceAuroraProxy : public FNiagaraDataInterfaceProxyRW
 };
 
 
-UCLASS(EditInlineNew, Category = "Aurora", meta = (DisplayName = "Aurora Grid Data Interface"), MinimalAPI)
-class UUNiagaraDataInterfaceAuroraData : public UNiagaraDataInterfaceGrid3D
+UCLASS(EditInlineNew, Category = "Aurora", meta = (DisplayName = "Aurora Grid Data Interface"))
+class AURORASIM_API UUNiagaraDataInterfaceAuroraData : public UNiagaraDataInterfaceGrid3D
 {
 	GENERATED_BODY()
 

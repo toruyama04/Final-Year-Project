@@ -7,23 +7,38 @@ public class AuroraSim : ModuleRules
 	public AuroraSim(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
-		PublicDependencyModuleNames.AddRange(new string[] { 
+
+        PublicIncludePaths.AddRange(
+                 new string[] {
+                     "AuroraSim/Public"
+                 }
+             );
+
+        PrivateIncludePaths.AddRange(
+            new string[] {
+                     "AuroraSim/Private",
+            }
+        );
+
+        PublicDependencyModuleNames.AddRange(new string[] { 
 			"Core", 
 			"CoreUObject", 
 			"Engine",
-			"EnhancedInput", 
 			"Niagara", 
 			"NiagaraCore",
+			"NiagaraShader",
 			"RenderCore", 
-			"RHI" 
+			"RHI",
+			"RDG"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { 
-			"Projects", 
+			"Projects",
+			"UnrealEd",
 			"NiagaraCore", 
 			"NiagaraShader", 
-			"NiagaraEditor"
+			"NiagaraEditor",
+			"Niagara"
 		});
 
 		// Uncomment if you are using Slate UI

@@ -473,8 +473,10 @@ bool UUNiagaraDataInterfaceAuroraData::GetFunctionHLSL(const FNiagaraDataInterfa
 		return false;
 	}
 }
+#endif
 
 //  TODO: add descriptions to each function?
+#if WITH_EDITORONLY_DATA
 void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const
 {
 	Super::GetFunctionsInternal(OutFunctions);
@@ -518,9 +520,9 @@ void UUNiagaraDataInterfaceAuroraData::GetFunctionsInternal(TArray<FNiagaraFunct
 		FNiagaraFunctionSignature GetElectricFieldSig;
 		GetElectricFieldSig.Name = GetElectricFieldFunctionName;
 		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
-		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexX")));
-		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexY")));
-		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("IndexZ")));
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexX")));
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexY")));
+		GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("IndexZ")));
 		GetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutElectricField")));
 		GetElectricFieldSig.bMemberFunction = true;
 		GetElectricFieldSig.bRequiresContext = false;
@@ -679,7 +681,6 @@ bool UUNiagaraDataInterfaceAuroraData::InitPerInstanceData(void* PerInstanceData
 
 	if ((NumCells.X * NumCells.Y * NumCells.Z) == 0 || (NumCells.X * NumCells.Y * NumCells.Z) > GetMaxBufferDimension())
 	{
-		UE_LOG(LogNiagara, Error, TEXT("UUNiagaraDataInterfaceAuroraData - Invalid NumCells count"));
 		return false;
 	}
 
@@ -833,21 +834,14 @@ void FNDIAuroraInstaceData::ResizeGrid(FRDGBuilder& GraphBuilder)
 
 	// PlasmaPotentialWrite, PlasmaPotentialRead, ChargeDensity
 	{
-		FRDGBufferDesc FloatBufferDesc = FRDGBufferDesc::CreateBufferDesc(sizeof(float), CellCount);
-		FloatBufferDesc.Usage = EBufferUsageFlags::ShaderResource | EBufferUsageFlags::UnorderedAccess;
-
-		PlasmaPotentialBufferRead.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferRead"), PF_R32_FLOAT, FloatBufferDesc);
-		PlasmaPotentialBufferWrite.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferWrite"), PF_R32_FLOAT, FloatBufferDesc);
-		ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), PF_R32_FLOAT, FloatBufferDesc);
+		PlasmaPotentialBufferRead.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferRead"), PF_R32_FLOAT, sizeof(float), CellCount, BUF_UnorderedAccess | BUF_ShaderResource);
+		PlasmaPotentialBufferWrite.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferWrite"), PF_R32_FLOAT, sizeof(float), CellCount, BUF_UnorderedAccess | BUF_ShaderResource);
+		ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), PF_R32_FLOAT, sizeof(float), CellCount, BUF_UnorderedAccess | BUF_ShaderResource);
 
 		const float DefaultValue = 0.0f;
-		FRDGBufferUAVRef PlasmaPotentialReadUAV = PlasmaPotentialBufferRead.GetOrCreateUAV(GraphBuilder);
-		FRDGBufferUAVRef PlasmaPotentialWriteUAV = PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder);
-		FRDGBufferUAVRef ChargeDensityUAV = ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder);
-
-		AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialReadUAV, DefaultValue);
-		AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialWriteUAV, DefaultValue);
-		AddClearUAVFloatPass(GraphBuilder, ChargeDensityUAV, DefaultValue);
+		AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialBufferRead.GetOrCreateUAV(GraphBuilder), DefaultValue);
+		AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder), DefaultValue);
+		AddClearUAVFloatPass(GraphBuilder, ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), DefaultValue);
 	}
 	// ElectricField
 	{
