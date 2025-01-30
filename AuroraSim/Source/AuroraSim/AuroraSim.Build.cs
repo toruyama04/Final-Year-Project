@@ -10,7 +10,7 @@ public class AuroraSim : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Niagara" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PrivateDependencyModuleNames.AddRange(new string[] { "NiagaraShader", "NiagaraCore", "RenderCore", "VectorVM", "RHI", "Renderer", "NiagaraVertexFactories", "Projects", "NiagaraRHI", "RenderGraph" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
