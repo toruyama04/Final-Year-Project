@@ -26,7 +26,7 @@ struct FNDIAuroraInstanceData
 	FNiagaraPooledRWBuffer PlasmaPotentialBuffeRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
 	FNiagaraPooledRWBuffer ChargeDensityBuffer;
-	FNiagaraPooledRWTexture ElectricFieldTexture;
+	FNiagaraPooledRWBuffer ElectricFieldBuffer;
 };
 
 
@@ -62,7 +62,7 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterface
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      ChargeDensity)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, ElectricField)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float4>, ElectricField)
 	END_SHADER_PARAMETER_STRUCT()
 
 	
@@ -73,7 +73,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FIntVector NumCells;
 
-	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	float CellSize;
 
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
