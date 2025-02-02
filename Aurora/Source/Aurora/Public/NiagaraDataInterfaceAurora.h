@@ -33,10 +33,9 @@ struct FNDIAuroraInstanceDataRenderThread
 struct FNDIAuroraInstanceDataGameThread
 {
 	FIntVector NumCells = FIntVector::ZeroValue;
-	float CellSize = 0.0f;
 	FVector WorldBBoxSize = FVector::ZeroVector;
 	bool bNeedsRealloc = false;
-	bool bUpdateBounds = false;
+	bool bBoundsChanged = false;
 };
 
 
@@ -118,6 +117,8 @@ public:
 #endif
 
 protected:
+	TMap<FNiagaraSystemInstanceID, FNDIAuroraInstanceDataGameThread*> SystemInstancesToProxyData_GT;
+
 #if WITH_EDITORONLY_DATA
 	virtual void GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const override;
 #endif

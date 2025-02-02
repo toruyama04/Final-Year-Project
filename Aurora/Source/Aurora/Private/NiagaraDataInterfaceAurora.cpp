@@ -86,7 +86,6 @@ bool UNiagaraDataInterfaceAurora::Equals(const UNiagaraDataInterface* Other) con
 	const UNiagaraDataInterfaceAurora* OtherType = CastChecked<const UNiagaraDataInterfaceAurora>(Other);
 	return OtherType != nullptr &&
 		OtherType->NumCells == NumCells &&
-		OtherType->CellSize == CellSize &&
 		OtherType->WorldBBoxSize == WorldBBoxSize;
 }
 
@@ -405,24 +404,31 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 bool UNiagaraDataInterfaceAurora::InitPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance)
 {
 	FNDIAuroraInstanceDataGameThread* InstanceData = new (PerInstanceData) FNDIAuroraInstanceDataGameThread();
-	FNiagaraDataInterfaceProxyAurora* LocalProxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
+	SystemInstancesToProxyData_GT.Emplace(SystemInstance->GetId(), InstanceData);
+
 	FIntVector RT_NumCells = NumCells;
 	FVector RT_WorldBBoxSize = WorldBBoxSize;
 	FVector::FReal TmpCellSize = RT_WorldBBoxSize[0] / RT_NumCells[0];
+
 	if ((NumCells.X * NumCells.Y * NumCells.Z) == 0 || (NumCells.X * NumCells.Y * NumCells.Z) > GetMaxBufferDimension())
 	{
 		return false;
 	}
-	InstanceData->CellSize = float(TmpCellSize);
+
 	InstanceData->WorldBBoxSize = RT_WorldBBoxSize;
 	InstanceData->NumCells = RT_NumCells;
+
+	FNiagaraDataInterfaceProxyAurora* LocalProxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
+
 	ENQUEUE_RENDER_COMMAND(FInitData)(
-		[LocalProxy, RT_NumCells, RT_WorldBBoxSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
+		[LocalProxy, RT_InstanceData = *InstanceData, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
 		{
 			check(!LocalProxy->SystemInstancesToProxyData.Contains(InstanceID));
 			FNDIAuroraInstanceDataRenderThread* TargetData = &LocalProxy->SystemInstancesToProxyData.Add(InstanceID);
-			TargetData->NumCells = RT_NumCells;
-			TargetData->WorldBBoxSize = RT_WorldBBoxSize;
+
+			TargetData->NumCells = RT_InstanceData.NumCells;
+			TargetData->WorldBBoxSize = RT_InstanceData.WorldBBoxSize;
+			TargetData->CellSize = static_cast<float>(RT_InstanceData.WorldBBoxSize.X / RT_InstanceData.NumCells.X);
 			TargetData->bResizeBuffers = true;
 		}
 		);
@@ -431,13 +437,11 @@ bool UNiagaraDataInterfaceAurora::InitPerInstanceData(void* PerInstanceData, FNi
 
 void UNiagaraDataInterfaceAurora::DestroyPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance)
 {
+	SystemInstancesToProxyData_GT.Remove(SystemInstance->GetId());
 	FNDIAuroraInstanceDataGameThread* InstanceData = static_cast<FNDIAuroraInstanceDataGameThread*>(PerInstanceData);
 	InstanceData->~FNDIAuroraInstanceDataGameThread();
+
 	FNiagaraDataInterfaceProxyAurora* LocalProxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
-	if (!LocalProxy)
-	{
-		return;
-	}
 	ENQUEUE_RENDER_COMMAND(FNiagaraDestroyInstanceData) (
 		[LocalProxy, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& CmdList)
 		{
@@ -449,28 +453,41 @@ void UNiagaraDataInterfaceAurora::DestroyPerInstanceData(void* PerInstanceData, 
 bool UNiagaraDataInterfaceAurora::PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds)
 {
 	FNDIAuroraInstanceDataGameThread* InstanceData = static_cast<FNDIAuroraInstanceDataGameThread*>(PerInstanceData);
-	bool bNeedsReset = false;
-	if (InstanceData->bNeedsRealloc && InstanceData->NumCells.X > 0 && InstanceData->NumCells.Y > 0 && InstanceData->NumCells.Z > 0)
+
+	if (InstanceData->bBoundsChanged || InstanceData->bNeedsRealloc)
 	{
-		InstanceData->bNeedsRealloc = false;
-		InstanceData->CellSize = float((InstanceData->WorldBBoxSize / FVector(InstanceData->NumCells.X, InstanceData->NumCells.Y, InstanceData->NumCells.Z))[0]);
-		FNiagaraDataInterfaceProxyAurora* LocalProxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
-		ENQUEUE_RENDER_COMMAND(FUpdateNumCells)(
-			[LocalProxy, NewNumCells = InstanceData->NumCells, NewWorldBBoxSize = InstanceData->WorldBBoxSize, NewCellSize = InstanceData->CellSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
+		if (InstanceData->NumCells.X > 0 && InstanceData->NumCells.Y > 0 && InstanceData->NumCells.Z > 0)
+		{
+			bool bNumCellsChanged = false;
+			if (InstanceData->bNeedsRealloc)
 			{
-				check(LocalProxy->SystemInstancesToProxyData.Contains(InstanceID));
-				FNDIAuroraInstanceDataRenderThread* TargetData = &LocalProxy->SystemInstancesToProxyData.Add(InstanceID);
-				TargetData->NumCells = NewNumCells;
-				TargetData->CellSize = NewCellSize;
-				TargetData->bResizeBuffers = true;
-				TargetData->WorldBBoxSize = NewWorldBBoxSize;
+				bNumCellsChanged = true;
+				InstanceData->bNeedsRealloc = false;
 			}
-			);
+		
+			FNiagaraDataInterfaceProxyAurora* LocalProxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
+
+			ENQUEUE_RENDER_COMMAND(FUpdateNumCells)(
+				[LocalProxy, bNumCellsChanged, RT_InstanceData = *InstanceData, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
+				{
+					check(LocalProxy->SystemInstancesToProxyData.Contains(InstanceID));
+					FNDIAuroraInstanceDataRenderThread* TargetData = &LocalProxy->SystemInstancesToProxyData.Add(InstanceID);
+
+					if (bNumCellsChanged)
+					{
+						TargetData->NumCells = RT_InstanceData.NumCells;
+						TargetData->bResizeBuffers = true;
+					}
+					TargetData->CellSize = RT_InstanceData.WorldBBoxSize.X / RT_InstanceData.NumCells.X;
+					TargetData->WorldBBoxSize = RT_InstanceData.WorldBBoxSize;
+				}
+				);
+		}
 	}
+
 
 	return false;
 }
-
 
 #if WITH_EDITOR
 void UNiagaraDataInterfaceAurora::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
@@ -481,6 +498,24 @@ void UNiagaraDataInterfaceAurora::PostEditChangeProperty(struct FPropertyChanged
 	if (FProperty* PropertyThatChanged = PropertyChangedEvent.Property)
 	{
 		const FName& Name = PropertyThatChanged->GetFName();
+		if (Name == NumCellsFName || Name == WorldBBoxSizeFName)
+		{
+			for (auto& Pair : SystemInstancesToProxyData_GT)
+			{
+				FNDIAuroraInstanceDataGameThread* InstanceData = Pair.Value;
+				if (Name == NumCellsFName)
+				{
+					InstanceData->NumCells = this->NumCells;
+					InstanceData->bNeedsRealloc = true;
+				}
+				if (Name == WorldBBoxSizeFName)
+				{
+					InstanceData->WorldBBoxSize = this->WorldBBoxSize;
+					InstanceData->bBoundsChanged = true;
+				}
+			}
+			MarkRenderDataDirty();
+		}
 	}
 }
 #endif
@@ -607,8 +642,11 @@ void FNiagaraDataInterfaceProxyAurora::ResetData(const FNDIGpuComputeResetContex
 {
 	// Every frame, only reset the Charge Density buffer, others should be persistant
 	FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
-	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
-	AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
+	if (ProxyData)
+	{
+		FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
+		AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
+	}
 }
 
 // Runs before each stage #todo add event debug logs
@@ -616,10 +654,10 @@ void FNiagaraDataInterfaceProxyAurora::PreStage(const FNDIGpuComputePreStageCont
 {
 	// NumCells could have changed, therefore check boolean and resize accordingly
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
-	FNDIAuroraInstanceDataRenderThread& ProxyData = SystemInstancesToProxyData.FindChecked(Context.GetSystemInstanceID());
-	if (ProxyData.bResizeBuffers)
+	FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
+	if (ProxyData && ProxyData->bResizeBuffers)
 	{
-		ProxyData.ResizeBuffers(GraphBuilder);
+		ProxyData->ResizeBuffers(GraphBuilder);
 	}
 }
 
@@ -628,15 +666,19 @@ void FNiagaraDataInterfaceProxyAurora::PreStage(const FNDIGpuComputePreStageCont
 void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimulateContext& Context)
 {
 	// Swap buffers after each tick, end buffers if final tick
-	FNDIAuroraInstanceDataRenderThread& ProxyData = SystemInstancesToProxyData.FindChecked(Context.GetSystemInstanceID());
-	ProxyData.SwapBuffers();
-	if (Context.IsFinalPostSimulate())
+	FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
+	if (ProxyData)
 	{
-		ProxyData.PlasmaPotentialBuffeRead.EndGraphUsage();
-		ProxyData.PlasmaPotentialBufferWrite.EndGraphUsage();
-		ProxyData.ChargeDensityBuffer.EndGraphUsage();
-		ProxyData.ChargeDensityBuffer.EndGraphUsage();
+		ProxyData->SwapBuffers();
+		if (Context.IsFinalPostSimulate())
+		{
+			ProxyData->PlasmaPotentialBuffeRead.EndGraphUsage();
+			ProxyData->PlasmaPotentialBufferWrite.EndGraphUsage();
+			ProxyData->ChargeDensityBuffer.EndGraphUsage();
+			ProxyData->ChargeDensityBuffer.EndGraphUsage();
+		}
 	}
+
 }
 
 void FNiagaraDataInterfaceProxyAurora::GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context)
