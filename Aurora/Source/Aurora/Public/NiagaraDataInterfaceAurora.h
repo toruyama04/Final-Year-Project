@@ -12,7 +12,7 @@
 
 #include "NiagaraDataInterfaceAurora.generated.h"
 
-struct FNDIAuroraInstanceData
+struct FNDIAuroraInstanceDataRenderThread
 {
 	void ResizeBuffers(FRDGBuilder& GraphBuilder);
 	void SwapBuffers();
@@ -30,6 +30,16 @@ struct FNDIAuroraInstanceData
 };
 
 
+struct FNDIAuroraInstanceDataGameThread
+{
+	FIntVector NumCells = FIntVector::ZeroValue;
+	float CellSize = 0.0f;
+	FVector WorldBBoxSize = FVector::ZeroVector;
+	bool bNeedsRealloc = false;
+	bool bUpdateBounds = false;
+};
+
+
 struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
 {
 	virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
@@ -41,7 +51,7 @@ struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
 
 	virtual void GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context) override;
 
-	TMap<FNiagaraSystemInstanceID, FNDIAuroraInstanceData> SystemInstancesToProxyData;
+	TMap<FNiagaraSystemInstanceID, FNDIAuroraInstanceDataRenderThread> SystemInstancesToProxyData;
 };
 
 
@@ -61,8 +71,8 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterface
 
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      ChargeDensity)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float4>, ElectricField)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<int>,        ChargeDensity)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float4>,     ElectricField)
 	END_SHADER_PARAMETER_STRUCT()
 
 	
@@ -73,13 +83,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FIntVector NumCells;
 
-	float CellSize;
+	float CellSize = 0.0f;
 
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FVector WorldBBoxSize;
-
-	bool bNeedsRealloc = false;
-	bool bUpdateBounds = false;
 
 	virtual void PostInitProperties() override;
 
@@ -97,7 +104,7 @@ public:
 	virtual void ProvidePerInstanceDataForRenderThread(void* DataForRenderThread, void* PerInstanceData, const FNiagaraSystemInstanceID& SystemInstance) override {}
 	virtual bool InitPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;
 	virtual void DestroyPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;
-	// virtual int32 PerInstanceDataSize()const override { return sizeof(FNDINeighborGrid3DInstanceData_GT); }
+	virtual int32 PerInstanceDataSize()const override { return sizeof(FNDIAuroraInstanceDataGameThread); }
 	virtual bool PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
 	virtual bool HasPostSimulateTick() const override { return true; }
 
@@ -105,8 +112,6 @@ public:
 	void SolveElectricField(FVectorVMExternalFunctionContext& Context);
 	void GatherToParticle(FVectorVMExternalFunctionContext& Context);
 	void ScatterToGrid(FVectorVMExternalFunctionContext& Context);
-	// void SimulationToUnit(FVectorVMExternalFunctionContext& Context);
-	// void UnitToFloatIndex(FVectorVMExternalFunctionContext& Context);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;

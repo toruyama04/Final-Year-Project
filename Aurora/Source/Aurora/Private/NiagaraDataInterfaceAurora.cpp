@@ -155,8 +155,10 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				} else {
 					sum += {PlasmaPotentialRead}[Index];
 				}
+				// dividing charge density by 100,000 for precision when converting from integer
+				float ChargeDensityValue = float({ChargeDensity}[Index]) / 100000.0;
 
-				{PlasmaPotentialWrite}[Index] = (sum - {ChargeDensity}[Index] * CellVolume) / 6.0;
+				{PlasmaPotentialWrite}[Index] = (sum - ChargeDensityValue * CellVolume) / 6.0;
 				OutSuccess = true;
 			}
 		)");
@@ -286,7 +288,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 
 			int i = (int)Index.x;
 			float di = Index.x - i;
-    
+
 			int j = (int)Index.y;
 			float dj = Index.y - j;
 
@@ -306,42 +308,43 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 			int Index111 = (i + 1) + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
 			int Index011 = i + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
 
+			float ScaledCharge = InCharge * 100000.0;
+
 			if (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ)
 			{ 
-				InterlockedAdd({ChargeDensity}[Index000], InCharge * (1.0 - di) * (1.0 - dj) * (1.0 - dk)); 
+				InterlockedAdd({ChargeDensity}[Index000], (uint)(ScaledCharge * (1.0 - di) * (1.0 - dj) * (1.0 - dk))); 
 			}
 			if (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ)
 			{ 
-				InterlockedAdd({ChargeDensity}[Index100], InCharge * di * (1.0 - dj) * (1.0 - dk)); 
+				InterlockedAdd({ChargeDensity}[Index100], (uint)(ScaledCharge * di * (1.0 - dj) * (1.0 - dk))); 
 			}
 			if (i + 1 >= 0 && i + 1 < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k >= 0 && k < GridSizeZ)
 			{ 
-				InterlockedAdd({ChargeDensity}[Index110], InCharge * di * dj * (1.0 - dk)); 
+				InterlockedAdd({ChargeDensity}[Index110], (uint)(ScaledCharge * di * dj * (1.0 - dk))); 
 			}
 			if (i >= 0 && i < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k >= 0 && k < GridSizeZ)
 			{ 
-				InterlockedAdd({ChargeDensity}[Index010], InCharge * (1.0 - di) * dj * (1.0 - dk)); 
+				InterlockedAdd({ChargeDensity}[Index010], (uint)(ScaledCharge * (1.0 - di) * dj * (1.0 - dk))); 
 			}
 			if (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
 			{ 
-				InterlockedAdd({ChargeDensity}[Index001], InCharge * (1.0 - di) * (1.0 - dj) * dk); 
+				InterlockedAdd({ChargeDensity}[Index001], (uint)(ScaledCharge * (1.0 - di) * (1.0 - dj) * dk)); 
 			}
 			if (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
 			{ 
-				InterlockedAdd({ChargeDensity}[Index101], InCharge * di * (1.0 - dj) * dk); 
+				InterlockedAdd({ChargeDensity}[Index101], (uint)(ScaledCharge * di * (1.0 - dj) * dk)); 
 			}
 			if (i + 1 >= 0 && i + 1 < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
 			{ 
-				InterlockedAdd({ChargeDensity}[Index111], InCharge * di * dj * dk); 
+				InterlockedAdd({ChargeDensity}[Index111], (uint)(ScaledCharge * di * dj * dk)); 
 			}
 			if (i >= 0 && i < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
 			{ 
-				InterlockedAdd({ChargeDensity}[Index011], InCharge * (1.0 - di) * dj * dk); 
+				InterlockedAdd({ChargeDensity}[Index011], (uint)(ScaledCharge * (1.0 - di) * dj * dk)); 
 			}
 
 			OutSuccess = true;
 		}
-
     )");
 		OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
 		return true;
@@ -358,7 +361,7 @@ void UNiagaraDataInterfaceAurora::GetParameterDefinitionHLSL(const FNiagaraDataI
 	OutHLSL.Appendf(TEXT("float3              %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *WorldBBoxSizeParamName);
 	OutHLSL.Appendf(TEXT("RWBuffer<float>     %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialReadParamName);
 	OutHLSL.Appendf(TEXT("RWBuffer<float>     %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialWriteParamName);
-	OutHLSL.Appendf(TEXT("RWBuffer<float>     %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *ChargeDensityParamName);
+	OutHLSL.Appendf(TEXT("RWBuffer<int>       %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *ChargeDensityParamName);
 	OutHLSL.Appendf(TEXT("RWBuffer<float4>    %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *ElectricFieldParamName);
 }
 #endif
@@ -371,7 +374,7 @@ void UNiagaraDataInterfaceAurora::BuildShaderParameters(FNiagaraShaderParameters
 void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfaceSetShaderParametersContext& Context) const
 {
 	FNiagaraDataInterfaceProxyAurora& DIProxy = Context.GetProxy<FNiagaraDataInterfaceProxyAurora>();
-	FNDIAuroraInstanceData* InstanceData = DIProxy.SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
+	FNDIAuroraInstanceDataRenderThread* InstanceData = DIProxy.SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
 
 	FShaderParameters* ShaderParameters = Context.GetParameterNestedStruct<FShaderParameters>();
@@ -394,26 +397,30 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 		ShaderParameters->WorldBBoxSize = FVector3f::ZeroVector;
 		ShaderParameters->PlasmaPotentialRead = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 		ShaderParameters->PlasmaPotentialWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
-		ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
+		ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
 		ShaderParameters->ElectricField = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_A32B32G32R32F);
 	}
 }
 
 bool UNiagaraDataInterfaceAurora::InitPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance)
 {
+	FNDIAuroraInstanceDataGameThread* InstanceData = new (PerInstanceData) FNDIAuroraInstanceDataGameThread();
 	FNiagaraDataInterfaceProxyAurora* LocalProxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
 	FIntVector RT_NumCells = NumCells;
 	FVector RT_WorldBBoxSize = WorldBBoxSize;
+	FVector::FReal TmpCellSize = RT_WorldBBoxSize[0] / RT_NumCells[0];
 	if ((NumCells.X * NumCells.Y * NumCells.Z) == 0 || (NumCells.X * NumCells.Y * NumCells.Z) > GetMaxBufferDimension())
 	{
 		return false;
 	}
-
+	InstanceData->CellSize = float(TmpCellSize);
+	InstanceData->WorldBBoxSize = RT_WorldBBoxSize;
+	InstanceData->NumCells = RT_NumCells;
 	ENQUEUE_RENDER_COMMAND(FInitData)(
 		[LocalProxy, RT_NumCells, RT_WorldBBoxSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
 		{
 			check(!LocalProxy->SystemInstancesToProxyData.Contains(InstanceID));
-			FNDIAuroraInstanceData* TargetData = &LocalProxy->SystemInstancesToProxyData.Add(InstanceID);
+			FNDIAuroraInstanceDataRenderThread* TargetData = &LocalProxy->SystemInstancesToProxyData.Add(InstanceID);
 			TargetData->NumCells = RT_NumCells;
 			TargetData->WorldBBoxSize = RT_WorldBBoxSize;
 			TargetData->bResizeBuffers = true;
@@ -424,6 +431,8 @@ bool UNiagaraDataInterfaceAurora::InitPerInstanceData(void* PerInstanceData, FNi
 
 void UNiagaraDataInterfaceAurora::DestroyPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance)
 {
+	FNDIAuroraInstanceDataGameThread* InstanceData = static_cast<FNDIAuroraInstanceDataGameThread*>(PerInstanceData);
+	InstanceData->~FNDIAuroraInstanceDataGameThread();
 	FNiagaraDataInterfaceProxyAurora* LocalProxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
 	if (!LocalProxy)
 	{
@@ -439,40 +448,24 @@ void UNiagaraDataInterfaceAurora::DestroyPerInstanceData(void* PerInstanceData, 
 
 bool UNiagaraDataInterfaceAurora::PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds)
 {
-	if (bNeedsRealloc || bUpdateBounds)
+	FNDIAuroraInstanceDataGameThread* InstanceData = static_cast<FNDIAuroraInstanceDataGameThread*>(PerInstanceData);
+	bool bNeedsReset = false;
+	if (InstanceData->bNeedsRealloc && InstanceData->NumCells.X > 0 && InstanceData->NumCells.Y > 0 && InstanceData->NumCells.Z > 0)
 	{
+		InstanceData->bNeedsRealloc = false;
+		InstanceData->CellSize = float((InstanceData->WorldBBoxSize / FVector(InstanceData->NumCells.X, InstanceData->NumCells.Y, InstanceData->NumCells.Z))[0]);
 		FNiagaraDataInterfaceProxyAurora* LocalProxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
-		if (NumCells.X > 0 && NumCells.Y > 0 && NumCells.Z > 0 && WorldBBoxSize.X > 0.0 && WorldBBoxSize.Y > 0.0 && WorldBBoxSize.Z > 0.0)
-		{
-			bool bNumCellsChanged = false;
-			bool bBoundsChanged = false;
-			if (bNeedsRealloc)
+		ENQUEUE_RENDER_COMMAND(FUpdateNumCells)(
+			[LocalProxy, NewNumCells = InstanceData->NumCells, NewWorldBBoxSize = InstanceData->WorldBBoxSize, NewCellSize = InstanceData->CellSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
 			{
-				bNumCellsChanged = true;
-				bNeedsRealloc = false;
+				check(LocalProxy->SystemInstancesToProxyData.Contains(InstanceID));
+				FNDIAuroraInstanceDataRenderThread* TargetData = &LocalProxy->SystemInstancesToProxyData.Add(InstanceID);
+				TargetData->NumCells = NewNumCells;
+				TargetData->CellSize = NewCellSize;
+				TargetData->bResizeBuffers = true;
+				TargetData->WorldBBoxSize = NewWorldBBoxSize;
 			}
-			if (bUpdateBounds)
-			{
-				bBoundsChanged = true;
-				bUpdateBounds = false;
-			}
-			ENQUEUE_RENDER_COMMAND(FUpdateNumCells)(
-				[LocalProxy, bNumCellsChanged, bBoundsChanged, NewNumCells = NumCells, NewWorldBBoxSize = WorldBBoxSize, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
-				{
-					check(LocalProxy->SystemInstancesToProxyData.Contains(InstanceID));
-					FNDIAuroraInstanceData* TargetData = &LocalProxy->SystemInstancesToProxyData.Add(InstanceID);
-					if (bNumCellsChanged)
-					{
-						TargetData->NumCells = NewNumCells;
-						TargetData->bResizeBuffers = true;
-					}
-					if (bBoundsChanged)
-					{
-						TargetData->WorldBBoxSize = NewWorldBBoxSize;
-					}
-				}
-				);
-		}
+			);
 	}
 
 	return false;
@@ -488,14 +481,6 @@ void UNiagaraDataInterfaceAurora::PostEditChangeProperty(struct FPropertyChanged
 	if (FProperty* PropertyThatChanged = PropertyChangedEvent.Property)
 	{
 		const FName& Name = PropertyThatChanged->GetFName();
-		if (Name == NumCellsFName)
-		{
-			bNeedsRealloc = true;
-		}
-		else if (Name == WorldBBoxSizeFName)
-		{
-			bUpdateBounds = true;
-		}
 	}
 }
 #endif
@@ -582,7 +567,7 @@ bool UNiagaraDataInterfaceAurora::CopyToInternal(UNiagaraDataInterface* Destinat
 /*--- Instance Data ---*/
 /*---------------------*/
 
-void FNDIAuroraInstanceData::ResizeBuffers(FRDGBuilder& GraphBuilder)
+void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder)
 {
 	// Release current buffers/textures
 	const uint32 CellCount = NumCells.X * NumCells.Y * NumCells.Z;
@@ -595,17 +580,17 @@ void FNDIAuroraInstanceData::ResizeBuffers(FRDGBuilder& GraphBuilder)
 	// Create buffers with new size
 	PlasmaPotentialBuffeRead.Initialize(GraphBuilder, TEXT("PlasmaPotentialReadBuffer"), PF_R32_FLOAT, sizeof(float), CellCount, BUF_UnorderedAccess | BUF_ShaderResource);
 	PlasmaPotentialBufferWrite.Initialize(GraphBuilder, TEXT("PlasmaPotentialWriteBuffer"), PF_R32_FLOAT, sizeof(float), CellCount, BUF_UnorderedAccess | BUF_ShaderResource);
-	ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), PF_R32_FLOAT, sizeof(float), CellCount, BUF_UnorderedAccess | BUF_ShaderResource);
+	ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), PF_R32_UINT, sizeof(uint32), CellCount, BUF_UnorderedAccess | BUF_ShaderResource);
 	ElectricFieldBuffer.Initialize(GraphBuilder, TEXT("ElectricFieldBuffer"), PF_A32B32G32R32F, sizeof(FVector4f), CellCount, BUF_UnorderedAccess | BUF_ShaderResource);
 
 	const float DefaultValue = 0.0f;
 	AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialBuffeRead.GetOrCreateUAV(GraphBuilder), DefaultValue);
 	AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder), DefaultValue);
-	AddClearUAVFloatPass(GraphBuilder, ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), DefaultValue);
+	AddClearUAVFloatPass(GraphBuilder, ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
 	AddClearUAVFloatPass(GraphBuilder, ElectricFieldBuffer.GetOrCreateUAV(GraphBuilder), DefaultValue);
 }
 
-void FNDIAuroraInstanceData::SwapBuffers()
+void FNDIAuroraInstanceDataRenderThread::SwapBuffers()
 {
 	// Read from previous frame's plasma potential for current frame
 	Swap(PlasmaPotentialBuffeRead, PlasmaPotentialBufferWrite);
@@ -621,9 +606,9 @@ void FNDIAuroraInstanceData::SwapBuffers()
 void FNiagaraDataInterfaceProxyAurora::ResetData(const FNDIGpuComputeResetContext& Context)
 {
 	// Every frame, only reset the Charge Density buffer, others should be persistant
-	FNDIAuroraInstanceData* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
+	FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
-	AddClearUAVFloatPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0.0f);
+	AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
 }
 
 // Runs before each stage #todo add event debug logs
@@ -631,7 +616,7 @@ void FNiagaraDataInterfaceProxyAurora::PreStage(const FNDIGpuComputePreStageCont
 {
 	// NumCells could have changed, therefore check boolean and resize accordingly
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
-	FNDIAuroraInstanceData& ProxyData = SystemInstancesToProxyData.FindChecked(Context.GetSystemInstanceID());
+	FNDIAuroraInstanceDataRenderThread& ProxyData = SystemInstancesToProxyData.FindChecked(Context.GetSystemInstanceID());
 	if (ProxyData.bResizeBuffers)
 	{
 		ProxyData.ResizeBuffers(GraphBuilder);
@@ -643,7 +628,7 @@ void FNiagaraDataInterfaceProxyAurora::PreStage(const FNDIGpuComputePreStageCont
 void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimulateContext& Context)
 {
 	// Swap buffers after each tick, end buffers if final tick
-	FNDIAuroraInstanceData& ProxyData = SystemInstancesToProxyData.FindChecked(Context.GetSystemInstanceID());
+	FNDIAuroraInstanceDataRenderThread& ProxyData = SystemInstancesToProxyData.FindChecked(Context.GetSystemInstanceID());
 	ProxyData.SwapBuffers();
 	if (Context.IsFinalPostSimulate())
 	{
@@ -657,7 +642,7 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 void FNiagaraDataInterfaceProxyAurora::GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context)
 {
 	// specify the dispatch count for data interface iteration
-	if (const FNDIAuroraInstanceData* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID()))
+	if (const FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID()))
 	{
 		Context.SetDirect(ProxyData->NumCells);
 	}
