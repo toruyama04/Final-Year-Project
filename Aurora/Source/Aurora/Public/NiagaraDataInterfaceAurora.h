@@ -23,7 +23,7 @@ struct FNDIAuroraInstanceDataRenderThread
 
 	bool bResizeBuffers = false;
 
-	FNiagaraPooledRWBuffer PlasmaPotentialBuffeRead;
+	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
 	FNiagaraPooledRWBuffer ChargeDensityBuffer;
 	FNiagaraPooledRWBuffer ElectricFieldBuffer;
