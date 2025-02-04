@@ -59,7 +59,7 @@ struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
  * 
  */
 UCLASS(EditInlineNew, Category = "Aurora", meta = (DisplayName = "Aurora Data"))
-class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterface
+class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBase
 {
 	GENERATED_BODY()
 
@@ -70,7 +70,7 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterface
 
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<int>,        ChargeDensity)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,        ChargeDensity)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float4>,     ElectricField)
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -103,14 +103,18 @@ public:
 	virtual void ProvidePerInstanceDataForRenderThread(void* DataForRenderThread, void* PerInstanceData, const FNiagaraSystemInstanceID& SystemInstance) override {}
 	virtual bool InitPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;
 	virtual void DestroyPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;
+	virtual bool PerInstanceTick(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override { return false; }
 	virtual int32 PerInstanceDataSize()const override { return sizeof(FNDIAuroraInstanceDataGameThread); }
 	virtual bool PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
 	virtual bool HasPostSimulateTick() const override { return true; }
+	virtual bool HasPreSimulateTick() const override { return true; }
 
 	void SolvePlasmaPotential(FVectorVMExternalFunctionContext& Context);
 	void SolveElectricField(FVectorVMExternalFunctionContext& Context);
 	void GatherToParticle(FVectorVMExternalFunctionContext& Context);
 	void ScatterToGrid(FVectorVMExternalFunctionContext& Context);
+	void GetNumCells(FVectorVMExternalFunctionContext& Context);
+	void SetNumCells(FVectorVMExternalFunctionContext& Context);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;

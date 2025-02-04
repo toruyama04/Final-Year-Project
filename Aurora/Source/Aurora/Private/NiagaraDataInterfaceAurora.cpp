@@ -27,8 +27,8 @@ static const FName SolvePlasmaPotentialFunctionName("SolvePlasmaPotential");
 static const FName SolveElectricFieldFunctionName("SolveElectricField");
 static const FName GatherToParticleFunctionName("GatherToParticle");
 static const FName ScatterToGridFunctionName("ScatterToGrid");
-// static const FName SimulationToUnitFunctionName("SimulationToUnit");
-// static const FName UnitToFloatIndexFunctionName("UnitToFloatIndex");
+static const FName GetNumCellsFunctionName("GetNumCells");
+static const FName SetNumCellsFunctionName("SetNumCells");
 
 
 /*---------------------*/
@@ -53,6 +53,7 @@ void UNiagaraDataInterfaceAurora::PostInitProperties()
 	}
 }
 
+DEFINE_NDI_DIRECT_FUNC_BINDER(UNiagaraDataInterfaceAurora, SetNumCells);
 void UNiagaraDataInterfaceAurora::GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc)
 {
 	if (BindingInfo.Name == SolvePlasmaPotentialFunctionName)
@@ -70,6 +71,15 @@ void UNiagaraDataInterfaceAurora::GetVMExternalFunction(const FVMExternalFunctio
 	else if (BindingInfo.Name == ScatterToGridFunctionName)
 	{
 		OutFunc = FVMExternalFunction::CreateLambda([this](FVectorVMExternalFunctionContext& Context) { this->ScatterToGrid(Context); });
+	}
+	else if (BindingInfo.Name == GetNumCellsFunctionName)
+	{
+		OutFunc = FVMExternalFunction::CreateLambda([this](FVectorVMExternalFunctionContext& Context) { this->GetNumCells(Context); });
+	}
+	else if (BindingInfo.Name == SetNumCellsFunctionName)
+	{
+		check(BindingInfo.GetNumInputs() == 4 && BindingInfo.GetNumOutputs() == 1);
+		NDI_FUNC_BINDER(UNiagaraDataInterfaceAurora, SetNumCells)::Bind(this, OutFunc);
 	}
 	else
 	{
@@ -352,6 +362,20 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
 		return true;
 	}
+	else if (FunctionInfo.DefinitionName == GetNumCellsFunctionName)
+	{
+		static const TCHAR* FormatSample = TEXT(R"(
+			void {FunctionName}(out int Out_NumCellsX, out int Out_NumCellsY, out int Out_NumCellsZ)
+			{
+				Out_NumCellsX = {NumCells}.x;
+				Out_NumCellsY = {NumCells}.y;
+				Out_NumCellsZ = {NumCells}.z;
+			}
+		)");
+
+		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
+		return true;
+	}
 	else
 	{
 		return false;
@@ -381,10 +405,7 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
 
 	FShaderParameters* ShaderParameters = Context.GetParameterNestedStruct<FShaderParameters>();
-	if (InstanceData && InstanceData->PlasmaPotentialBufferRead.IsValid() 
-					 && InstanceData->PlasmaPotentialBufferWrite.IsValid() 
-					 && InstanceData->ChargeDensityBuffer.IsValid()
-					 && InstanceData->ElectricFieldBuffer.IsValid())
+	if (InstanceData)
 	{
 		ShaderParameters->NumCells = InstanceData->NumCells;
 		ShaderParameters->CellSize.X = float(InstanceData->WorldBBoxSize.X / double(InstanceData->NumCells.X));
@@ -431,11 +452,11 @@ bool UNiagaraDataInterfaceAurora::InitPerInstanceData(void* PerInstanceData, FNi
 
 	FIntVector RT_NumCells = NumCells;
 	FVector RT_WorldBBoxSize = WorldBBoxSize;
-	FVector::FReal TmpCellSize = RT_WorldBBoxSize[0] / RT_NumCells[0];
+	FVector::FReal TmpCellSize = static_cast<float>(RT_WorldBBoxSize[0] / RT_NumCells[0]);
 
 	if ((NumCells.X * NumCells.Y * NumCells.Z) == 0 || (NumCells.X * NumCells.Y * NumCells.Z) > GetMaxBufferDimension())
 	{
-		UE_LOG(LogTemp, Display, TEXT("NumCells is too small"));
+		UE_LOG(LogTemp, Display, TEXT("NumCells is invalid"));
 		return false;
 	}
 
@@ -517,21 +538,15 @@ bool UNiagaraDataInterfaceAurora::PerInstanceTickPostSimulate(void* PerInstanceD
 void UNiagaraDataInterfaceAurora::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
-	static FName NumCellsFName = GET_MEMBER_NAME_CHECKED(UNiagaraDataInterfaceAurora, NumCells);
 	static FName WorldBBoxSizeFName = GET_MEMBER_NAME_CHECKED(UNiagaraDataInterfaceAurora, WorldBBoxSize);
 	if (FProperty* PropertyThatChanged = PropertyChangedEvent.Property)
 	{
 		const FName& Name = PropertyThatChanged->GetFName();
-		if (Name == NumCellsFName || Name == WorldBBoxSizeFName)
+		if (Name == WorldBBoxSizeFName)
 		{
 			for (auto& Pair : SystemInstancesToProxyData_GT)
 			{
 				FNDIAuroraInstanceDataGameThread* InstanceData = Pair.Value;
-				if (Name == NumCellsFName)
-				{
-					InstanceData->NumCells = this->NumCells;
-					InstanceData->bNeedsRealloc = true;
-				}
 				if (Name == WorldBBoxSizeFName)
 				{
 					InstanceData->WorldBBoxSize = this->WorldBBoxSize;
@@ -603,17 +618,45 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 	ScatterToGridSig.bWriteFunction = true;
 	ScatterToGridSig.bSupportsGPU = true;
 	OutFunctions.Add(ScatterToGridSig);
+
+	FNiagaraFunctionSignature GetNumCellsSig;
+	GetNumCellsSig.Name = UNiagaraDataInterfaceRWBase::NumCellsFunctionName;
+	GetNumCellsSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+	GetNumCellsSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("NumCellsX")));
+	GetNumCellsSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("NumCellsY")));
+	GetNumCellsSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("NumCellsZ")));
+	GetNumCellsSig.bMemberFunction = true;
+	GetNumCellsSig.bRequiresContext = false;
+	OutFunctions.Add(GetNumCellsSig);
+
+	FNiagaraFunctionSignature SetNumCellsSig;
+	SetNumCellsSig.Name = SetNumCellsFunctionName;
+	SetNumCellsSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+	SetNumCellsSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("NumCellsX")));
+	SetNumCellsSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("NumCellsY")));
+	SetNumCellsSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("NumCellsZ")));
+	SetNumCellsSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("Success")));
+	SetNumCellsSig.bMemberFunction = true;
+	SetNumCellsSig.bRequiresExecPin = true;
+	SetNumCellsSig.bRequiresContext = false;
+	SetNumCellsSig.bSupportsCPU = true;
+	SetNumCellsSig.bSupportsGPU = false;
+	OutFunctions.Add(SetNumCellsSig);
 }
 #endif
 
 bool UNiagaraDataInterfaceAurora::CopyToInternal(UNiagaraDataInterface* Destination) const
 {
-	Super::CopyToInternal(Destination);
+	if (!Super::CopyToInternal(Destination))
+	{
+		return false;
+	}
 	UNiagaraDataInterfaceAurora* CastedDestination = Cast<UNiagaraDataInterfaceAurora>(Destination);
 	if (CastedDestination)
 	{
 		CastedDestination->NumCells = NumCells;
 		CastedDestination->WorldBBoxSize = WorldBBoxSize;
+		CastedDestination->CellSize = CellSize;
 	}
 	return true;
 }
@@ -637,9 +680,9 @@ void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder
 
 	// Create buffers with new size
 	PlasmaPotentialBufferRead.Initialize(GraphBuilder, TEXT("PlasmaPotentialReadBuffer"), PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount,1u), BUF_UnorderedAccess | BUF_ShaderResource);
-	PlasmaPotentialBufferWrite.Initialize(GraphBuilder, TEXT("PlasmaPotentialWriteBuffer"), PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource | BUF_Dynamic);
-	ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), PF_R32_UINT, sizeof(uint32), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource | BUF_Dynamic);
-	ElectricFieldBuffer.Initialize(GraphBuilder, TEXT("ElectricFieldBuffer"), PF_A32B32G32R32F, sizeof(FVector4f), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource | BUF_Dynamic);
+	PlasmaPotentialBufferWrite.Initialize(GraphBuilder, TEXT("PlasmaPotentialWriteBuffer"), PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource);
+	ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), PF_R32_UINT, sizeof(uint32), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource);
+	ElectricFieldBuffer.Initialize(GraphBuilder, TEXT("ElectricFieldBuffer"), PF_A32B32G32R32F, sizeof(FVector4f), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource);
 
 	const float DefaultValue = 0.0f;
 	AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialBufferRead.GetOrCreateUAV(GraphBuilder), DefaultValue);
@@ -648,6 +691,7 @@ void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder
 	AddClearUAVFloatPass(GraphBuilder, ElectricFieldBuffer.GetOrCreateUAV(GraphBuilder), DefaultValue);
 }
 
+// #todo possible synchronisation error?
 void FNDIAuroraInstanceDataRenderThread::SwapBuffers()
 {
 	// Read from previous frame's plasma potential for current frame
@@ -669,9 +713,9 @@ void FNiagaraDataInterfaceProxyAurora::ResetData(const FNDIGpuComputeResetContex
 	{
 		FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
 		AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
+		// for testing
 		AddClearUAVFloatPass(GraphBuilder, ProxyData->PlasmaPotentialBufferRead.GetOrCreateUAV(GraphBuilder), 0.0f);
 		AddClearUAVFloatPass(GraphBuilder, ProxyData->PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder), 0.0f);
-		AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
 		AddClearUAVFloatPass(GraphBuilder, ProxyData->ElectricFieldBuffer.GetOrCreateUAV(GraphBuilder), 0.0f);
 	}
 }
@@ -702,7 +746,7 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 			ProxyData->PlasmaPotentialBufferRead.EndGraphUsage();
 			ProxyData->PlasmaPotentialBufferWrite.EndGraphUsage();
 			ProxyData->ChargeDensityBuffer.EndGraphUsage();
-			ProxyData->ChargeDensityBuffer.EndGraphUsage();
+			ProxyData->ElectricFieldBuffer.EndGraphUsage();
 		}
 	}
 
@@ -735,3 +779,45 @@ void UNiagaraDataInterfaceAurora::GatherToParticle(FVectorVMExternalFunctionCont
 void UNiagaraDataInterfaceAurora::ScatterToGrid(FVectorVMExternalFunctionContext& Context)
 {
 }
+
+void UNiagaraDataInterfaceAurora::GetNumCells(FVectorVMExternalFunctionContext& Context)
+{
+}
+
+void UNiagaraDataInterfaceAurora::SetNumCells(FVectorVMExternalFunctionContext& Context)
+{
+	VectorVM::FUserPtrHandler<FNDIAuroraInstanceDataGameThread> InstData(Context);
+	VectorVM::FExternalFuncInputHandler<int> InNumCellsX(Context);
+	VectorVM::FExternalFuncInputHandler<int> InNumCellsY(Context);
+	VectorVM::FExternalFuncInputHandler<int> InNumCellsZ(Context);
+	VectorVM::FExternalFuncRegisterHandler<FNiagaraBool> OutSuccess(Context);
+
+	for (int32 InstanceIdx = 0; InstanceIdx < Context.GetNumInstances(); ++InstanceIdx)
+	{
+		const int NewNumCellsX = InNumCellsX.GetAndAdvance();
+		const int NewNumCellsY = InNumCellsY.GetAndAdvance();
+		const int NewNumCellsZ = InNumCellsZ.GetAndAdvance();
+		bool bSuccess = (InstData.Get() != nullptr && Context.GetNumInstances() == 1 && NumCells.X >= 0 && NumCells.Y >= 0 && NumCells.Z >= 0);
+		const uint32 NumTotalCells = NewNumCellsX * NewNumCellsY * NewNumCellsZ;
+		if (NumTotalCells == 0)
+		{
+			bSuccess = false;
+		}
+		else if (NumTotalCells > GetMaxBufferDimension())
+		{
+			bSuccess = false;
+		}
+		*OutSuccess.GetDestAndAdvance() = bSuccess;
+		if (bSuccess)
+		{
+			FIntVector OldNumCells = InstData->NumCells;
+
+			InstData->NumCells.X = FMath::Max(1, NewNumCellsX);
+			InstData->NumCells.Y = FMath::Max(1, NewNumCellsY);
+			InstData->NumCells.Z = FMath::Max(1, NewNumCellsZ);
+
+			InstData->bNeedsRealloc = OldNumCells != InstData->NumCells;
+		}
+	}
+}
+

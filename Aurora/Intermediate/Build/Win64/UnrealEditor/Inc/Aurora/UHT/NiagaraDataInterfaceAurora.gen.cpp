@@ -14,7 +14,7 @@ AURORA_API UClass* Z_Construct_UClass_UNiagaraDataInterfaceAurora();
 AURORA_API UClass* Z_Construct_UClass_UNiagaraDataInterfaceAurora_NoRegister();
 COREUOBJECT_API UScriptStruct* Z_Construct_UScriptStruct_FIntVector();
 COREUOBJECT_API UScriptStruct* Z_Construct_UScriptStruct_FVector();
-NIAGARA_API UClass* Z_Construct_UClass_UNiagaraDataInterface();
+NIAGARA_API UClass* Z_Construct_UClass_UNiagaraDataInterfaceRWBase();
 UPackage* Z_Construct_UPackage__Script_Aurora();
 // End Cross Module References
 
@@ -65,7 +65,7 @@ const UECodeGen_Private::FPropertyParamsBase* const Z_Construct_UClass_UNiagaraD
 };
 static_assert(UE_ARRAY_COUNT(Z_Construct_UClass_UNiagaraDataInterfaceAurora_Statics::PropPointers) < 2048);
 UObject* (*const Z_Construct_UClass_UNiagaraDataInterfaceAurora_Statics::DependentSingletons[])() = {
-	(UObject* (*)())Z_Construct_UClass_UNiagaraDataInterface,
+	(UObject* (*)())Z_Construct_UClass_UNiagaraDataInterfaceRWBase,
 	(UObject* (*)())Z_Construct_UPackage__Script_Aurora,
 };
 static_assert(UE_ARRAY_COUNT(Z_Construct_UClass_UNiagaraDataInterfaceAurora_Statics::DependentSingletons) < 16);
@@ -104,10 +104,10 @@ UNiagaraDataInterfaceAurora::~UNiagaraDataInterfaceAurora() {}
 struct Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_Aurora_Source_Aurora_Public_NiagaraDataInterfaceAurora_h_Statics
 {
 	static constexpr FClassRegisterCompiledInInfo ClassInfo[] = {
-		{ Z_Construct_UClass_UNiagaraDataInterfaceAurora, UNiagaraDataInterfaceAurora::StaticClass, TEXT("UNiagaraDataInterfaceAurora"), &Z_Registration_Info_UClass_UNiagaraDataInterfaceAurora, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UNiagaraDataInterfaceAurora), 4219964791U) },
+		{ Z_Construct_UClass_UNiagaraDataInterfaceAurora, UNiagaraDataInterfaceAurora::StaticClass, TEXT("UNiagaraDataInterfaceAurora"), &Z_Registration_Info_UClass_UNiagaraDataInterfaceAurora, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UNiagaraDataInterfaceAurora), 3064047819U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_Aurora_Source_Aurora_Public_NiagaraDataInterfaceAurora_h_52564206(TEXT("/Script/Aurora"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_Aurora_Source_Aurora_Public_NiagaraDataInterfaceAurora_h_1038805399(TEXT("/Script/Aurora"),
 	Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_Aurora_Source_Aurora_Public_NiagaraDataInterfaceAurora_h_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Users_toruy_iu_Documents_Y3_Modules_FYP_AuroraSim_Aurora_Source_Aurora_Public_NiagaraDataInterfaceAurora_h_Statics::ClassInfo),
 	nullptr, 0,
 	nullptr, 0);

@@ -19,7 +19,7 @@ private: \
 	static void StaticRegisterNativesUNiagaraDataInterfaceAurora(); \
 	friend struct Z_Construct_UClass_UNiagaraDataInterfaceAurora_Statics; \
 public: \
-	DECLARE_CLASS(UNiagaraDataInterfaceAurora, UNiagaraDataInterface, COMPILED_IN_FLAGS(0), CASTCLASS_None, TEXT("/Script/Aurora"), NO_API) \
+	DECLARE_CLASS(UNiagaraDataInterfaceAurora, UNiagaraDataInterfaceRWBase, COMPILED_IN_FLAGS(0), CASTCLASS_None, TEXT("/Script/Aurora"), NO_API) \
 	DECLARE_SERIALIZER(UNiagaraDataInterfaceAurora)
 
 
