@@ -14,10 +14,12 @@
 
 struct FNDIAuroraInstanceDataRenderThread
 {
+	FName SourceDIName;
+
 	void ResizeBuffers(FRDGBuilder& GraphBuilder);
 	void SwapBuffers();
 
-	FIntVector NumCells = FIntVector::ZeroValue;
+	FIntVector NumCells = FIntVector(10, 10, 10);
 	FVector WorldBBoxSize = FVector::ZeroVector;
 	float CellSize = 0.0f;
 
@@ -32,8 +34,8 @@ struct FNDIAuroraInstanceDataRenderThread
 
 struct FNDIAuroraInstanceDataGameThread
 {
-	FIntVector NumCells = FIntVector::ZeroValue;
-	FVector WorldBBoxSize = FVector::ZeroVector;
+	FIntVector NumCells = FIntVector(10, 10, 10);
+	FVector WorldBBoxSize = FVector(100., 100., 100.);
 	bool bNeedsRealloc = false;
 	bool bBoundsChanged = false;
 };
@@ -41,12 +43,14 @@ struct FNDIAuroraInstanceDataGameThread
 
 struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
 {
+	FNiagaraDataInterfaceProxyAurora() {}
+
 	virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
 	virtual void PreStage(const FNDIGpuComputePreStageContext& Context) override;
 	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
 
-	virtual void ConsumePerInstanceDataFromGameThread(void* PerInstanceData, const FNiagaraSystemInstanceID& Instance) override {}
-	virtual int32 PerInstanceDataPassedToRenderThreadSize() const override { return 0; }
+	// virtual void ConsumePerInstanceDataFromGameThread(void* PerInstanceData, const FNiagaraSystemInstanceID& Instance) override {}
+	// virtual int32 PerInstanceDataPassedToRenderThreadSize() const override { return 0; }
 
 	virtual void GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context) override;
 
@@ -103,11 +107,9 @@ public:
 	virtual void ProvidePerInstanceDataForRenderThread(void* DataForRenderThread, void* PerInstanceData, const FNiagaraSystemInstanceID& SystemInstance) override {}
 	virtual bool InitPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;
 	virtual void DestroyPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;
-	virtual bool PerInstanceTick(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override { return false; }
 	virtual int32 PerInstanceDataSize()const override { return sizeof(FNDIAuroraInstanceDataGameThread); }
 	virtual bool PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
 	virtual bool HasPostSimulateTick() const override { return true; }
-	virtual bool HasPreSimulateTick() const override { return true; }
 
 	void SolvePlasmaPotential(FVectorVMExternalFunctionContext& Context);
 	void SolveElectricField(FVectorVMExternalFunctionContext& Context);
@@ -118,6 +120,7 @@ public:
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual ENiagaraGpuDispatchType GetGpuDispatchType() const override { return ENiagaraGpuDispatchType::ThreeD; }
 #endif
 
 protected:
