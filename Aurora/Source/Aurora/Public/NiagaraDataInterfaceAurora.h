@@ -111,10 +111,6 @@ public:
 	virtual bool PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
 	virtual bool HasPostSimulateTick() const override { return true; }
 
-	void SolvePlasmaPotential(FVectorVMExternalFunctionContext& Context);
-	void SolveElectricField(FVectorVMExternalFunctionContext& Context);
-	void GatherToParticle(FVectorVMExternalFunctionContext& Context);
-	void ScatterToGrid(FVectorVMExternalFunctionContext& Context);
 	void GetNumCells(FVectorVMExternalFunctionContext& Context);
 	void SetNumCells(FVectorVMExternalFunctionContext& Context);
 

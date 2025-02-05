@@ -28,6 +28,15 @@ static const FName ScatterToGridFunctionName("ScatterToGrid");
 static const FName GetNumCellsFunctionName("GetNumCells");
 static const FName SetNumCellsFunctionName("SetNumCells");
 
+static const FName SetPlasmaPotentialWriteFunctionName("SetPlasmaPotentialWrite");
+static const FName SetChargeDensityFunctionName("SetChargeDensity");
+static const FName SetElectricFieldFunctionName("SetElectricField");
+
+static const FName GetPlasmaPotentialReadFunctionName("SetPlasmaPotentialRead");
+static const FName GetPlasmaPotentialWriteFunctionName("GetPlasmaPotentialWrite");
+static const FName GetChargeDensityFunctionName("GetChargeDensity");
+static const FName GetElectricFieldFunctionName("GetElectricField");
+
 
 /*---------------------*/
 /*------- NDI ---------*/
@@ -57,24 +66,9 @@ void UNiagaraDataInterfaceAurora::PostInitProperties()
 DEFINE_NDI_DIRECT_FUNC_BINDER(UNiagaraDataInterfaceAurora, SetNumCells);
 void UNiagaraDataInterfaceAurora::GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc)
 {
-	if (BindingInfo.Name == SolvePlasmaPotentialFunctionName)
+	if (BindingInfo.Name == GetNumCellsFunctionName)
 	{
-		OutFunc = FVMExternalFunction::CreateLambda([this](FVectorVMExternalFunctionContext& Context) { this->SolvePlasmaPotential(Context); });
-	}
-	else if (BindingInfo.Name == SolveElectricFieldFunctionName)
-	{
-		OutFunc = FVMExternalFunction::CreateLambda([this](FVectorVMExternalFunctionContext& Context) { this->SolveElectricField(Context); });
-	}
-	else if (BindingInfo.Name == GatherToParticleFunctionName)
-	{
-		OutFunc = FVMExternalFunction::CreateLambda([this](FVectorVMExternalFunctionContext& Context) { this->GatherToParticle(Context); });
-	}
-	else if (BindingInfo.Name == ScatterToGridFunctionName)
-	{
-		OutFunc = FVMExternalFunction::CreateLambda([this](FVectorVMExternalFunctionContext& Context) { this->ScatterToGrid(Context); });
-	}
-	else if (BindingInfo.Name == GetNumCellsFunctionName)
-	{
+		check(BindingInfo.GetNumInputs() == 1 && BindingInfo.GetNumOutputs() == 3);
 		OutFunc = FVMExternalFunction::CreateLambda([this](FVectorVMExternalFunctionContext& Context) { this->GetNumCells(Context); });
 	}
 	else if (BindingInfo.Name == SetNumCellsFunctionName)
@@ -116,6 +110,7 @@ bool UNiagaraDataInterfaceAurora::AppendCompileHash(FNiagaraCompileHashVisitor* 
 }
 bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL)
 {
+	/// Precision value is 100,000;
 	TMap<FString, FStringFormatArg> ArgsDeclaration =
 	{
 		{TEXT("FunctionName"),         FunctionInfo.InstanceName},
@@ -381,7 +376,88 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
 		return true;
 	}
-
+	else if (FunctionInfo.DefinitionName == GetPlasmaPotentialReadFunctionName)
+	{
+		static const TCHAR* FormatSample = TEXT(R"(
+			void {FunctionName}(int Index, out float OutValue)
+			{
+				OutValue = {PlasmaPotentialRead}[Index];
+			}
+		)");
+		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
+		return true;
+	}
+	else if (FunctionInfo.DefinitionName == GetPlasmaPotentialWriteFunctionName)
+	{
+		static const TCHAR* FormatSample = TEXT(R"(
+			void {FunctionName}(int Index, out float OutValue)
+			{
+				OutValue = {PlasmaPotentialWrite}[Index];
+			}
+		)");
+		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
+		return true;
+	}
+	else if (FunctionInfo.DefinitionName == GetChargeDensityFunctionName)
+	{
+		static const TCHAR* FormatSample = TEXT(R"(
+			void {FunctionName}(int Index, out float OutValue)
+			{
+				int preValue = {ChargeDensity}[Index];
+				OutValue = float(preValue) / 100000;
+			}
+		)");
+		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
+		return true;
+	}
+	else if (FunctionInfo.DefinitionName == GetElectricFieldFunctionName)
+	{
+		static const TCHAR* FormatSample = TEXT(R"(
+			void {FunctionName}(int Index, out float3 OutValue)
+			{
+				OutValue = {ElectricField}[Index].xyz;
+			}
+		)");
+		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
+		return true;
+	}
+	else if (FunctionInfo.DefinitionName == SetPlasmaPotentialWriteFunctionName)
+	{
+		static const TCHAR* FormatSample = TEXT(R"(
+			void {FunctionName}(int Index, float InValue, out bool OutSuccess)
+			{
+				{PlasmaPotentialWrite}[Index] = InValue;
+				OutSuccess = true;
+			}
+		)");
+		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
+		return true;
+	}
+	else if (FunctionInfo.DefinitionName == SetChargeDensityFunctionName)
+	{
+		static const TCHAR* FormatSample = TEXT(R"(
+			void {FunctionName}(int Index, float InValue, out bool OutSuccess)
+			{
+				uint value = uint(InValue * 100000);
+				{ChargeDensity}[Index] = value;
+				OutSuccess = true;
+			}
+		)");
+		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
+		return true;
+	}
+	else if (FunctionInfo.DefinitionName == SetElectricFieldFunctionName)
+	{
+		static const TCHAR* FormatSample = TEXT(R"(
+			void {FunctionName}(int Index, float3 InValue, out bool OutSuccess)
+			{
+				{ElectricField}[Index].xyz = InValue;
+				OutSuccess = true;
+			}
+		)");
+		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
+		return true;
+	}
 	return false;
 }
 void UNiagaraDataInterfaceAurora::GetParameterDefinitionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, FString& OutHLSL)
@@ -390,19 +466,19 @@ void UNiagaraDataInterfaceAurora::GetParameterDefinitionHLSL(const FNiagaraDataI
 		int3 {NumCellsName};
 		float3 {CellSizeName};
 		float3 {WorldBBoxSizeName};
-		RWBuffer<float> {PlasmaPotentialReadParamName};
-		RWBuffer<float> {PlasmaPotentialWriteParamName};
-		RWBuffer<uint> {ChargeDensityParamName};
-		RWBuffer<float4> {ElectricFieldParamName};
+		RWBuffer<float> {PlasmaPotentialRead};
+		RWBuffer<float> {PlasmaPotentialWrite};
+		RWBuffer<uint> {ChargeDensity};
+		RWBuffer<float4> {ElectricField};
 	)");
 	TMap<FString, FStringFormatArg> ArgsDeclarations = {
 		{ TEXT("NumCellsName"), ParamInfo.DataInterfaceHLSLSymbol + UNiagaraDataInterfaceRWBase::NumCellsName },
 		{ TEXT("CellSizeName"), ParamInfo.DataInterfaceHLSLSymbol + UNiagaraDataInterfaceRWBase::CellSizeName },
 		{ TEXT("WorldBBoxSizeName"), ParamInfo.DataInterfaceHLSLSymbol + UNiagaraDataInterfaceRWBase::WorldBBoxSizeName },
-		{ TEXT("PlasmaPotentialReadParamName"), ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialReadParamName},
-		{ TEXT("PlasmaPotentialWriteParamName"), ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName },
-		{ TEXT("ChargeDensityParamName"), ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName },
-		{ TEXT("ElectricFieldParamName"), ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName },
+		{ TEXT("PlasmaPotentialRead"), ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialReadParamName},
+		{ TEXT("PlasmaPotentialWrite"), ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName },
+		{ TEXT("ChargeDensity"), ParamInfo.DataInterfaceHLSLSymbol + ChargeDensityParamName },
+		{ TEXT("ElectricField"), ParamInfo.DataInterfaceHLSLSymbol + ElectricFieldParamName },
 	};
 	OutHLSL += FString::Format(FormatDeclarations, ArgsDeclarations);
 }
@@ -662,6 +738,8 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 	GetNumCellsSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("NumCellsZ")));
 	GetNumCellsSig.bMemberFunction = true;
 	GetNumCellsSig.bRequiresContext = false;
+	GetNumCellsSig.bSupportsCPU = true;
+	GetNumCellsSig.bSupportsGPU = true;
 	OutFunctions.Add(GetNumCellsSig);
 
 	FNiagaraFunctionSignature SetNumCellsSig;
@@ -677,6 +755,86 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 	SetNumCellsSig.bSupportsCPU = true;
 	SetNumCellsSig.bSupportsGPU = false;
 	OutFunctions.Add(SetNumCellsSig);
+
+	FNiagaraFunctionSignature GetPlasmaPotentialReadSig;
+	GetPlasmaPotentialReadSig.Name = GetPlasmaPotentialReadFunctionName;
+	GetPlasmaPotentialReadSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+	GetPlasmaPotentialReadSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+	GetPlasmaPotentialReadSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("OutPlasmaPotential")));
+	GetPlasmaPotentialReadSig.bMemberFunction = true;
+	GetPlasmaPotentialReadSig.bRequiresContext = false;
+	GetPlasmaPotentialReadSig.bSupportsCPU = false;
+	GetPlasmaPotentialReadSig.bSupportsGPU = true;
+	OutFunctions.Add(GetPlasmaPotentialReadSig);
+
+	FNiagaraFunctionSignature GetPlasmaPotentialWriteSig;
+	GetPlasmaPotentialWriteSig.Name = GetPlasmaPotentialReadFunctionName;
+	GetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+	GetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+	GetPlasmaPotentialWriteSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("OutPlasmaPotential")));
+	GetPlasmaPotentialWriteSig.bMemberFunction = true;
+	GetPlasmaPotentialWriteSig.bRequiresContext = false;
+	GetPlasmaPotentialWriteSig.bSupportsCPU = false;
+	GetPlasmaPotentialWriteSig.bSupportsGPU = true;
+	OutFunctions.Add(GetPlasmaPotentialWriteSig);
+
+	FNiagaraFunctionSignature GetChargeDensitySig;
+	GetChargeDensitySig.Name = GetPlasmaPotentialReadFunctionName;
+	GetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+	GetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+	GetChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("OutChargeDensity")));
+	GetChargeDensitySig.bMemberFunction = true;
+	GetChargeDensitySig.bRequiresContext = false;
+	GetChargeDensitySig.bSupportsCPU = false;
+	GetChargeDensitySig.bSupportsGPU = true;
+	OutFunctions.Add(GetChargeDensitySig);
+
+	FNiagaraFunctionSignature GetElectricFieldSig;
+	GetElectricFieldSig.Name = GetPlasmaPotentialReadFunctionName;
+	GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+	GetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+	GetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutElectricField")));
+	GetElectricFieldSig.bMemberFunction = true;
+	GetElectricFieldSig.bRequiresContext = false;
+	GetElectricFieldSig.bSupportsCPU = false;
+	GetElectricFieldSig.bSupportsGPU = true;
+	OutFunctions.Add(GetElectricFieldSig);
+
+	FNiagaraFunctionSignature SetPlasmaPotentialWriteSig;
+	SetPlasmaPotentialWriteSig.Name = GetPlasmaPotentialReadFunctionName;
+	SetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+	SetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+	SetPlasmaPotentialWriteSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("Value")));
+	SetPlasmaPotentialWriteSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
+	SetPlasmaPotentialWriteSig.bMemberFunction = true;
+	SetPlasmaPotentialWriteSig.bRequiresContext = false;
+	SetPlasmaPotentialWriteSig.bSupportsCPU = false;
+	SetPlasmaPotentialWriteSig.bSupportsGPU = true;
+	OutFunctions.Add(SetPlasmaPotentialWriteSig);
+
+	FNiagaraFunctionSignature SetChargeDensitySig;
+	SetChargeDensitySig.Name = GetPlasmaPotentialReadFunctionName;
+	SetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+	SetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+	SetChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("Value")));
+	SetChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
+	SetChargeDensitySig.bMemberFunction = true;
+	SetChargeDensitySig.bRequiresContext = false;
+	SetChargeDensitySig.bSupportsCPU = false;
+	SetChargeDensitySig.bSupportsGPU = true;
+	OutFunctions.Add(SetChargeDensitySig);
+
+	FNiagaraFunctionSignature SetElectricFieldSig;
+	SetElectricFieldSig.Name = GetPlasmaPotentialReadFunctionName;
+	SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+	SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+	SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("Value")));
+	SetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
+	SetElectricFieldSig.bMemberFunction = true;
+	SetElectricFieldSig.bRequiresContext = false;
+	SetElectricFieldSig.bSupportsCPU = false;
+	SetElectricFieldSig.bSupportsGPU = true;
+	OutFunctions.Add(SetElectricFieldSig);
 }
 #endif
 
@@ -753,7 +911,7 @@ void FNiagaraDataInterfaceProxyAurora::ResetData(const FNDIGpuComputeResetContex
 {
 	// Every frame, only reset the Charge Density buffer, others should be persistant
 	FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
-	if (!ProxyData)
+	if (!ProxyData || ProxyData->bResizeBuffers)
 	{
 		return;
 	}
@@ -771,7 +929,9 @@ void FNiagaraDataInterfaceProxyAurora::PreStage(const FNDIGpuComputePreStageCont
 	// NumCells could have changed, therefore check boolean and resize accordingly
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
 	FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
+
 	UE_LOG(LogTemp, Log, TEXT("Pre Stage"));
+
 	if (ProxyData && ProxyData->bResizeBuffers)
 	{
 		ProxyData->ResizeBuffers(GraphBuilder);
@@ -788,16 +948,24 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 	{
 		return;
 	}
+
 	UE_LOG(LogTemp, Log, TEXT("Post Simulate"));
+
 	ProxyData->SwapBuffers();
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
 	AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
+
 	if (Context.IsFinalPostSimulate())
 	{
-		ProxyData->PlasmaPotentialBufferRead.EndGraphUsage();
-		ProxyData->PlasmaPotentialBufferWrite.EndGraphUsage();
-		ProxyData->ChargeDensityBuffer.EndGraphUsage();
-		ProxyData->ElectricFieldBuffer.EndGraphUsage();
+		UE_LOG(LogTemp, Log, TEXT("Final post simulate"));
+		for (auto it = SystemInstancesToProxyData.CreateIterator(); it; ++it)
+		{
+			FNDIAuroraInstanceDataRenderThread& InstanceData = it.Value();
+			InstanceData.PlasmaPotentialBufferRead.EndGraphUsage();
+			InstanceData.PlasmaPotentialBufferWrite.EndGraphUsage();
+			InstanceData.ChargeDensityBuffer.EndGraphUsage();
+			InstanceData.ElectricFieldBuffer.EndGraphUsage();
+		}
 	}
 }
 
@@ -813,24 +981,25 @@ void FNiagaraDataInterfaceProxyAurora::GetDispatchArgs(const FNDIGpuComputeDispa
 
 /*----VMFunctions----*/
 
-void UNiagaraDataInterfaceAurora::SolvePlasmaPotential(FVectorVMExternalFunctionContext& Context)
-{
-}
-
-void UNiagaraDataInterfaceAurora::SolveElectricField(FVectorVMExternalFunctionContext& Context)
-{
-}
-
-void UNiagaraDataInterfaceAurora::GatherToParticle(FVectorVMExternalFunctionContext& Context)
-{
-}
-
-void UNiagaraDataInterfaceAurora::ScatterToGrid(FVectorVMExternalFunctionContext& Context)
-{
-}
-
 void UNiagaraDataInterfaceAurora::GetNumCells(FVectorVMExternalFunctionContext& Context)
 {
+	VectorVM::FUserPtrHandler<FNDIAuroraInstanceDataGameThread> InstData(Context);
+	FNDIOutputParam<int32> NumCellsX(Context);
+	FNDIOutputParam<int32> NumCellsY(Context);
+	FNDIOutputParam<int32> NumCellsZ(Context);
+
+	UE_LOG(LogTemp, Log, TEXT("Getting num cells"));
+
+	int32 TmpNumCellsX = InstData->NumCells.X;
+	int32 TmpNumCellsY = InstData->NumCells.Y;
+	int32 TmpNumCellsZ = InstData->NumCells.Z;
+
+	for (int32 InstanceIdx = 0; InstanceIdx < Context.GetNumInstances(); ++InstanceIdx)
+	{
+		NumCellsX.SetAndAdvance(TmpNumCellsX);
+		NumCellsY.SetAndAdvance(TmpNumCellsY);
+		NumCellsZ.SetAndAdvance(TmpNumCellsZ);
+	}
 }
 
 void UNiagaraDataInterfaceAurora::SetNumCells(FVectorVMExternalFunctionContext& Context)
