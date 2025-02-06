@@ -128,49 +128,44 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(int Index, out bool OutSuccess)
 			{
-				OutSuccess = false;
 				int3 GridSize = {NumCells};
+				float CellVolume = {CellSize}.x * {CellSize}.y * {CellSize}.z;	
+
 				int iVal = Index % GridSize.x;
 				int jVal = (Index / GridSize.x) % GridSize.y;
 				int kVal = Index / (GridSize.x * GridSize.y);
 				
 				// Get and Set tests
-				{PlasmaPotentialWrite}[Index] = {PlasmaPotentialRead}[Index] + {PlasmaPotentialWrite}[Index];
-				{ChargeDensity}[Index] += 1;
-				{ElectricField}[Index].xyz += float3(1.1, 1.2, 1.3);
-				float CellVolume = {CellSize}.x * {CellSize}.y * {CellSize}.z;				
-				float3 box = {WorldBBoxSize};
+				// {PlasmaPotentialWrite}[Index] = {PlasmaPotentialRead}[Index] + {PlasmaPotentialWrite}[Index];
+				// {ChargeDensity}[Index] += 1;
+				// {ElectricField}[Index].xyz += float3(1.1, 1.2, 1.3);
 
-				// float sum = 0.0;
-
-				// int iVal = IndexX;
-				// int jVal = IndexY;
-				// int kVal = IndexZ;
+				float sum = 0.0;
     
-				// int iL = clamp(iVal - 1, 0, GridSize.x - 1);
-				// int iR = clamp(iVal + 1, 0, GridSize.x - 1);
-				// int jD = clamp(jVal - 1, 0, GridSize.y - 1);
-				// int jU = clamp(jVal + 1, 0, GridSize.y - 1);
-				// int kB = clamp(kVal - 1, 0, GridSize.z - 1);
-				// int kF = clamp(kVal + 1, 0, GridSize.z - 1);
+				int iL = clamp(iVal - 1, 0, GridSize.x - 1);
+				int iR = clamp(iVal + 1, 0, GridSize.x - 1);
+				int jD = clamp(jVal - 1, 0, GridSize.y - 1);
+				int jU = clamp(jVal + 1, 0, GridSize.y - 1);
+				int kB = clamp(kVal - 1, 0, GridSize.z - 1);
+				int kF = clamp(kVal + 1, 0, GridSize.z - 1);
 
-				// int leftIndex   = iL + GridSize.x * (jVal + GridSize.y * kVal);
-				// int rightIndex  = iR + GridSize.x * (jVal + GridSize.y * kVal);
-				// int downIndex   = iVal + GridSize.x * (jD + GridSize.y * kVal);
-				// int upIndex     = iVal + GridSize.x * (jU + GridSize.y * kVal);
-				// int backIndex   = iVal + GridSize.x * (jVal + GridSize.y * kB);
-				// int frontIndex  = iVal + GridSize.x * (jVal + GridSize.y * kF);
+				int leftIndex   = iL + GridSize.x * (jVal + GridSize.y * kVal);
+				int rightIndex  = iR + GridSize.x * (jVal + GridSize.y * kVal);
+				int downIndex   = iVal + GridSize.x * (jD + GridSize.y * kVal);
+				int upIndex     = iVal + GridSize.x * (jU + GridSize.y * kVal);
+				int backIndex   = iVal + GridSize.x * (jVal + GridSize.y * kB);
+				int frontIndex  = iVal + GridSize.x * (jVal + GridSize.y * kF);
 
-				// sum += {PlasmaPotentialRead}[leftIndex];
-				// sum += {PlasmaPotentialRead}[rightIndex];
-				// sum += {PlasmaPotentialRead}[downIndex];
-				// sum += {PlasmaPotentialRead}[upIndex];
-				// sum += {PlasmaPotentialRead}[backIndex];
-				// sum += {PlasmaPotentialRead}[frontIndex];
+				sum += {PlasmaPotentialRead}[leftIndex];
+				sum += {PlasmaPotentialRead}[rightIndex];
+				sum += {PlasmaPotentialRead}[downIndex];
+				sum += {PlasmaPotentialRead}[upIndex];
+				sum += {PlasmaPotentialRead}[backIndex];
+				sum += {PlasmaPotentialRead}[frontIndex];
 
-				// float ChargeDensityValue = float({ChargeDensity}[Index]) / 100000.0f;
+				float ChargeDensityValue = float({ChargeDensity}[Index]) / 100000.0f;
 
-				// {PlasmaPotentialWrite}[Index] = (sum - ChargeDensityValue * CellVolume) / 6.0f;
+				{PlasmaPotentialWrite}[Index] = (sum - ChargeDensityValue * CellVolume) / 6.0f;
 				OutSuccess = true;
 			}
 		)");
