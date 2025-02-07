@@ -21,7 +21,7 @@ struct FNDIAuroraInstanceDataRenderThread
 	void SwapBuffers();
 
 	FIntVector NumCells = FIntVector(10, 10, 10);
-	FVector WorldBBoxSize = FVector::ZeroVector;
+	FVector WorldBBoxSize = FVector(100., 100., 100.);
 	float CellSize = 0.0f;
 
 	bool bResizeBuffers = false;
@@ -51,14 +51,10 @@ struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
 	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
 	virtual void PostStage(const FNDIGpuComputePostStageContext& Context) override;
 
-	// virtual void ConsumePerInstanceDataFromGameThread(void* PerInstanceData, const FNiagaraSystemInstanceID& Instance) override {}
-	// virtual int32 PerInstanceDataPassedToRenderThreadSize() const override { return 0; }
-
 	virtual void GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context) override;
 
 	TMap<FNiagaraSystemInstanceID, FNDIAuroraInstanceDataRenderThread> SystemInstancesToProxyData;
 };
-
 
 
 /**
@@ -76,7 +72,7 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,        ChargeDensity)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       ChargeDensity)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float4>,     ElectricField)
 	END_SHADER_PARAMETER_STRUCT()
 

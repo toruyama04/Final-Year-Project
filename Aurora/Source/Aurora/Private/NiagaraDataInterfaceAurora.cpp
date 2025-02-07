@@ -17,10 +17,10 @@
 #include "Logging/LogMacros.h"
 #include "NiagaraSimStageData.h"
 
-static const FString PlasmaPotentialReadParamName(TEXT("_PlasmaPotentialRead"));
-static const FString PlasmaPotentialWriteParamName(TEXT("_PlasmaPotentialWrite"));
-static const FString ChargeDensityParamName(TEXT("_ChargeDensity"));
-static const FString ElectricFieldParamName(TEXT("_ElectricField"));
+static const FString PlasmaPotentialReadParamName(TEXT("PlasmaPotentialRead"));
+static const FString PlasmaPotentialWriteParamName(TEXT("PlasmaPotentialWrite"));
+static const FString ChargeDensityParamName(TEXT("ChargeDensity"));
+static const FString ElectricFieldParamName(TEXT("ElectricField"));
 
 static const FName SolvePlasmaPotentialFunctionName("SolvePlasmaPotential");
 static const FName SolveElectricFieldFunctionName("SolveElectricField");
@@ -1034,7 +1034,7 @@ void UNiagaraDataInterfaceAurora::SetNumCells(FVectorVMExternalFunctionContext& 
 		const int NewNumCellsX = InNumCellsX.GetAndAdvance();
 		const int NewNumCellsY = InNumCellsY.GetAndAdvance();
 		const int NewNumCellsZ = InNumCellsZ.GetAndAdvance();
-		bool bSuccess = (InstData.Get() != nullptr && Context.GetNumInstances() == 1 && NumCells.X >= 0 && NumCells.Y >= 0 && NumCells.Z >= 0);
+		bool bSuccess = (InstData.Get() != nullptr && NumCells.X >= 0 && NumCells.Y >= 0 && NumCells.Z >= 0);
 		const uint32 NumTotalCells = NewNumCellsX * NewNumCellsY * NewNumCellsZ;
 		if (NumTotalCells == 0)
 		{
