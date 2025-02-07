@@ -8,9 +8,10 @@
 #include "NiagaraRenderGraphUtils.h"
 #include "RHIUtilities.h"
 #include "NiagaraCommon.h"
-
+#include "GlobalShader.h"
 
 #include "NiagaraDataInterfaceAurora.generated.h"
+
 
 struct FNDIAuroraInstanceDataRenderThread
 {
@@ -48,6 +49,7 @@ struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
 	virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
 	virtual void PreStage(const FNDIGpuComputePreStageContext& Context) override;
 	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
+	virtual void PostStage(const FNDIGpuComputePostStageContext& Context) override;
 
 	// virtual void ConsumePerInstanceDataFromGameThread(void* PerInstanceData, const FNiagaraSystemInstanceID& Instance) override {}
 	// virtual int32 PerInstanceDataPassedToRenderThreadSize() const override { return 0; }
@@ -114,6 +116,7 @@ public:
 	void GetNumCells(FVectorVMExternalFunctionContext& Context);
 	void SetNumCells(FVectorVMExternalFunctionContext& Context);
 
+
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual ENiagaraGpuDispatchType GetGpuDispatchType() const override { return ENiagaraGpuDispatchType::ThreeD; }
@@ -127,3 +130,19 @@ protected:
 #endif
 	virtual bool CopyToInternal(UNiagaraDataInterface* Destination) const override;
 };
+
+
+
+/*class FAuroraPlasmaPotentialSolverCS : FGlobalShader
+{
+public:
+	DECLARE_GLOBAL_SHADER(FAuroraPlasmaPotentialSolverCS);
+	SHADER_USE_PARAMETER_STRUCT(FAuroraPlasmaPotentialSolverCS, FGlobalShader);
+
+	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		SHADER_PARAMETER(FIntVector, NumCells)
+		SHADER_PARAMETER(float, DampingFactor)
+		SHADER_PARAMETER_UAV(RWBuffer<float>, PlasmaPotentialRead)
+		SHADER_PARAMETER_SRV(RWBuffer<float>, PlasmaPotentialWrite)
+	END_SHADER_PARAMETER_STRUCT()
+};*/

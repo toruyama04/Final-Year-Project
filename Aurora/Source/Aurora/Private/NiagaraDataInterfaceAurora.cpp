@@ -15,6 +15,7 @@
 #include "NiagaraGpuComputeDispatchInterface.h"
 #include "NiagaraTypes.h"
 #include "Logging/LogMacros.h"
+#include "NiagaraSimStageData.h"
 
 static const FString PlasmaPotentialReadParamName(TEXT("_PlasmaPotentialRead"));
 static const FString PlasmaPotentialWriteParamName(TEXT("_PlasmaPotentialWrite"));
@@ -100,6 +101,7 @@ bool UNiagaraDataInterfaceAurora::Equals(const UNiagaraDataInterface* Other) con
 }
 
 #if WITH_EDITORONLY_DATA
+// update shader file here
 bool UNiagaraDataInterfaceAurora::AppendCompileHash(FNiagaraCompileHashVisitor* InVisitor) const
 {
 	if (!Super::AppendCompileHash(InVisitor))
@@ -968,6 +970,20 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 			InstanceData.ChargeDensityBuffer.EndGraphUsage();
 			InstanceData.ElectricFieldBuffer.EndGraphUsage();
 		}
+	}
+}
+
+void FNiagaraDataInterfaceProxyAurora::PostStage(const FNDIGpuComputePostStageContext& Context)
+{
+	FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
+	const FNiagaraSimStageData& SimData = Context.GetSimStageData();
+	UE_LOG(LogTemp, Log, TEXT("Current Sim index: %d"), SimData.StageIndex);
+
+
+	if (SimData.StageIndex == 1 && ProxyData)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Swapping buffers"));
+		ProxyData->SwapBuffers();
 	}
 }
 

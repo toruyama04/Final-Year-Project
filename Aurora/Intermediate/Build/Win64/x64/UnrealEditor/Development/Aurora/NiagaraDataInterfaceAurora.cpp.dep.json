@@ -151,7 +151,8 @@
             "c:\\program files\\epic games\\ue_5.5\\engine\\plugins\\fx\\niagara\\source\\niagara\\public\\niagaragpucomputedatamanager.h",
             "c:\\program files\\epic games\\ue_5.5\\engine\\plugins\\fx\\niagara\\source\\niagara\\classes\\niagaragpuinstancecountmanager.h",
             "c:\\program files\\epic games\\ue_5.5\\engine\\plugins\\fx\\niagara\\source\\niagaravertexfactories\\public\\niagaradrawindirect.h",
-            "c:\\program files\\epic games\\ue_5.5\\engine\\source\\runtime\\engine\\public\\fxsystem.h"
+            "c:\\program files\\epic games\\ue_5.5\\engine\\source\\runtime\\engine\\public\\fxsystem.h",
+            "c:\\program files\\epic games\\ue_5.5\\engine\\plugins\\fx\\niagara\\source\\niagara\\public\\niagarasimstagedata.h"
         ],
         "ImportedModules": [],
         "ImportedHeaderUnits": []
