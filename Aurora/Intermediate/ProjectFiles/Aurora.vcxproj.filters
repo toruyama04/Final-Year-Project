@@ -51,5 +51,23 @@
     <ClCompile Include="..\..\Source\Aurora\Public\NiagaraDataInterfaceAurora.h">
       <Filter>Source\Aurora\Public</Filter>
     </ClCompile>
+    <None Include="AuroraPlasmaPotential.usf">
+      <Filter>Source\Aurora\Private\Shader</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source\Aurora\Private\Shader">
+      <UniqueIdentifier>{515468b6-5f2a-45b8-8bfe-88eab56c3740}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Source\Aurora\Public\FAuroraPlasmaPotential.h">
+      <Filter>Source\Aurora\Public</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Source\Aurora\Private\FAuroraPlasmaPotential.cpp">
+      <Filter>Source\Aurora\Private</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

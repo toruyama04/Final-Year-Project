@@ -1,0 +1,50 @@
+// AuroraJacobi.usf
+#include "Common.ush"  // Optional common utilities
+
+// Define the parameters – these should match the names/types in your C++ FShaderParameters
+cbuffer FShaderParameters
+{
+    int3 NumCells;
+    float3 CellSize;
+    float3 WorldBBoxSize;
+};
+
+RWBuffer<float> PlasmaPotentialRead;
+RWBuffer<float> PlasmaPotentialWrite;
+RWBuffer<uint> ChargeDensity;
+RWBuffer<float4> ElectricField;
+
+// Optionally, you could also pass an iteration count if you want to control the number of Jacobi iterations.
+static const int IterationCount = 10; // Or a parameterized value
+
+[numthreads(8, 8, 8)] // Adjust based on expected workload and GPU occupancy.
+void MainCS(uint3 DispatchThreadId : SV_DispatchThreadID)
+{
+    // Check if the thread is within bounds, if needed:
+    if (DispatchThreadId.x >= NumCells.x ||
+        DispatchThreadId.y >= NumCells.y ||
+        DispatchThreadId.z >= NumCells.z)
+    {
+        return;
+    }
+
+    // Compute a linear index from DispatchThreadId, or work in 3D space directly.
+    uint index = DispatchThreadId.x + DispatchThreadId.y * NumCells.x + DispatchThreadId.z * (NumCells.x * NumCells.y);
+
+    // Example: multiple Jacobi iterations within the shader.
+    float potential = PlasmaPotentialRead[index];
+    for (int i = 0; i < IterationCount; ++i)
+    {
+        // Example of a Jacobi iteration. This is pseudocode:
+        //   Read neighbor values (with proper boundary checks),
+        //   Compute a new potential value based on the Jacobi formula,
+        //   Optionally use the ChargeDensity buffer as a source term.
+        // Note: Your actual formulation depends on your discretization.
+        float newPotential = potential; // Replace with actual calculation.
+        // (for instance, newPotential = (neighbors + chargeDensity) / weight;)
+        potential = newPotential;
+    }
+
+    // Write the computed result to the write buffer.
+    PlasmaPotentialWrite[index] = potential;
+}

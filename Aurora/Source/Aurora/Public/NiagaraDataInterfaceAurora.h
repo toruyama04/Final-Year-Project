@@ -8,7 +8,6 @@
 #include "NiagaraRenderGraphUtils.h"
 #include "RHIUtilities.h"
 #include "NiagaraCommon.h"
-#include "GlobalShader.h"
 
 #include "NiagaraDataInterfaceAurora.generated.h"
 

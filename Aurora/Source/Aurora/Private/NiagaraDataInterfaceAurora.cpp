@@ -179,71 +179,70 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		static const TCHAR* FormatBounds = TEXT(R"(
 		void {FunctionName}(int Index, out bool OutSuccess)
 		{
-			// float dx = {CellSize}.x;
-			// float dy = {CellSize}.y;
-			// float dz = {CellSize}.z;
+			float dx = {CellSize}.x;
+			float dy = {CellSize}.y;
+			float dz = {CellSize}.z;
 
-			// float ef_x = 0.0f;
-			// float ef_y = 0.0f;
-			// float ef_z = 0.0f;
+			int IndexX = Index % {NumCells}.x;
+			int IndexY = (Index / {NumCells}.x) % {NumCells}.y;
+			int IndexZ = Index / ({NumCells}.x * {NumCells}.y);
 
-			// int3 GridSize = {NumCells};
-			// int strideY = GridSize.x;
-			// int strideZ = GridSize.x * GridSize.y;
-			// int LinearIndex = IndexX + strideY * IndexY + strideZ * IndexZ;
-			// float V_i = {PlasmaPotentialWrite}[LinearIndex];
+			float ef_x = 0.0f;
+			float ef_y = 0.0f;
+			float ef_z = 0.0f;
 
-			// if (IndexX == 0) {
-				// int LinearIndex_ip1 = (IndexX + 1) + strideY * IndexY + strideZ * IndexZ;
-				// float V_ip1 = {PlasmaPotentialWrite}[LinearIndex_ip1];
-				// ef_x = -(V_ip1 - V_i) / dx;
-			// } else if (IndexX == GridSize.x - 1) {
-				// int LinearIndex_im1 = (IndexX - 1) + strideY * IndexY + strideZ * IndexZ;
-				// float V_im1 = {PlasmaPotentialWrite}[LinearIndex_im1];
-				// ef_x = -(V_i - V_im1) / dx;
-			// } else {
-				// int LinearIndex_im1 = (IndexX - 1) + strideY * IndexY + strideZ * IndexZ;
-				// int LinearIndex_ip1 = (IndexX + 1) + strideY * IndexY + strideZ * IndexZ;
-				// float V_im1 = {PlasmaPotentialWrite}[LinearIndex_im1];
-				// float V_ip1 = {PlasmaPotentialWrite}[LinearIndex_ip1];
-				// ef_x = -(V_ip1 - V_im1) / (2.0f * dx);
-			// }
+			int3 GridSize = {NumCells};
+			float V_i = {PlasmaPotentialWrite}[Index];
 
-			// if (IndexY == 0) {
-				// int LinearIndex_jp1 = IndexX + strideY * (IndexY + 1) + strideZ * IndexZ;
-				// float V_jp1 = {PlasmaPotentialWrite}[LinearIndex_jp1];
-				// ef_y = -(V_jp1 - V_i) / dy;
-			// } else if (IndexY == GridSize.y - 1) {
-				// int LinearIndex_jm1 = IndexX + strideY * (IndexY - 1) + strideZ * IndexZ;
-				// float V_jm1 = {PlasmaPotentialWrite}[LinearIndex_jm1];
-				// ef_y = -(V_i - V_jm1) / dy;
-			// } else {
-				// int LinearIndex_jm1 = IndexX + strideY * (IndexY - 1) + strideZ * IndexZ;
-				// int LinearIndex_jp1 = IndexX + strideY * (IndexY + 1) + strideZ * IndexZ;
-				// float V_jm1 = {PlasmaPotentialWrite}[LinearIndex_jm1];
-				// float V_jp1 = {PlasmaPotentialWrite}[LinearIndex_jp1];
-				// ef_y = -(V_jp1 - V_jm1) / (2.0f * dy);
-			// }
+			if (IndexX == 0) {
+				int idx = (IndexX + 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+				float plasmap = {PlasmaPotentialWrite}[idx];
+				ef_x = -(plasmap - V_i) / dx;
+			} else if (IndexX == GridSize.x - 1) {
+				int idx = (IndexX - 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+				float plasmap = {PlasmaPotentialWrite}[idx];
+				ef_x = -(V_i - plasmap) / dx;
+			} else {
+				int idxX = (IndexX - 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+				int idxY = (IndexX + 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+				float plasmapx = {PlasmaPotentialWrite}[idxX];
+				float plasmapy = {PlasmaPotentialWrite}[idxY];
+				ef_x = -(plasmapy - plasmapx) / (2.0f * dx);
+			}
 
-			// if (IndexZ == 0) {
-				// int LinearIndex_kp1 = IndexX + strideY * IndexY + strideZ * (IndexZ + 1);
-				// float V_kp1 = {PlasmaPotentialWrite}[LinearIndex_kp1];
-				// ef_z = -(V_kp1 - V_i) / dz;
-			// } else if (IndexZ == GridSize.z - 1) {
-				// int LinearIndex_km1 = IndexX + strideY * IndexY + strideZ * (IndexZ - 1);
-				// float V_km1 = {PlasmaPotentialWrite}[LinearIndex_km1];
-				// ef_z = -(V_i - V_km1) / dz;
-			// } else {
-				// int LinearIndex_km1 = IndexX + strideY * IndexY + strideZ * (IndexZ - 1);
-				// int LinearIndex_kp1 = IndexX + strideY * IndexY + strideZ * (IndexZ + 1);
-				// float V_km1 = {PlasmaPotentialWrite}[LinearIndex_km1];
-				// float V_kp1 = {PlasmaPotentialWrite}[LinearIndex_kp1];
-				// ef_z = -(V_kp1 - V_km1) / (2.0f * dz);
-			// }
+			if (IndexY == 0) {
+				int idx = IndexX + GridSize.x * (IndexY + 1) + GridSize.x * GridSize.y * IndexZ;
+				float plasmap = {PlasmaPotentialWrite}[idx];
+				ef_y = -(plasmap - V_i) / dy;
+			} else if (IndexY == GridSize.y - 1) {
+				int idx = IndexX + GridSize.x * (IndexY - 1) + GridSize.x * GridSize.y * IndexZ;
+				float plasmap = {PlasmaPotentialWrite}[idx];
+				ef_y = -(V_i - plasmap) / dy;
+			} else {
+				int idxX = IndexX + GridSize.x * (IndexY - 1) + GridSize.x * GridSize.y * IndexZ;
+				int idxY = IndexX + GridSize.x * (IndexY + 1) + GridSize.x * GridSize.y * IndexZ;
+				float plasmapx = {PlasmaPotentialWrite}[idxX];
+				float plasmapy = {PlasmaPotentialWrite}[idxY];
+				ef_y = -(plasmapy - plasmapx) / (2.0f * dy);
+			}
 
-			// int ElectricFieldLinearIndex = IndexX + strideY * IndexY + strideZ * IndexZ;
-			// {ElectricField}[ElectricFieldLinearIndex] = float4(ef_x, ef_y, ef_z, 0.0f);
+			if (IndexZ == 0) {
+				int idx = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ + 1);
+				float plasmap = {PlasmaPotentialWrite}[idx];
+				ef_z = -(plasmap - V_i) / dz;
+			} else if (IndexZ == GridSize.z - 1) {
+				int idx = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ - 1);
+				float plasmap = {PlasmaPotentialWrite}[idx];
+				ef_z = -(V_i - plasmap) / dz;
+			} else {
+				int idxX = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ - 1);
+				int idxY = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ + 1);
+				float plasmapx = {PlasmaPotentialWrite}[idxX];
+				float plasmapy = {PlasmaPotentialWrite}[idxY];
+				ef_z = -(plasmapy - plasmapx) / (2.0f * dz);
+			}
 
+			{ElectricField}[Index] = float4(ef_x, ef_y, ef_z, 0.0f);
 			OutSuccess = true;
 		}
 		)");
@@ -255,47 +254,47 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		static const TCHAR* FormatBounds = TEXT(R"(
         void {FunctionName}(float3 InWorldPositionParticle, float4x4 InSimulationToUnitTransform, out float3 OutVector)
 		{
-			// float3 UnitIndex = mul(float4(InWorldPositionParticle, 1.0), InSimulationToUnitTransform).xyz;
-			// float3 Index = UnitIndex * {NumCells} - 0.5;
+			float3 UnitIndex = mul(float4(InWorldPositionParticle, 1.0), InSimulationToUnitTransform).xyz;
+			float3 Index = UnitIndex * {NumCells} - 0.5;
     
-			// int i = (int)Index.x;
-			// float di = Index.x - i;
-			// int j = (int)Index.y;
-			// float dj = Index.y - j;
-			// int k = (int)Index.z;
-			// float dk = Index.z - k;
+			int i = (int)Index.x;
+			float di = Index.x - i;
+			int j = (int)Index.y;
+			float dj = Index.y - j;
+			int k = (int)Index.z;
+			float dk = Index.z - k;
 
-			// int GridSizeX = {NumCells}.x;
-			// int GridSizeY = {NumCells}.y;
-			// int GridSizeZ = {NumCells}.z;
+			int GridSizeX = {NumCells}.x;
+			int GridSizeY = {NumCells}.y;
+			int GridSizeZ = {NumCells}.z;
 
-			// int Index000 = i + j * GridSizeX + k * GridSizeX * GridSizeY;
-			// int Index100 = (i + 1) + j * GridSizeX + k * GridSizeX * GridSizeY;
-			// int Index110 = (i + 1) + (j + 1) * GridSizeX + k * GridSizeX * GridSizeY;
-			// int Index010 = i + (j + 1) * GridSizeX + k * GridSizeX * GridSizeY;
-			// int Index001 = i + j * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
-			// int Index101 = (i + 1) + j * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
-			// int Index111 = (i + 1) + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
-			// int Index011 = i + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
+			int Index000 = i + j * GridSizeX + k * GridSizeX * GridSizeY;
+			int Index100 = (i + 1) + j * GridSizeX + k * GridSizeX * GridSizeY;
+			int Index110 = (i + 1) + (j + 1) * GridSizeX + k * GridSizeX * GridSizeY;
+			int Index010 = i + (j + 1) * GridSizeX + k * GridSizeX * GridSizeY;
+			int Index001 = i + j * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
+			int Index101 = (i + 1) + j * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
+			int Index111 = (i + 1) + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
+			int Index011 = i + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
 
-			// float3 value000 = (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ) ? {ElectricField}[Index000].xyz : float3(0, 0, 0);
-			// float3 value100 = (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ) ? {ElectricField}[Index100].xyz : float3(0, 0, 0);
-			// float3 value110 = (i + 1 >= 0 && i + 1 < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k >= 0 && k < GridSizeZ) ? {ElectricField}[Index110].xyz : float3(0, 0, 0);
-			// float3 value010 = (i >= 0 && i < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k >= 0 && k < GridSizeZ) ? {ElectricField}[Index010].xyz : float3(0, 0, 0);
-			// float3 value001 = (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ) ? {ElectricField}[Index001].xyz : float3(0, 0, 0);
-			// float3 value101 = (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ) ? {ElectricField}[Index101].xyz : float3(0, 0, 0);
-			// float3 value111 = (i + 1 >= 0 && i + 1 < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ) ? {ElectricField}[Index111].xyz : float3(0, 0, 0);
-			// float3 value011 = (i >= 0 && i < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ) ? {ElectricField}[Index011].xyz : float3(0, 0, 0);
+			float3 value000 = (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ) ? {ElectricField}[Index000].xyz : float3(0, 0, 0);
+			float3 value100 = (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ) ? {ElectricField}[Index100].xyz : float3(0, 0, 0);
+			float3 value110 = (i + 1 >= 0 && i + 1 < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k >= 0 && k < GridSizeZ) ? {ElectricField}[Index110].xyz : float3(0, 0, 0);
+			float3 value010 = (i >= 0 && i < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k >= 0 && k < GridSizeZ) ? {ElectricField}[Index010].xyz : float3(0, 0, 0);
+			float3 value001 = (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ) ? {ElectricField}[Index001].xyz : float3(0, 0, 0);
+			float3 value101 = (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ) ? {ElectricField}[Index101].xyz : float3(0, 0, 0);
+			float3 value111 = (i + 1 >= 0 && i + 1 < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ) ? {ElectricField}[Index111].xyz : float3(0, 0, 0);
+			float3 value011 = (i >= 0 && i < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ) ? {ElectricField}[Index011].xyz : float3(0, 0, 0);
 
-			// OutVector = 
-				// value000 * (1.0 - di) * (1.0 - dj) * (1.0 - dk) +
-				// value100 * di * (1.0 - dj) * (1.0 - dk) +
-				// value110 * di * dj * (1.0 - dk) +
-				// value010 * (1.0 - di) * dj * (1.0 - dk) +
-				// value001 * (1.0 - di) * (1.0 - dj) * dk +
-				// value101 * di * (1.0 - dj) * dk +
-				// value111 * di * dj * dk +
-				// value011 * (1.0 - di) * dj * dk;
+			OutVector = 
+				value000 * (1.0 - di) * (1.0 - dj) * (1.0 - dk) +
+				value100 * di * (1.0 - dj) * (1.0 - dk) +
+				value110 * di * dj * (1.0 - dk) +
+				value010 * (1.0 - di) * dj * (1.0 - dk) +
+				value001 * (1.0 - di) * (1.0 - dj) * dk +
+				value101 * di * (1.0 - dj) * dk +
+				value111 * di * dj * dk +
+				value011 * (1.0 - di) * dj * dk;
 		}
     )");
 		OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
@@ -306,64 +305,63 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		static const TCHAR* FormatBounds = TEXT(R"(
         void {FunctionName}(float3 InPosition, float4x4 InSimulationToUnitTransform, float InCharge, out bool OutSuccess)
 		{
-			// float3 UnitIndex = mul(float4(InPosition, 1.0), InSimulationToUnitTransform).xyz;
-			// float3 Index = UnitIndex * {NumCells} - 0.5;
+			float3 UnitIndex = mul(float4(InPosition, 1.0), InSimulationToUnitTransform).xyz;
+			float3 Index = UnitIndex * {NumCells} - 0.5;
 
-			// int i = (int)Index.x;
-			// float di = Index.x - i;
-			// int j = (int)Index.y;
-			// float dj = Index.y - j;
-			// int k = (int)Index.z;
-			// float dk = Index.z - k;
+			int i = (int)Index.x;
+			float di = Index.x - i;
+			int j = (int)Index.y;
+			float dj = Index.y - j;
+			int k = (int)Index.z;
+			float dk = Index.z - k;
 			
+			int GridSizeX = {NumCells}.x;
+			int GridSizeY = {NumCells}.y;
+			int GridSizeZ = {NumCells}.z;
 
-			// int GridSizeX = {NumCells}.x;
-			// int GridSizeY = {NumCells}.y;
-			// int GridSizeZ = {NumCells}.z;
+			int Index000 = i + j * GridSizeX + k * GridSizeX * GridSizeY;
+			int Index100 = (i + 1) + j * GridSizeX + k * GridSizeX * GridSizeY;
+			int Index110 = (i + 1) + (j + 1) * GridSizeX + k * GridSizeX * GridSizeY;
+			int Index010 = i + (j + 1) * GridSizeX + k * GridSizeX * GridSizeY;
+			int Index001 = i + j * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
+			int Index101 = (i + 1) + j * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
+			int Index111 = (i + 1) + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
+			int Index011 = i + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
 
-			// int Index000 = i + j * GridSizeX + k * GridSizeX * GridSizeY;
-			// int Index100 = (i + 1) + j * GridSizeX + k * GridSizeX * GridSizeY;
-			// int Index110 = (i + 1) + (j + 1) * GridSizeX + k * GridSizeX * GridSizeY;
-			// int Index010 = i + (j + 1) * GridSizeX + k * GridSizeX * GridSizeY;
-			// int Index001 = i + j * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
-			// int Index101 = (i + 1) + j * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
-			// int Index111 = (i + 1) + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
-			// int Index011 = i + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
+			float ScaledCharge = InCharge * 100000.0;
 
-			// float ScaledCharge = InCharge * 100000.0;
-
-			// if (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ)
-			// { 
-				// InterlockedAdd({ChargeDensity}[Index000], (uint)(ScaledCharge * (1.0 - di) * (1.0 - dj) * (1.0 - dk))); 
-			// }
-			// if (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ)
-			// { 
-			// 	InterlockedAdd({ChargeDensity}[Index100], (uint)(ScaledCharge * di * (1.0 - dj) * (1.0 - dk))); 
-			// }
-			// if (i + 1 >= 0 && i + 1 < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k >= 0 && k < GridSizeZ)
-			// { 
-			// 	InterlockedAdd({ChargeDensity}[Index110], (uint)(ScaledCharge * di * dj * (1.0 - dk))); 
-			// }
-			// if (i >= 0 && i < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k >= 0 && k < GridSizeZ)
-			// { 
-			// 	InterlockedAdd({ChargeDensity}[Index010], (uint)(ScaledCharge * (1.0 - di) * dj * (1.0 - dk))); 
-			// }
-			// if (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
-			// { 
-			// 	InterlockedAdd({ChargeDensity}[Index001], (uint)(ScaledCharge * (1.0 - di) * (1.0 - dj) * dk)); 
-			// }
-			// if (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
-			// { 
-			// 	InterlockedAdd({ChargeDensity}[Index101], (uint)(ScaledCharge * di * (1.0 - dj) * dk)); 
-			// }
-			// if (i + 1 >= 0 && i + 1 < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
-			// { 
-			// 	InterlockedAdd({ChargeDensity}[Index111], (uint)(ScaledCharge * di * dj * dk)); 
-			// }
-			// if (i >= 0 && i < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
-			// { 
-			// 	InterlockedAdd({ChargeDensity}[Index011], (uint)(ScaledCharge * (1.0 - di) * dj * dk)); 
-			// }
+			if (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ)
+			{ 
+				InterlockedAdd({ChargeDensity}[Index000], uint(ScaledCharge * (1.0 - di) * (1.0 - dj) * (1.0 - dk))); 
+			}
+			if (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ)
+			{ 
+				InterlockedAdd({ChargeDensity}[Index100], uint(ScaledCharge * di * (1.0 - dj) * (1.0 - dk))); 
+			}
+			if (i + 1 >= 0 && i + 1 < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k >= 0 && k < GridSizeZ)
+			{ 
+				InterlockedAdd({ChargeDensity}[Index110], uint(ScaledCharge * di * dj * (1.0 - dk))); 
+			}
+			if (i >= 0 && i < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k >= 0 && k < GridSizeZ)
+			{ 
+				InterlockedAdd({ChargeDensity}[Index010], uint(ScaledCharge * (1.0 - di) * dj * (1.0 - dk))); 
+			}
+			if (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
+			{ 
+				InterlockedAdd({ChargeDensity}[Index001], uint(ScaledCharge * (1.0 - di) * (1.0 - dj) * dk)); 
+			}
+			if (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
+			{ 
+				InterlockedAdd({ChargeDensity}[Index101], uint(ScaledCharge * di * (1.0 - dj) * dk)); 
+			}
+			if (i + 1 >= 0 && i + 1 < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
+			{ 
+				InterlockedAdd({ChargeDensity}[Index111], uint(ScaledCharge * di * dj * dk)); 
+			}
+			if (i >= 0 && i < GridSizeX && j + 1 >= 0 && j + 1 < GridSizeY && k + 1 >= 0 && k + 1 < GridSizeZ)
+			{ 
+				InterlockedAdd({ChargeDensity}[Index011], uint(ScaledCharge * (1.0 - di) * dj * dk)); 
+			}
 			OutSuccess = true;
 		}
     )");
@@ -980,11 +978,11 @@ void FNiagaraDataInterfaceProxyAurora::PostStage(const FNDIGpuComputePostStageCo
 	UE_LOG(LogTemp, Log, TEXT("Current Sim index: %d"), SimData.StageIndex);
 
 
-	if (SimData.StageIndex == 1 && ProxyData)
+	/*if (SimData.StageIndex == 1 && ProxyData)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Swapping buffers"));
 		ProxyData->SwapBuffers();
-	}
+	}*/
 }
 
 void FNiagaraDataInterfaceProxyAurora::GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context)

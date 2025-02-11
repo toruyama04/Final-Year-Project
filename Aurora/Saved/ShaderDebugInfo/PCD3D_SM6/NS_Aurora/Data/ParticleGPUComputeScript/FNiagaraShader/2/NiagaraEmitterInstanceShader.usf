@@ -1,0 +1,850 @@
+#line 1 "DumpShaderDefinesAsCommentedCode"
+// #define __SHADER_TARGET_MAJOR 6
+// #define __SHADER_TARGET_MINOR 6
+// #define ALLOW_STATIC_LIGHTING 0
+// #define AMPLIFICATIONSHADER 0
+// #define CLEAR_COAT_BOTTOM_NORMAL 0
+// #define COLORED_LIGHT_FUNCTION_ATLAS 0
+// #define COMPILE_SHADERS_FOR_DEVELOPMENT 1
+// #define COMPILER_DEFINE #define
+// #define COMPILER_DXC 1
+// #define COMPILER_FXC 0
+// #define COMPILER_HLSL 1
+// #define COMPILER_SUPPORTS_BARYCENTRIC_INTRINSICS 0
+// #define COMPILER_SUPPORTS_NOINLINE 1
+// #define COMPUTESHADER 1
+// #define DO_CHECK 1
+// #define DO_GUARD_SLOW 0
+// #define DXT5_NORMALMAPS 0
+// #define EARLY_Z_PASS_ONLY_MATERIAL_MASKING 0
+// #define ES3_1_PROFILE 0
+// #define FORWARD_SHADING 0
+// #define FORWARD_SHADING_FORCES_SKYLIGHT_CUBEMAPS_BLENDING 0
+// #define GBUFFER_HAS_DIFFUSE_SAMPLE_OCCLUSION 0
+// #define GBUFFER_HAS_VELOCITY 0
+// #define GBUFFER_REFACTOR 1
+// #define GEOMETRYSHADER 0
+// #define GPU_SIMULATION 1
+// #define GPU_SIMULATION_SHADER 1
+// #define HAS_INVERTED_Z_BUFFER 1
+// #define INSTANCED_STEREO 0
+// #define IRIS_NORMAL 0
+// #define LEGACY_MATERIAL_ENERGYCONSERVATION 0
+// #define MATERIAL_ROUGHDIFFUSE 0
+// #define MESHSHADER 0
+// #define MOBILE_MULTI_VIEW 0
+// #define MULTI_VIEW 0
+// #define NIAGARA_COMPRESSED_ATTRIBUTES_ENABLED 0
+// #define NIAGARA_DISPATCH_INDIRECT 0
+// #define NIAGARA_DISPATCH_TYPE 2
+// #define NIAGARA_MAX_GPU_SPAWN_INFOS 8
+// #define PIXELSHADER 0
+// #define PLATFORM_ALLOW_SCENE_DATA_COMPRESSED_TRANSFORMS 1
+// #define PLATFORM_MAX_SAMPLERS 32
+// #define PLATFORM_SUPPORTS_BARYCENTRICS_SEMANTIC 1
+// #define PLATFORM_SUPPORTS_BINDLESS 0
+// #define PLATFORM_SUPPORTS_BUFFER_LOAD_TYPE_CONVERSION 1
+// #define PLATFORM_SUPPORTS_CALLABLE_SHADERS 1
+// #define PLATFORM_SUPPORTS_CLIP_DISTANCE 1
+// #define PLATFORM_SUPPORTS_DIAGNOSTIC_BUFFER 1
+// #define PLATFORM_SUPPORTS_DISTANCE_FIELDS 1
+// #define PLATFORM_SUPPORTS_INLINE_RAY_TRACING 0
+// #define PLATFORM_SUPPORTS_MESH_SHADERS_TIER0 1
+// #define PLATFORM_SUPPORTS_MESH_SHADERS_TIER1 1
+// #define PLATFORM_SUPPORTS_PER_PIXEL_DBUFFER_MASK 0
+// #define PLATFORM_SUPPORTS_RAY_TRACING_HIGH_END_EFFECTS 1
+// #define PLATFORM_SUPPORTS_REAL_TYPES 0
+// #define PLATFORM_SUPPORTS_RENDERTARGET_WRITE_MASK 0
+// #define PLATFORM_SUPPORTS_ROV 1
+// #define PLATFORM_SUPPORTS_SHADER_BUNDLE_DISPATCH 0
+// #define PLATFORM_SUPPORTS_SHADER_ROOT_CONSTANTS 1
+// #define PLATFORM_SUPPORTS_SM6_0_WAVE_OPERATIONS 1
+// #define PLATFORM_SUPPORTS_STATIC_SAMPLERS 1
+// #define PLATFORM_SUPPORTS_UNIFORM_BUFFER_OBJECTS 0
+// #define PLATFORM_SUPPORTS_VERTEX_SHADER_SRVS 1
+// #define PLATFORM_SUPPORTS_VERTEX_SHADER_UAVS 1
+// #define PRIMITIVE_HAS_TILEOFFSET_DATA 1
+// #define PROJECT_ALLOW_GLOBAL_CLIP_PLANE 0
+// #define PROJECT_EXPFOG_MATCHES_VFOG 0
+// #define PROJECT_LOCALFOGVOLUME_APPLYONTRANSLUCENT 0
+// #define PROJECT_MOBILE_DISABLE_VERTEX_FOG 1
+// #define PROJECT_OIT 0
+// #define PROJECT_SUBSTRATE_BACKCOMPATIBILITY 0
+// #define PROJECT_SUPPORT_SKY_ATMOSPHERE 1
+// #define PROJECT_SUPPORT_SKY_ATMOSPHERE_AFFECTS_HEIGHFOG 1
+// #define PROJECT_SUPPORTS_LOCALFOGVOLUME 1
+// #define PROJECT_SUPPORTS_LUMEN 1
+// #define PROJECT_VERTEX_FOGGING_FOR_OPAQUE 0
+// #define RAYCALLABLESHADER 0
+// #define RAYGENSHADER 0
+// #define RAYHITGROUPSHADER 0
+// #define RAYMISSSHADER 0
+// #define SELECTIVE_BASEPASS_OUTPUTS 0
+// #define SHADING_PATH_DEFERRED 1
+// #define SimulateMain SimulateMain
+// #define SimulationStageIndex 2
+// #define SM5_PROFILE 0
+// #define SM6_PROFILE 1
+// #define SUBSTRATE_ADVANCED_DEBUG_ENABLED 0
+// #define SUBSTRATE_ENABLED 0
+// #define SUBSTRATE_OPAQUE_ROUGH_REFRACTION_ENABLED 0
+// #define SUBSTRATE_TOP_LAYER_TYPE uint
+// #define SUPPORT_CLOUD_SHADOW_ON_FORWARD_LIT_TRANSLUCENT 0
+// #define SUPPORT_CLOUD_SHADOW_ON_SINGLE_LAYER_WATER 0
+// #define SUPPORT_IESPROFILE_ON_FORWARD_LIT_TRANSLUCENT 0
+// #define SUPPORT_PRIMITIVE_ALPHA_HOLDOUT 0
+// #define SUPPORT_RECTLIGHT_ON_FORWARD_LIT_TRANSLUCENT 0
+// #define SUPPORT_VSM_FOWARD_QUALITY 0
+// #define SUPPORTS_INDEPENDENT_SAMPLERS 1
+// #define THREADGROUP_SIZE 64
+// #define THREADGROUP_SIZE_X 4
+// #define THREADGROUP_SIZE_Y 4
+// #define THREADGROUP_SIZE_Z 4
+// #define UE_LEGACY_LUMINANCE_FACTORS 0
+// #define UE_LWC_RENDER_TILE_SIZE 2097152.00f
+// #define UE_LWC_RENDER_TILE_SIZE_FMOD_2PI 0.673652053f
+// #define UE_LWC_RENDER_TILE_SIZE_FMOD_PI 0.673652053f
+// #define UE_LWC_RENDER_TILE_SIZE_RCP 4.76837158e-07f
+// #define UE_LWC_RENDER_TILE_SIZE_RSQRT 0.000690533954f
+// #define UE_LWC_RENDER_TILE_SIZE_SQRT 1448.15466f
+// #define USE_DBUFFER 1
+// #define USE_HAIR_TRIANGLE_STRIP 1
+// #define USE_WAVE_INTRINSICS 0
+// #define USES_BASE_PASS_VELOCITY 0
+// #define USING_VERTEX_SHADER_LAYER 0
+// #define VELOCITY_ENCODE_DEPTH 1
+// #define VERTEXSHADER 0
+// #define VIEW_HAS_TILEOFFSET_DATA 1
+// #define VIRTUAL_TEXTURE_ANISOTROPIC_FILTERING 0
+// #define WORKGRAPHCOMPUTESHADER 0
+// #define WORKGRAPHROOTSHADER 0
+// #define WORKING_COLOR_SPACE_IS_SRGB 1
+#line 6 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+#pragma warning(disable:4008)
+
+#line 51 "/Engine/Private/RandomPCG.ush"
+uint3 Rand3DPCG32(int3 p)
+{
+
+	uint3 v = uint3(p);
+
+
+	v = v * 1664525u + 1013904223u;
+
+
+	v.x += v.y*v.z;
+	v.y += v.z*v.x;
+	v.z += v.x*v.y;
+
+
+	v ^= v >> 16u;
+
+
+	v.x += v.y*v.z;
+	v.y += v.z*v.x;
+	v.z += v.x*v.y;
+
+	return v;
+}
+
+#line 91 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+uint3 DispatchThreadIdBounds;
+uint3 DispatchThreadIdToLinear;
+
+#line 95 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+static uint3 GDispatchThreadId;
+static uint3 GGroupId;
+static uint3 GGroupThreadId;
+static uint  GGroupIndex;
+static uint GLinearThreadId;
+static uint GEmitterTickCounter;
+static uint GRandomSeedOffset = 0;
+
+#line 110 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+uint EmitterTickCounter;
+
+#line 130 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+float NiagaraInternalNoise(uint u, uint v, uint s)
+	{
+		uint Seed = (u * 1664525u + v) + s + GRandomSeedOffset;
+		GRandomSeedOffset += Seed;
+		return float(Rand3DPCG32(int3(u,v,Seed)).x) / 4294967296.0f;
+	}
+
+#line 144 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+static float Emitter_SpawnInterval;
+static float Emitter_InterpSpawnStartDt;
+static int Emitter_SpawnGroup;
+
+#line 148 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+static int Engine_ExecutionCount;
+static int GGPUExecIndex;
+
+#line 151 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+static uint GSpawnStartInstance;
+
+#line 154 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+void SetupExecIndexForGPU()
+	{
+		GGPUExecIndex = GLinearThreadId;
+		Engine_ExecutionCount = GSpawnStartInstance;
+	}
+
+#line 194 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+int ExecIndex()
+	{
+		return GGPUExecIndex;
+	}
+
+#line 542 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+uint SimStart;
+
+#line 557 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+RWBuffer<uint> RWInstanceCounts;
+
+#line 568 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+uint4 SimulationStageIterationInfo;
+
+#line 574 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+int SimulationStage_GetInstanceCount() { return SimulationStageIterationInfo.x == uint(-1) ? int(SimulationStageIterationInfo.y) : int(RWInstanceCounts[SimulationStageIterationInfo.x]); }
+
+#line 809 "/Plugin/FX/Niagara/Private/NiagaraEmitterInstanceShader.usf"
+void EnterStatScope(int ID)	{}
+void ExitStatScope()	{}
+
+#line 44 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct NiagaraEmitterID
+{
+	int ID;
+};
+
+#line 213 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Transient
+{
+	float3 AdvectionVelocity;
+	bool DragIgnoreMass;
+	bool FirstFrame;
+	float PhysicsDeltaTime;
+	float PhysicsDrag;
+	float3 PhysicsForce;
+	float PhysicsRotationalDrag;
+};
+
+#line 224 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_SolveForcesAndVelocity
+{
+	float DeltaTime;
+	float3 Force;
+	float Mass;
+	float3 Position;
+	float3 PreviousVelocity;
+	float3 Velocity;
+	bool WritetoIntrinsicProperties;
+};
+
+#line 235 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_ShapeLocation
+{
+	float3 ApplyOwnerScale;
+	bool InvertRotationQuaternion;
+	int RotationCoordinateSpace;
+	float4x4 RotationMatrix;
+	float4 RotationQuaternion;
+	float3 ShapeOrigin;
+};
+
+#line 245 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_ParticleState
+{
+	float DeltaTime;
+	float Lifetime;
+};
+
+#line 251 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Particles_ShapeLocation
+{
+	float3 ShapeBitangent;
+	float3 ShapeNormal;
+	float3 ShapePosition;
+	float3 ShapeTangent;
+	float3 ShapeVector;
+};
+
+#line 260 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Particles_Previous
+{
+	float3 Position;
+	float2 SpriteSize;
+	float3 Velocity;
+};
+
+#line 267 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Particles_Presolve
+{
+	float3 PhysicsForce;
+	float3 Position;
+	float3 Velocity;
+};
+
+#line 274 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Particles
+{
+	float Age;
+	float4 Color;
+	float DistanceTraveled;
+	float Lifetime;
+	float Mass;
+	float MaterialRandom;
+	float NormalizedAge;
+	float3 Position;
+	FParamMap0_Particles_Presolve Presolve;
+	FParamMap0_Particles_Previous Previous;
+	float RibbonUVDistance;
+	FParamMap0_Particles_ShapeLocation ShapeLocation;
+	float2 SpriteSize;
+	int UniqueID;
+	float3 Velocity;
+};
+
+#line 293 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_OUTPUT_VAR_SolveForcesAndVelocity
+{
+	float IncomingPhysicsDrag;
+	float3 IncomingPhysicsForce;
+	float3 Position;
+	float3 Velocity;
+};
+
+#line 301 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_OUTPUT_VAR_ParticleState
+{
+	bool FirstFrame;
+};
+
+#line 306 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_OUTPUT_VAR
+{
+	FParamMap0_OUTPUT_VAR_ParticleState ParticleState;
+	FParamMap0_OUTPUT_VAR_SolveForcesAndVelocity SolveForcesAndVelocity;
+};
+
+#line 312 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Multiply_VectorByFloat
+{
+	float FLOAT_VAR;
+};
+
+#line 317 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Local_SolveForcesAndVelocity
+{
+	float3 AdvectionVelocity;
+	float DeltaTime;
+	bool DragIgnoreMass;
+	float3 DragVelocity;
+	float InverseDeltaTime;
+	float InverseMass;
+	float Mass;
+	float PhysicsDrag;
+	float3 PhysicsForce;
+};
+
+#line 330 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Local_ShapeLocation_TransformStack_Rotation
+{
+	float3 LocalTransformBitangent;
+	float3 LocalTransformNormal;
+	float3 LocalTransformTangent;
+	float3 LocalTransformVector;
+};
+
+#line 338 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Local_ShapeLocation
+{
+	float3 BoxNormal;
+	float3 BoxTangent;
+	float3 BoxVector;
+	float3 InverseScaleFactor;
+	float3 OffsetVector;
+	float3 ScaleFactor;
+	float3 ShapeBitangent;
+	float3 ShapeNormal;
+	float3 ShapePosition;
+	float3 ShapeTangent;
+	float3 ShapeVector;
+	FParamMap0_Local_ShapeLocation_TransformStack_Rotation TransformStack_Rotation;
+};
+
+#line 354 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Local_InitializeParticle
+{
+	float InitRIbbonDistance;
+};
+
+#line 359 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Local
+{
+	FParamMap0_Local_InitializeParticle InitializeParticle;
+	FParamMap0_Local_ShapeLocation ShapeLocation;
+	FParamMap0_Local_SolveForcesAndVelocity SolveForcesAndVelocity;
+};
+
+#line 366 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Interpolation
+{
+	float Emitter_InterpSpawnStartDt;
+	int Emitter_SpawnGroup;
+	float Emitter_SpawnInterval;
+	int InterpSpawn_Index;
+	float InterpSpawn_InvSpawnTime;
+	float InterpSpawn_InvUpdateTime;
+	float InterpSpawn_SpawnTime;
+	float InterpSpawn_UpdateTime;
+	float SpawnInterp;
+};
+
+#line 379 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_InitializeParticle
+{
+	float MaterialRandom;
+	int PositionOffsetCoordinateSpace;
+};
+
+#line 385 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_GravityForce
+{
+	float3 Gravity;
+};
+
+#line 390 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Engine_System
+{
+	float Age;
+	int CurrentTimeStep;
+	int NumEmitters;
+	int NumEmittersAlive;
+	int NumParticles;
+	int NumTimeSteps;
+	int PaddingInt32_0;
+	int PaddingInt32_1;
+	int RandomSeed;
+	int SignificanceIndex;
+	int TickCount;
+	float TimeStepFraction;
+};
+
+#line 406 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Engine_Owner
+{
+	int ExecutionState;
+	float LODDistance;
+	float LODDistanceFraction;
+	float4 LWCTile;
+	int PaddingInt32_0;
+	int PaddingInt32_1;
+	int PaddingInt32_2;
+	int PaddingInt32_3;
+	int PaddingInt32_4;
+	int PaddingInt32_5;
+	float3 Position;
+	float4 Rotation;
+	float3 Scale;
+	float4x4 SystemLocalToWorld;
+	float4x4 SystemLocalToWorldNoScale;
+	float4x4 SystemLocalToWorldTransposed;
+	float4x4 SystemWorldToLocal;
+	float4x4 SystemWorldToLocalNoScale;
+	float4x4 SystemWorldToLocalTransposed;
+	float3 SystemXAxis;
+	float3 SystemYAxis;
+	float3 SystemZAxis;
+	float TimeSinceRendered;
+	float3 Velocity;
+};
+
+#line 434 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Engine_Emitter
+{
+	NiagaraEmitterID ID;
+	int InstanceSeed;
+	int NumParticles;
+	int PaddingInt32_0;
+	int PaddingInt32_1;
+	float SpawnCountScale;
+	int TotalSpawnedParticles;
+};
+
+#line 445 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Engine
+{
+	float DeltaTime;
+	FParamMap0_Engine_Emitter Emitter;
+	int ExecIndex;
+	int ExecutionCount;
+	float InverseDeltaTime;
+	FParamMap0_Engine_Owner Owner;
+	int PaddingInt32_0;
+	int PaddingInt32_1;
+	int QualityLevel;
+	float RealTime;
+	FParamMap0_Engine_System System;
+	float Time;
+	float WorldDeltaTime;
+};
+
+#line 462 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Emitter
+{
+	float Age;
+	float DistanceTraveled;
+	int RandomSeed;
+	float4x4 SimToUnit;
+	float SpawnRate;
+};
+
+#line 471 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Drag
+{
+	bool IgnoreMass;
+};
+
+#line 476 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_DataInstance
+{
+	bool Alive;
+};
+
+#line 481 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Array_ShapeLocation
+{
+	int ShapeBitangent;
+	int ShapeNormal;
+	int ShapePosition;
+	int ShapeTangent;
+	int ShapeVector;
+};
+
+#line 490 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Array_Previous
+{
+	int Position;
+	int SpriteSize;
+	int Velocity;
+};
+
+#line 497 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Array_Presolve
+{
+	int PhysicsForce;
+	int Position;
+	int Velocity;
+};
+
+#line 504 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0_Array
+{
+	int Age;
+	int Color;
+	int DistanceTraveled;
+	int Lifetime;
+	int Mass;
+	int MaterialRandom;
+	int NormalizedAge;
+	int Position;
+	FParamMap0_Array_Presolve Presolve;
+	FParamMap0_Array_Previous Previous;
+	int RibbonUVDistance;
+	FParamMap0_Array_ShapeLocation ShapeLocation;
+	int SpriteSize;
+	int UniqueID;
+	int Velocity;
+};
+
+#line 523 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FParamMap0
+{
+	FParamMap0_Array Array;
+	FParamMap0_DataInstance DataInstance;
+	FParamMap0_Drag Drag;
+	FParamMap0_Emitter Emitter;
+	FParamMap0_Engine Engine;
+	FParamMap0_GravityForce GravityForce;
+	FParamMap0_InitializeParticle InitializeParticle;
+	FParamMap0_Interpolation Interpolation;
+	FParamMap0_Local Local;
+	FParamMap0_Multiply_VectorByFloat Multiply_VectorByFloat;
+	FParamMap0_OUTPUT_VAR OUTPUT_VAR;
+	FParamMap0_Particles Particles;
+	FParamMap0_ParticleState ParticleState;
+	FParamMap0_ShapeLocation ShapeLocation;
+	FParamMap0_SolveForcesAndVelocity SolveForcesAndVelocity;
+	FParamMap0_Transient Transient;
+};
+
+#line 543 "/Engine/Generated/NiagaraEmitterInstance.ush"
+struct FSimulationContext
+{
+
+
+
+
+
+
+
+
+
+
+	FParamMap0 MapSimStage2_SolveElectricField;
+
+
+
+
+};
+
+#line 586 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void SolveElectricField_System_MyAuroraData_UEImpureCall(int In_Index, out bool Out_OutSuccess);
+void SolveElectricField_Emitter_Func_(inout FSimulationContext Context);
+
+#line 1161 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void SolveElectricField_Emitter_Func_(inout FSimulationContext Context)
+{
+	int Result89 = ExecIndex();
+	bool SolveElectricField_System_MyAuroraData_UEImpureCallOutput_OutSuccess;
+	SolveElectricField_System_MyAuroraData_UEImpureCall(Result89, SolveElectricField_System_MyAuroraData_UEImpureCallOutput_OutSuccess);
+}
+
+#line 1324 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void ReadDataSets(inout FSimulationContext Context)
+{
+}
+
+#line 1328 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void WriteDataSets(inout FSimulationContext Context)
+{
+}
+
+#line 1485 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void SimulateMapSimStage2_SolveElectricField(inout FSimulationContext Context)
+{
+
+	EnterStatScope(8 );
+	SolveElectricField_Emitter_Func_(Context);
+	ExitStatScope();
+
+
+
+}
+
+#line 1509 "/Engine/Generated/NiagaraEmitterInstance.ush"
+int3 System_MyAuroraData_NumCells;
+float3 System_MyAuroraData_CellSize;
+
+#line 1513 "/Engine/Generated/NiagaraEmitterInstance.ush"
+RWBuffer<float> System_MyAuroraDataPlasmaPotentialWrite;
+
+#line 1515 "/Engine/Generated/NiagaraEmitterInstance.ush"
+RWBuffer<float4> System_MyAuroraDataElectricField;
+
+#line 1560 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void SolveElectricField_System_MyAuroraData_UEImpureCall(int Index, out bool OutSuccess)
+		{
+			float dx = System_MyAuroraData_CellSize.x;
+			float dy = System_MyAuroraData_CellSize.y;
+			float dz = System_MyAuroraData_CellSize.z;
+
+			int IndexX = Index % System_MyAuroraData_NumCells.x;
+			int IndexY = (Index / System_MyAuroraData_NumCells.x) % System_MyAuroraData_NumCells.y;
+			int IndexZ = Index / (System_MyAuroraData_NumCells.x * System_MyAuroraData_NumCells.y);
+
+			float ef_x = 0.0f;
+			float ef_y = 0.0f;
+			float ef_z = 0.0f;
+
+			int3 GridSize = System_MyAuroraData_NumCells;
+			float V_i = System_MyAuroraDataPlasmaPotentialWrite[Index];
+
+			if (IndexX == 0) {
+				int idx = (IndexX + 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+				float plasmap = System_MyAuroraDataPlasmaPotentialWrite[idx];
+				ef_x = -(plasmap - V_i) / dx;
+			} else if (IndexX == GridSize.x - 1) {
+				int idx = (IndexX - 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+				float plasmap = System_MyAuroraDataPlasmaPotentialWrite[idx];
+				ef_x = -(V_i - plasmap) / dx;
+			} else {
+				int idxX = (IndexX - 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+				int idxY = (IndexX + 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+				float plasmapx = System_MyAuroraDataPlasmaPotentialWrite[idxX];
+				float plasmapy = System_MyAuroraDataPlasmaPotentialWrite[idxY];
+				ef_x = -(plasmapy - plasmapx) / (2.0f * dx);
+			}
+
+			if (IndexY == 0) {
+				int idx = IndexX + GridSize.x * (IndexY + 1) + GridSize.x * GridSize.y * IndexZ;
+				float plasmap = System_MyAuroraDataPlasmaPotentialWrite[idxidx];
+				ef_y = -(plasmap - V_i) / dy;
+			} else if (IndexY == GridSize.y - 1) {
+				int idx = IndexX + GridSize.x * (IndexY - 1) + GridSize.x * GridSize.y * IndexZ;
+				float plasmap = System_MyAuroraDataPlasmaPotentialWrite[idx];
+				ef_y = -(V_i - plasmap) / dy;
+			} else {
+				int idxX = IndexX + GridSize.x * (IndexY - 1) + GridSize.x * GridSize.y * IndexZ;
+				int idxY = IndexX + GridSize.x * (IndexY + 1) + GridSize.x * GridSize.y * IndexZ;
+				float plasmapx = System_MyAuroraDataPlasmaPotentialWrite[idxX];
+				float plasmapy = System_MyAuroraDataPlasmaPotentialWrite[idxY];
+				ef_y = -(plasmapy - plasmapx) / (2.0f * dy);
+			}
+
+			if (IndexZ == 0) {
+				int idx = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ + 1);
+				float V_kp1 = System_MyAuroraDataPlasmaPotentialWrite[idx];
+				ef_z = -(V_kp1 - V_i) / dz;
+			} else if (IndexZ == GridSize.z - 1) {
+				int idx = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ - 1);
+				float plasmap = System_MyAuroraDataPlasmaPotentialWrite[idx];
+				ef_z = -(V_i - plasmap) / dz;
+			} else {
+				int idxX = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ - 1);
+				int idxY = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ + 1);
+				float plasmapx = System_MyAuroraDataPlasmaPotentialWrite[idxX];
+				float plasmapy = System_MyAuroraDataPlasmaPotentialWrite[idxY];
+				ef_z = -(plasmapy - plasmapx) / (2.0f * dz);
+			}
+
+			System_MyAuroraDataElectricField[Index] = float4(ef_x, ef_y, ef_z, 0.0f);
+			OutSuccess = true;
+		}
+
+#line 1639 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void InitConstants(inout FSimulationContext Context)
+{
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#line 1670 "/Engine/Generated/NiagaraEmitterInstance.ush"
+
+}
+
+#line 1673 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void InitSpawnVariables(inout FSimulationContext Context)
+{
+#line 1731 "/Engine/Generated/NiagaraEmitterInstance.ush"
+
+}
+
+#line 1734 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void LoadUpdateVariables(inout FSimulationContext Context, int InstanceIdx)
+{
+#line 1884 "/Engine/Generated/NiagaraEmitterInstance.ush"
+
+}
+
+#line 1892 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void TransferAttributes(inout FSimulationContext Context)
+{
+
+
+
+
+
+
+
+
+
+}
+
+#line 1905 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void StoreUpdateVariables(in FSimulationContext Context, bool bIsValidInstance)
+{
+#line 1975 "/Engine/Generated/NiagaraEmitterInstance.ush"
+
+
+}
+
+#line 1989 "/Engine/Generated/NiagaraEmitterInstance.ush"
+[numthreads(4, 4, 4)]
+void SimulateMainComputeCS(
+	uint3 InDispatchThreadId	: SV_DispatchThreadID,
+	uint3 InGroupId				: SV_GroupID,
+	uint3 InGroupThreadId		: SV_GroupThreadID,
+	uint  InGroupIndex			: SV_GroupIndex)
+{
+	GDispatchThreadId	= InDispatchThreadId;
+	GGroupId			= InGroupId;
+	GGroupThreadId		= InGroupThreadId;
+	GGroupIndex			= InGroupIndex;
+	GEmitterTickCounter = EmitterTickCounter;
+	GRandomSeedOffset = 0;
+#line 2114 "/Engine/Generated/NiagaraEmitterInstance.ush"
+
+
+
+
+
+
+
+
+
+
+
+	GLinearThreadId		= GDispatchThreadId.x + (GDispatchThreadId.y * DispatchThreadIdToLinear.y);
+
+		GLinearThreadId += GDispatchThreadId.z * DispatchThreadIdToLinear.z;
+
+
+
+	const uint MaxInstances = SimulationStage_GetInstanceCount();
+	GLinearThreadId = all(GDispatchThreadId < DispatchThreadIdBounds) ? GLinearThreadId : MaxInstances;
+	GSpawnStartInstance = MaxInstances;
+	const bool bRunUpdateLogic = (GLinearThreadId < GSpawnStartInstance) && (SimStart != 1);
+	const bool bRunSpawnLogic = (GLinearThreadId < GSpawnStartInstance) && (SimStart == 1);
+
+	const float RandomSeedInitialisation = NiagaraInternalNoise(GLinearThreadId * 16384, 0 * 8196, (bRunUpdateLogic ? 4096 : 0) + EmitterTickCounter);	
+
+	FSimulationContext Context = (FSimulationContext)0;
+	[branch]
+	if (bRunUpdateLogic)
+	{
+		SetupExecIndexForGPU();
+		InitConstants(Context);
+		LoadUpdateVariables(Context, GLinearThreadId);
+		ReadDataSets(Context);
+	}
+	else if (bRunSpawnLogic)
+	{
+		SetupExecIndexForGPU();
+		InitConstants(Context);
+		InitSpawnVariables(Context);
+		ReadDataSets(Context);
+		TransferAttributes(Context);
+	}
+
+	if (bRunUpdateLogic || bRunSpawnLogic)
+	{
+		SimulateMapSimStage2_SolveElectricField(Context);
+		WriteDataSets(Context);
+	}
+
+	StoreUpdateVariables(Context, bRunUpdateLogic || bRunSpawnLogic);
+
+#line 2215 "/Engine/Generated/NiagaraEmitterInstance.ush"
+
+}
+
+/* BASE64_ENV
+BgAAABkAAABWSUVXX0hBU19USUxFT0ZGU0VUX0RBVEEAAAEAAAAeAAAAUFJJTUlUSVZFX0hBU19USUxFT0ZGU0VUX0RBVEEAAAEAAAARAAAASU5TVEFOQ0VEX1NURVJFTwAAAAAAAAsAAABNVUxUSV9WSUVXAAAAAAAAEgAAAE1PQklMRV9NVUxUSV9WSUVXAAAAAAAAFgAAAFBMQVRGT1JNX01BWF9TQU1QTEVSUwADIAAAAAAQEAACAAAAAAAAAJMAAAAJCQAACQkBAAkJAgAJCQMACREEAAkRBQAECAAABAgBAAQFAgAEBQMABAUEAAQFBQAEBQYABAUHAAQFCAAEBQkABAUKAAQFCwAECAwABAgNAAQIDgAECA8ABAgQAAQIEQAECBIABAgTAAQIFAAEBRUABAUWAAQFFwAEBRgABAgZAAQIGgAECBsABAUcAAQIHQAEBR4ABAgfAAQFIAAECCEABAUiAAQIIwAEBSQABAglAAQFJgAECCcABAgoAAQIKQAECCoABAgrAAQILAAECC0ABAUuAAQILwAEBjAABAUxAAQIMgAEBTMABAg0AAQFNQAECDYABAU3AAQIOAAEBTkABAg6AAQGOwAEBjwABAU9AAQIPgAEBT8ABAhAAAQFQQAECEIABAVDAAQIRAAEBUUABAVGAAQFRwAEBUgABAhJAAQFSgAECEsABAVMAAQITQAEBU4ABAhPAAQFUAAECFEABAhSAAQFUwAECFQABAVVAAQIVgAEBlcABAZYAAQFWQAECFoABAVbAAQIXAAECF0ABAZeAAQGXwAEB2AABAZhABMJAAATCAEAEwkCABMJAwATCAQAEwkFABMIBgATCQcAEwkIABMICQATDAoAEwwLABMJDAATCA0AEwkOABMJDwATCRAAEwkRABMJEgATCRMAEwkUABMJFQATCBYAEwgXABMIGAATCBkAEwgaABMJAAATCQEAEwkCABMJAwATCQQAEwkFABMJBgATCQcAEwkIABMJCQATCQoAEwkLABMMDAATCA0ADwkAAA8JAQAHAAAAGAAAAERyYXdSZWN0YW5nbGVQYXJhbWV0ZXJzAAAAAAAAAAAAAAEwAAEACgAAAFN1YnN0cmF0ZQAAAAAAvAAAAFMAdQBiAHMAdAByAGEAdABlAF8ATQBhAHQAZQByAGkAYQBsAFQAZQB4AHQAdQByAGUAQQByAHIAYQB5AAAAUwB1AGIAcwB0AHIAYQB0AGUAXwBUAG8AcABMAGEAeQBlAHIAVABlAHgAdAB1AHIAZQAAAFMAdQBiAHMAdAByAGEAdABlAF8ATwBwAGEAcQB1AGUAUgBvAHUAZwBoAFIAZQBmAHIAYQBjAHQAaQBvAG4AVABlAHgAdAB1AHIAZQAAAFMAdQBiAHMAdAByAGEAdABlAF8AQwBsAG8AcwB1AHIAZQBPAGYAZgBzAGUAdABUAGUAeAB0AHUAcgBlAAAAUwB1AGIAcwB0AHIAYQB0AGUAXwBDAGwAbwBzAHUAcgBlAFQAaQBsAGUAQgB1AGYAZgBlAHIAAABTAHUAYgBzAHQAcgBhAHQAZQBfAEMAbABvAHMAdQByAGUAVABpAGwAZQBDAG8AdQBuAHQAQgB1AGYAZgBlAHIAAABAEHAJAQAFAAAAVmlldwAFAAAAVmlldwDzDAAAVgBpAGUAdwBfAE0AYQB0AGUAcgBpAGEAbABUAGUAeAB0AHUAcgBlAEIAaQBsAGkAbgBlAGEAcgBXAHIAYQBwAGUAZABTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAE0AYQB0AGUAcgBpAGEAbABUAGUAeAB0AHUAcgBlAEIAaQBsAGkAbgBlAGEAcgBDAGwAYQBtAHAAZQBkAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AVgBvAGwAdQBtAGUAdAByAGkAYwBMAGkAZwBoAHQAbQBhAHAASQBuAGQAaQByAGUAYwB0AGkAbwBuAFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8AVgBvAGwAdQBtAGUAdAByAGkAYwBMAGkAZwBoAHQAbQBhAHAAQgByAGkAYwBrAEEAbQBiAGkAZQBuAHQAVgBlAGMAdABvAHIAAABWAGkAZQB3AF8AVgBvAGwAdQBtAGUAdAByAGkAYwBMAGkAZwBoAHQAbQBhAHAAQgByAGkAYwBrAFMASABDAG8AZQBmAGYAaQBjAGkAZQBuAHQAcwAwAAAAVgBpAGUAdwBfAFYAbwBsAHUAbQBlAHQAcgBpAGMATABpAGcAaAB0AG0AYQBwAEIAcgBpAGMAawBTAEgAQwBvAGUAZgBmAGkAYwBpAGUAbgB0AHMAMQAAAFYAaQBlAHcAXwBWAG8AbAB1AG0AZQB0AHIAaQBjAEwAaQBnAGgAdABtAGEAcABCAHIAaQBjAGsAUwBIAEMAbwBlAGYAZgBpAGMAaQBlAG4AdABzADIAAABWAGkAZQB3AF8AVgBvAGwAdQBtAGUAdAByAGkAYwBMAGkAZwBoAHQAbQBhAHAAQgByAGkAYwBrAFMASABDAG8AZQBmAGYAaQBjAGkAZQBuAHQAcwAzAAAAVgBpAGUAdwBfAFYAbwBsAHUAbQBlAHQAcgBpAGMATABpAGcAaAB0AG0AYQBwAEIAcgBpAGMAawBTAEgAQwBvAGUAZgBmAGkAYwBpAGUAbgB0AHMANAAAAFYAaQBlAHcAXwBWAG8AbAB1AG0AZQB0AHIAaQBjAEwAaQBnAGgAdABtAGEAcABCAHIAaQBjAGsAUwBIAEMAbwBlAGYAZgBpAGMAaQBlAG4AdABzADUAAABWAGkAZQB3AF8AUwBrAHkAQgBlAG4AdABOAG8AcgBtAGEAbABCAHIAaQBjAGsAVABlAHgAdAB1AHIAZQAAAFYAaQBlAHcAXwBEAGkAcgBlAGMAdABpAG8AbgBhAGwATABpAGcAaAB0AFMAaABhAGQAbwB3AGkAbgBnAEIAcgBpAGMAawBUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAFYAbwBsAHUAbQBlAHQAcgBpAGMATABpAGcAaAB0AG0AYQBwAEIAcgBpAGMAawBBAG0AYgBpAGUAbgB0AFYAZQBjAHQAbwByAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AVgBvAGwAdQBtAGUAdAByAGkAYwBMAGkAZwBoAHQAbQBhAHAAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByADAAAABWAGkAZQB3AF8AVgBvAGwAdQBtAGUAdAByAGkAYwBMAGkAZwBoAHQAbQBhAHAAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByADEAAABWAGkAZQB3AF8AVgBvAGwAdQBtAGUAdAByAGkAYwBMAGkAZwBoAHQAbQBhAHAAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByADIAAABWAGkAZQB3AF8AVgBvAGwAdQBtAGUAdAByAGkAYwBMAGkAZwBoAHQAbQBhAHAAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByADMAAABWAGkAZQB3AF8AVgBvAGwAdQBtAGUAdAByAGkAYwBMAGkAZwBoAHQAbQBhAHAAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByADQAAABWAGkAZQB3AF8AVgBvAGwAdQBtAGUAdAByAGkAYwBMAGkAZwBoAHQAbQBhAHAAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByADUAAABWAGkAZQB3AF8AUwBrAHkAQgBlAG4AdABOAG8AcgBtAGEAbABUAGUAeAB0AHUAcgBlAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8ARABpAHIAZQBjAHQAaQBvAG4AYQBsAEwAaQBnAGgAdABTAGgAYQBkAG8AdwBpAG4AZwBUAGUAeAB0AHUAcgBlAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8ARwBsAG8AYgBhAGwARABpAHMAdABhAG4AYwBlAEYAaQBlAGwAZABQAGEAZwBlAEEAdABsAGEAcwBUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAEcAbABvAGIAYQBsAEQAaQBzAHQAYQBuAGMAZQBGAGkAZQBsAGQAQwBvAHYAZQByAGEAZwBlAEEAdABsAGEAcwBUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAEcAbABvAGIAYQBsAEQAaQBzAHQAYQBuAGMAZQBGAGkAZQBsAGQAUABhAGcAZQBUAGEAYgBsAGUAVABlAHgAdAB1AHIAZQAAAFYAaQBlAHcAXwBHAGwAbwBiAGEAbABEAGkAcwB0AGEAbgBjAGUARgBpAGUAbABkAE0AaQBwAFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8ARwBsAG8AYgBhAGwARABpAHMAdABhAG4AYwBlAEYAaQBlAGwAZABQAGEAZwBlAEEAdABsAGEAcwBUAGUAeAB0AHUAcgBlAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8ARwBsAG8AYgBhAGwARABpAHMAdABhAG4AYwBlAEYAaQBlAGwAZABDAG8AdgBlAHIAYQBnAGUAQQB0AGwAYQBzAFQAZQB4AHQAdQByAGUAUwBhAG0AcABsAGUAcgAAAFYAaQBlAHcAXwBHAGwAbwBiAGEAbABEAGkAcwB0AGEAbgBjAGUARgBpAGUAbABkAE0AaQBwAFQAZQB4AHQAdQByAGUAUwBhAG0AcABsAGUAcgAAAFYAaQBlAHcAXwBBAHQAbQBvAHMAcABoAGUAcgBlAFQAcgBhAG4AcwBtAGkAdAB0AGEAbgBjAGUAVABlAHgAdAB1AHIAZQAAAFYAaQBlAHcAXwBBAHQAbQBvAHMAcABoAGUAcgBlAFQAcgBhAG4AcwBtAGkAdAB0AGEAbgBjAGUAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAEEAdABtAG8AcwBwAGgAZQByAGUASQByAHIAYQBkAGkAYQBuAGMAZQBUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAEEAdABtAG8AcwBwAGgAZQByAGUASQByAHIAYQBkAGkAYQBuAGMAZQBUAGUAeAB0AHUAcgBlAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AQQB0AG0AbwBzAHAAaABlAHIAZQBJAG4AcwBjAGEAdAB0AGUAcgBUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAEEAdABtAG8AcwBwAGgAZQByAGUASQBuAHMAYwBhAHQAdABlAHIAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAFAAZQByAGwAaQBuAE4AbwBpAHMAZQBHAHIAYQBkAGkAZQBuAHQAVABlAHgAdAB1AHIAZQAAAFYAaQBlAHcAXwBQAGUAcgBsAGkAbgBOAG8AaQBzAGUARwByAGEAZABpAGUAbgB0AFQAZQB4AHQAdQByAGUAUwBhAG0AcABsAGUAcgAAAFYAaQBlAHcAXwBQAGUAcgBsAGkAbgBOAG8AaQBzAGUAMwBEAFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8AUABlAHIAbABpAG4ATgBvAGkAcwBlADMARABUAGUAeAB0AHUAcgBlAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AUwBvAGIAbwBsAFMAYQBtAHAAbABpAG4AZwBUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAFMAaABhAHIAZQBkAFAAbwBpAG4AdABXAHIAYQBwAHAAZQBkAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AUwBoAGEAcgBlAGQAUABvAGkAbgB0AEMAbABhAG0AcABlAGQAUwBhAG0AcABsAGUAcgAAAFYAaQBlAHcAXwBTAGgAYQByAGUAZABCAGkAbABpAG4AZQBhAHIAVwByAGEAcABwAGUAZABTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAFMAaABhAHIAZQBkAEIAaQBsAGkAbgBlAGEAcgBDAGwAYQBtAHAAZQBkAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AUwBoAGEAcgBlAGQAQgBpAGwAaQBuAGUAYQByAEEAbgBpAHMAbwBDAGwAYQBtAHAAZQBkAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AUwBoAGEAcgBlAGQAVAByAGkAbABpAG4AZQBhAHIAVwByAGEAcABwAGUAZABTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAFMAaABhAHIAZQBkAFQAcgBpAGwAaQBuAGUAYQByAEMAbABhAG0AcABlAGQAUwBhAG0AcABsAGUAcgAAAFYAaQBlAHcAXwBQAHIAZQBJAG4AdABlAGcAcgBhAHQAZQBkAEIAUgBEAEYAAABWAGkAZQB3AF8AUAByAGUASQBuAHQAZQBnAHIAYQB0AGUAZABCAFIARABGAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AUwBrAHkASQByAHIAYQBkAGkAYQBuAGMAZQBFAG4AdgBpAHIAbwBuAG0AZQBuAHQATQBhAHAAAABWAGkAZQB3AF8AVAByAGEAbgBzAG0AaQB0AHQAYQBuAGMAZQBMAHUAdABUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAFQAcgBhAG4AcwBtAGkAdAB0AGEAbgBjAGUATAB1AHQAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAFMAawB5AFYAaQBlAHcATAB1AHQAVABlAHgAdAB1AHIAZQAAAFYAaQBlAHcAXwBTAGsAeQBWAGkAZQB3AEwAdQB0AFQAZQB4AHQAdQByAGUAUwBhAG0AcABsAGUAcgAAAFYAaQBlAHcAXwBDAGEAbQBlAHIAYQBBAGUAcgBpAGEAbABQAGUAcgBzAHAAZQBjAHQAaQB2AGUAVgBvAGwAdQBtAGUAAABWAGkAZQB3AF8AQwBhAG0AZQByAGEAQQBlAHIAaQBhAGwAUABlAHIAcwBwAGUAYwB0AGkAdgBlAFYAbwBsAHUAbQBlAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AQwBhAG0AZQByAGEAQQBlAHIAaQBhAGwAUABlAHIAcwBwAGUAYwB0AGkAdgBlAFYAbwBsAHUAbQBlAE0AaQBlAE8AbgBsAHkAAABWAGkAZQB3AF8AQwBhAG0AZQByAGEAQQBlAHIAaQBhAGwAUABlAHIAcwBwAGUAYwB0AGkAdgBlAFYAbwBsAHUAbQBlAE0AaQBlAE8AbgBsAHkAUwBhAG0AcABsAGUAcgAAAFYAaQBlAHcAXwBDAGEAbQBlAHIAYQBBAGUAcgBpAGEAbABQAGUAcgBzAHAAZQBjAHQAaQB2AGUAVgBvAGwAdQBtAGUAUgBhAHkATwBuAGwAeQAAAFYAaQBlAHcAXwBDAGEAbQBlAHIAYQBBAGUAcgBpAGEAbABQAGUAcgBzAHAAZQBjAHQAaQB2AGUAVgBvAGwAdQBtAGUAUgBhAHkATwBuAGwAeQBTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAEQAaQBzAHQAYQBuAHQAUwBrAHkATABpAGcAaAB0AEwAdQB0AEIAdQBmAGYAZQByAFMAUgBWAAAAVgBpAGUAdwBfAE0AbwBiAGkAbABlAEQAaQBzAHQAYQBuAHQAUwBrAHkATABpAGcAaAB0AEwAdQB0AEIAdQBmAGYAZQByAFMAUgBWAAAAVgBpAGUAdwBfAEgAYQBpAHIAUwBjAGEAdAB0AGUAcgBpAG4AZwBMAFUAVABUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAEgAYQBpAHIAUwBjAGEAdAB0AGUAcgBpAG4AZwBMAFUAVABTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAEcARwBYAEwAVABDAE0AYQB0AFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8ARwBHAFgATABUAEMATQBhAHQAUwBhAG0AcABsAGUAcgAAAFYAaQBlAHcAXwBHAEcAWABMAFQAQwBBAG0AcABUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAEcARwBYAEwAVABDAEEAbQBwAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AUwBoAGUAZQBuAEwAVABDAFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8AUwBoAGUAZQBuAEwAVABDAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AUwBoAGEAZABpAG4AZwBFAG4AZQByAGcAeQBHAEcAWABTAHAAZQBjAFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8AUwBoAGEAZABpAG4AZwBFAG4AZQByAGcAeQBHAEcAWABHAGwAYQBzAHMAVABlAHgAdAB1AHIAZQAAAFYAaQBlAHcAXwBTAGgAYQBkAGkAbgBnAEUAbgBlAHIAZwB5AEMAbABvAHQAaABTAHAAZQBjAFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8AUwBoAGEAZABpAG4AZwBFAG4AZQByAGcAeQBEAGkAZgBmAHUAcwBlAFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8AUwBoAGEAZABpAG4AZwBFAG4AZQByAGcAeQBTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAEcAbABpAG4AdABUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAEcAbABpAG4AdABTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAFMAaQBtAHAAbABlAFYAbwBsAHUAbQBlAFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8AUwBpAG0AcABsAGUAVgBvAGwAdQBtAGUAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAFMAaQBtAHAAbABlAFYAbwBsAHUAbQBlAEUAbgB2AFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8AUwBpAG0AcABsAGUAVgBvAGwAdQBtAGUARQBuAHYAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAFMAUwBQAHIAbwBmAGkAbABlAHMAVABlAHgAdAB1AHIAZQAAAFYAaQBlAHcAXwBTAFMAUAByAG8AZgBpAGwAZQBzAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8AUwBTAFAAcgBvAGYAaQBsAGUAcwBUAHIAYQBuAHMAbQBpAHMAcwBpAG8AbgBTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAFMAUwBQAHIAbwBmAGkAbABlAHMAUAByAGUASQBuAHQAZQBnAHIAYQB0AGUAZABUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAFMAUwBQAHIAbwBmAGkAbABlAHMAUAByAGUASQBuAHQAZQBnAHIAYQB0AGUAZABTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAFMAcABlAGMAdQBsAGEAcgBQAHIAbwBmAGkAbABlAFQAZQB4AHQAdQByAGUAAABWAGkAZQB3AF8AUwBwAGUAYwB1AGwAYQByAFAAcgBvAGYAaQBsAGUAUwBhAG0AcABsAGUAcgAAAFYAaQBlAHcAXwBXAGEAdABlAHIASQBuAGQAaQByAGUAYwB0AGkAbwBuAAAAVgBpAGUAdwBfAFcAYQB0AGUAcgBEAGEAdABhAAAAVgBpAGUAdwBfAFIAZQBjAHQATABpAGcAaAB0AEEAdABsAGEAcwBUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAFIAZQBjAHQATABpAGcAaAB0AEEAdABsAGEAcwBTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAEkARQBTAEEAdABsAGEAcwBUAGUAeAB0AHUAcgBlAAAAVgBpAGUAdwBfAEkARQBTAEEAdABsAGEAcwBTAGEAbQBwAGwAZQByAAAAVgBpAGUAdwBfAEwAYQBuAGQAcwBjAGEAcABlAFcAZQBpAGcAaAB0AG0AYQBwAFMAYQBtAHAAbABlAHIAAABWAGkAZQB3AF8ATABhAG4AZABzAGMAYQBwAGUASQBuAGQAaQByAGUAYwB0AGkAbwBuAAAAVgBpAGUAdwBfAEwAYQBuAGQAcwBjAGEAcABlAFAAZQByAEMAbwBtAHAAbwBuAGUAbgB0AEQAYQB0AGEAAABWAGkAZQB3AF8AVgBUAEYAZQBlAGQAYgBhAGMAawBCAHUAZgBmAGUAcgAAAFYAaQBlAHcAXwBQAGgAeQBzAGkAYwBzAEYAaQBlAGwAZABDAGwAaQBwAG0AYQBwAEIAdQBmAGYAZQByAAAAig+LFAMADgAAAEluc3RhbmNlZFZpZXcADgAAAEluc3RhbmNlZFZpZXcAAAAAAAEDkB4DABQAAABNb2JpbGVTY2VuZVRleHR1cmVzAA4AAABTY2VuZVRleHR1cmVzAHQEAABNAG8AYgBpAGwAZQBTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAF8AUwBjAGUAbgBlAEMAbwBsAG8AcgBUAGUAeAB0AHUAcgBlAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAFMAYwBlAG4AZQBDAG8AbABvAHIAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAFMAYwBlAG4AZQBEAGUAcAB0AGgAVABlAHgAdAB1AHIAZQAAAE0AbwBiAGkAbABlAFMAYwBlAG4AZQBUAGUAeAB0AHUAcgBlAHMAXwBTAGMAZQBuAGUARABlAHAAdABoAFQAZQB4AHQAdQByAGUAQQByAHIAYQB5AAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAFMAYwBlAG4AZQBEAGUAcAB0AGgAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAFMAYwBlAG4AZQBQAGEAcgB0AGkAYQBsAEQAZQBwAHQAaABUAGUAeAB0AHUAcgBlAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAFMAYwBlAG4AZQBQAGEAcgB0AGkAYQBsAEQAZQBwAHQAaABUAGUAeAB0AHUAcgBlAFMAYQBtAHAAbABlAHIAAABNAG8AYgBpAGwAZQBTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAF8AQwB1AHMAdABvAG0ARABlAHAAdABoAFQAZQB4AHQAdQByAGUAAABNAG8AYgBpAGwAZQBTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAF8AQwB1AHMAdABvAG0ARABlAHAAdABoAFQAZQB4AHQAdQByAGUAQQByAHIAYQB5AAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAEMAdQBzAHQAbwBtAEQAZQBwAHQAaABUAGUAeAB0AHUAcgBlAFMAYQBtAHAAbABlAHIAAABNAG8AYgBpAGwAZQBTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAF8AQwB1AHMAdABvAG0AUwB0AGUAbgBjAGkAbABUAGUAeAB0AHUAcgBlAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAEMAdQBzAHQAbwBtAFMAdABlAG4AYwBpAGwAVABlAHgAdAB1AHIAZQBBAHIAcgBhAHkAAABNAG8AYgBpAGwAZQBTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAF8AUwBjAGUAbgBlAFYAZQBsAG8AYwBpAHQAeQBUAGUAeAB0AHUAcgBlAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAFMAYwBlAG4AZQBWAGUAbABvAGMAaQB0AHkAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAEcAQgB1AGYAZgBlAHIAQQBUAGUAeAB0AHUAcgBlAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAEcAQgB1AGYAZgBlAHIAQgBUAGUAeAB0AHUAcgBlAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAEcAQgB1AGYAZgBlAHIAQwBUAGUAeAB0AHUAcgBlAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAEcAQgB1AGYAZgBlAHIARABUAGUAeAB0AHUAcgBlAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAFMAYwBlAG4AZQBEAGUAcAB0AGgAQQB1AHgAVABlAHgAdAB1AHIAZQAAAE0AbwBiAGkAbABlAFMAYwBlAG4AZQBUAGUAeAB0AHUAcgBlAHMAXwBTAGMAZQBuAGUARABlAHAAdABoAEEAdQB4AFQAZQB4AHQAdQByAGUAQQByAHIAYQB5AAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAEwAbwBjAGEAbABMAGkAZwBoAHQAVABlAHgAdAB1AHIAZQBBAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAEwAbwBjAGEAbABMAGkAZwBoAHQAVABlAHgAdAB1AHIAZQBCAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAEcAQgB1AGYAZgBlAHIAQQBUAGUAeAB0AHUAcgBlAFMAYQBtAHAAbABlAHIAAABNAG8AYgBpAGwAZQBTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAF8ARwBCAHUAZgBmAGUAcgBCAFQAZQB4AHQAdQByAGUAUwBhAG0AcABsAGUAcgAAAE0AbwBiAGkAbABlAFMAYwBlAG4AZQBUAGUAeAB0AHUAcgBlAHMAXwBHAEIAdQBmAGYAZQByAEMAVABlAHgAdAB1AHIAZQBTAGEAbQBwAGwAZQByAAAATQBvAGIAaQBsAGUAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBfAEcAQgB1AGYAZgBlAHIARABUAGUAeAB0AHUAcgBlAFMAYQBtAHAAbABlAHIAAABNAG8AYgBpAGwAZQBTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAF8AUwBjAGUAbgBlAEQAZQBwAHQAaABBAHUAeABUAGUAeAB0AHUAcgBlAFMAYQBtAHAAbABlAHIAAADdA+gEAgAUAAAAU2NlbmVUZXh0dXJlc1N0cnVjdAAOAAAAU2NlbmVUZXh0dXJlcwAbAgAAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBTAHQAcgB1AGMAdABfAFMAYwBlAG4AZQBDAG8AbABvAHIAVABlAHgAdAB1AHIAZQAAAFMAYwBlAG4AZQBUAGUAeAB0AHUAcgBlAHMAUwB0AHIAdQBjAHQAXwBTAGMAZQBuAGUARABlAHAAdABoAFQAZQB4AHQAdQByAGUAAABTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAFMAdAByAHUAYwB0AF8AUwBjAGUAbgBlAFAAYQByAHQAaQBhAGwARABlAHAAdABoAFQAZQB4AHQAdQByAGUAAABTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAFMAdAByAHUAYwB0AF8ARwBCAHUAZgBmAGUAcgBBAFQAZQB4AHQAdQByAGUAAABTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAFMAdAByAHUAYwB0AF8ARwBCAHUAZgBmAGUAcgBCAFQAZQB4AHQAdQByAGUAAABTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAFMAdAByAHUAYwB0AF8ARwBCAHUAZgBmAGUAcgBDAFQAZQB4AHQAdQByAGUAAABTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAFMAdAByAHUAYwB0AF8ARwBCAHUAZgBmAGUAcgBEAFQAZQB4AHQAdQByAGUAAABTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAFMAdAByAHUAYwB0AF8ARwBCAHUAZgBmAGUAcgBFAFQAZQB4AHQAdQByAGUAAABTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAFMAdAByAHUAYwB0AF8ARwBCAHUAZgBmAGUAcgBGAFQAZQB4AHQAdQByAGUAAABTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAFMAdAByAHUAYwB0AF8ARwBCAHUAZgBmAGUAcgBWAGUAbABvAGMAaQB0AHkAVABlAHgAdAB1AHIAZQAAAFMAYwBlAG4AZQBUAGUAeAB0AHUAcgBlAHMAUwB0AHIAdQBjAHQAXwBTAGMAcgBlAGUAbgBTAHAAYQBjAGUAQQBPAFQAZQB4AHQAdQByAGUAAABTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAFMAdAByAHUAYwB0AF8AQwB1AHMAdABvAG0ARABlAHAAdABoAFQAZQB4AHQAdQByAGUAAABTAGMAZQBuAGUAVABlAHgAdAB1AHIAZQBzAFMAdAByAHUAYwB0AF8AQwB1AHMAdABvAG0AUwB0AGUAbgBjAGkAbABUAGUAeAB0AHUAcgBlAAAAUwBjAGUAbgBlAFQAZQB4AHQAdQByAGUAcwBTAHQAcgB1AGMAdABfAFAAbwBpAG4AdABDAGwAYQBtAHAAUwBhAG0AcABsAGUAcgAAAAgOcAkCABAAAABTdWJzdHJhdGVQdWJsaWMAAAAAAEUAAABTAHUAYgBzAHQAcgBhAHQAZQBQAHUAYgBsAGkAYwBfAFQAbwBwAEwAYQB5AGUAcgBUAGUAeAB0AHUAcgBlAAAAUwB1AGIAcwB0AHIAYQB0AGUAUAB1AGIAbABpAGMAXwBNAGEAdABlAHIAaQBhAGwAVABlAHgAdAB1AHIAZQBBAHIAcgBhAHkAAAARAUkAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+BASE64_ENV */
+/* DIRECT COMPILE
+-directcompile -format=PCD3D_SM6 -entry="SimulateMainComputeCS" -shaderPlatformName=PCD3D_SM6 -supportedHardwareMask=0 -cs C:/Users/toruy_iu/Documents/Y3 Modules/FYP/AuroraSim/Aurora/Saved/ShaderDebugInfo/PCD3D_SM6/NS_Aurora/Data/ParticleGPUComputeScript/FNiagaraShader/2/NiagaraEmitterInstanceShader.usf -nocrashreports
+DIRECT COMPILE */
