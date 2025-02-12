@@ -88,6 +88,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FVector WorldBBoxSize;
 
+	UPROPERTY(EditAnywhere, Category = "AuroraData")
+	UTextureRenderTarget2D* DebugRenderTarget;
+
 	virtual void PostInitProperties() override;
 
 	virtual void GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc) override;
@@ -128,16 +131,3 @@ protected:
 
 
 
-/*class FAuroraPlasmaPotentialSolverCS : FGlobalShader
-{
-public:
-	DECLARE_GLOBAL_SHADER(FAuroraPlasmaPotentialSolverCS);
-	SHADER_USE_PARAMETER_STRUCT(FAuroraPlasmaPotentialSolverCS, FGlobalShader);
-
-	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
-		SHADER_PARAMETER(FIntVector, NumCells)
-		SHADER_PARAMETER(float, DampingFactor)
-		SHADER_PARAMETER_UAV(RWBuffer<float>, PlasmaPotentialRead)
-		SHADER_PARAMETER_SRV(RWBuffer<float>, PlasmaPotentialWrite)
-	END_SHADER_PARAMETER_STRUCT()
-};*/

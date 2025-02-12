@@ -718,155 +718,179 @@ struct FSimulationContext
 
 #line 302 "/Engine/Generated/NiagaraEmitterInstance.ush"
 static float HackSpawnInterp = 1.0;
+void CustomHlslE37DE24747980A76DE7993AB870B9C71_Func_(float3 In_T, out float4x4 Out_TranslationMatrix);
+void CustomHlsl18C2AD9F44D01813AE16B5BCE2EB6A02_Func_(float3 In_Scale, out float4x4 Out_ScaleMatrix);
+void NiagaraScript_102_Particle_Func_(float4 In_FLOAT4_VAR, int In_TargetChannel, out float Out_NewOutput, inout FSimulationContext Context);
+void NiagaraScript_101_Particle_Func_(float3 In_Position, float4x4 In_Engine_Owner_SystemLocalToWorld, float4 In_Engine_Owner_LWCTile, out float3 Out_Vector, inout FSimulationContext Context);
+void CustomHlsl9C02467B4D83C905ACF1F2A0F2645A43_Func_(float3 In_T, out float4x4 Out_TranslationMatrix);
+void UnitToSim8339157945CA14E4C2CC4A847E926055_Func_(float4x4 In_TLocal, float4x4 In_S, float4x4 In_T, out float4x4 Out_ret);
+void ExecutionToSimulation_System_MyAuroraData(float4x4 In_UnitToSim, out float3 Out_Simulation);
+void NiagaraScript_103_Func_(float4x4 In_MATRIX_VAR, out float3 Out_Scale, inout FSimulationContext Context);
 void GetNumCells_System_MyAuroraData(out int Out_NumCellsX, out int Out_NumCellsY, out int Out_NumCellsZ);
-void NiagaraScript_773_Func_(float3 In_Translation, out float4x4 Out_NewOutput, inout FSimulationContext Context);
-void CustomHlsl301913AB4BFAC5ACC67E4589746FDF06_Func_(float3 In_Scale, out float4x4 Out_OutMatrix);
-void NiagaraScript_774_Func_(float3 In_INPUT_VAR, out float4x4 Out_NewOutput, inout FSimulationContext Context);
-void TD41B594649B68197FC50F888A1CF2587_Func_(float3 In_T, out float4x4 Out_OutMatrix);
-void CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_(int In_Index, float3 In_InNumCells, float4x4 In_SimToUnit, float4x4 In_GridTranslationMatrix, float4x4 In_ScaleMatrix, float4x4 In_TranslationMatrix, out float3 Out_SimPos, out float3 Out_Scale);
 void InitialiseDebug_Emitter_Func_(inout FSimulationContext Context);
 void UpdateDebugGrid_Emitter_Func_(inout FSimulationContext Context);
 
-#line 313 "/Engine/Generated/NiagaraEmitterInstance.ush"
-void NiagaraScript_773_Func_(float3 In_Translation, out float4x4 Out_NewOutput, inout FSimulationContext Context)
-{
-	float4 Constant4 = float4(1,0,0,0);
-	float4 Constant5 = float4(0,1,0,0);
-	float4 Constant6 = float4(0,0,1,0);
-	float Constant7 = 1;
-	float4 Output11;
-	Output11.x = In_Translation.x;
-	Output11.y = In_Translation.y;
-	Output11.z = In_Translation.z;
-	Output11.w = Constant7;
-	float4x4 Output12;
-	Output12[0] = Constant4;
-	Output12[1] = Constant5;
-	Output12[2] = Constant6;
-	Output12[3] = Output11;
-	Out_NewOutput = Output12;
-}
-
-#line 334 "/Engine/Generated/NiagaraEmitterInstance.ush"
-void CustomHlsl301913AB4BFAC5ACC67E4589746FDF06_Func_(float3 In_Scale, out float4x4 Out_OutMatrix)
+#line 316 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void CustomHlslE37DE24747980A76DE7993AB870B9C71_Func_(float3 In_T, out float4x4 Out_TranslationMatrix)
 {
 
-Out_OutMatrix[0][0] = In_Scale.x;
-	Out_OutMatrix[1][1] = In_Scale.y;
-	Out_OutMatrix[2][2] = In_Scale.z;
-	Out_OutMatrix[3][3] = 1.0f;
-
-	Out_OutMatrix[1][0] = 0.0f;
-	Out_OutMatrix[2][0] = 0.0f;
-	Out_OutMatrix[3][0] = 0.0f;
-
-	Out_OutMatrix[0][1] = 0.0f;
-	Out_OutMatrix[2][1] = 0.0f;
-	Out_OutMatrix[3][1] = 0.0f;
-
-	Out_OutMatrix[0][2] = 0.0f;
-	Out_OutMatrix[1][2] = 0.0f;
-	Out_OutMatrix[3][2] = 0.0f;
-
-	Out_OutMatrix[0][3] = 0.0f;
-	Out_OutMatrix[1][3] = 0.0f;
-	Out_OutMatrix[2][3] = 0.0f;
-
+Out_TranslationMatrix = float4x4(
+	        float4(1.0f, 0.0f, 0.0f, 0.0f),
+	        float4(0.0f, 1.0f, 0.0f, 0.0f),
+	        float4(0.0f, 0.0f, 1.0f, 0.0f),
+	        In_T, 1.0f);
 }
 
-#line 362 "/Engine/Generated/NiagaraEmitterInstance.ush"
-void NiagaraScript_774_Func_(float3 In_INPUT_VAR, out float4x4 Out_NewOutput, inout FSimulationContext Context)
-{
-	float4x4 CustomHlsl301913AB4BFAC5ACC67E4589746FDF06_Func_Output_OutMatrix;
-	CustomHlsl301913AB4BFAC5ACC67E4589746FDF06_Func_(In_INPUT_VAR, CustomHlsl301913AB4BFAC5ACC67E4589746FDF06_Func_Output_OutMatrix);
-	Out_NewOutput = CustomHlsl301913AB4BFAC5ACC67E4589746FDF06_Func_Output_OutMatrix;
-}
-
-#line 371 "/Engine/Generated/NiagaraEmitterInstance.ush"
-void TD41B594649B68197FC50F888A1CF2587_Func_(float3 In_T, out float4x4 Out_OutMatrix)
+#line 328 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void CustomHlsl18C2AD9F44D01813AE16B5BCE2EB6A02_Func_(float3 In_Scale, out float4x4 Out_ScaleMatrix)
 {
 
-Out_OutMatrix = float4x4(
-	    float4(1.0f, 0.0f, 0.0f, 0.0f),
-	    float4(0.0f, 1.0f, 0.0f, 0.0f),
-	    float4(0.0f, 0.0f, 1.0f, 0.0f),
-	    NiagaraOriginToVector, 1.0f);
+Out_ScaleMatrix = float4x4(
+	        float4(In_Scale.x, 0.0f, 0.0f, 0.0f),
+	        float4(0.0f, In_Scale.y, 0.0f, 0.0f),
+	        float4(0.0f, 0.0f, In_Scale.z, 0.0f),
+	        float4(0.0f, 0.0f, 0.0f, 1.0f));
 }
 
-#line 383 "/Engine/Generated/NiagaraEmitterInstance.ush"
-void CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_(int In_Index, float3 In_InNumCells, float4x4 In_SimToUnit, float4x4 In_GridTranslationMatrix, float4x4 In_ScaleMatrix, float4x4 In_TranslationMatrix, out float3 Out_SimPos, out float3 Out_Scale)
+#line 340 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void NiagaraScript_102_Particle_Func_(float4 In_FLOAT4_VAR, int In_TargetChannel, out float Out_NewOutput, inout FSimulationContext Context)
+{
+	float X;
+	float Y;
+	float Z;
+	float W;
+	X = In_FLOAT4_VAR.x;
+	Y = In_FLOAT4_VAR.y;
+	Z = In_FLOAT4_VAR.z;
+	W = In_FLOAT4_VAR.w;
+	float Constant9 = (0.0);
+	float NiagaraFloat_SelectResult = Constant9;
+	NiagaraFloat_SelectResult = X;
+	if(In_TargetChannel == 1)
+	{ 
+	NiagaraFloat_SelectResult = Y;
+	}
+	if(In_TargetChannel == 2)
+	{ 
+	NiagaraFloat_SelectResult = Z;
+	}
+	if(In_TargetChannel == 3)
+	{ 
+	NiagaraFloat_SelectResult = W;
+	}
+	Out_NewOutput = NiagaraFloat_SelectResult;
+}
+
+#line 370 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void NiagaraScript_101_Particle_Func_(float3 In_Position, float4x4 In_Engine_Owner_SystemLocalToWorld, float4 In_Engine_Owner_LWCTile, out float3 Out_Vector, inout FSimulationContext Context)
+{
+	float3 Output11;
+	Output11.x = Context.MapSpawn.Engine.Owner.LWCTile.x;
+	Output11.y = Context.MapSpawn.Engine.Owner.LWCTile.y;
+	Output11.z = Context.MapSpawn.Engine.Owner.LWCTile.z;
+	int Constant8 = 3;
+	float NiagaraScript_102_Particle_Func_Output_NewOutput;
+	NiagaraScript_102_Particle_Func_(Context.MapSpawn.Engine.Owner.LWCTile, Constant8, NiagaraScript_102_Particle_Func_Output_NewOutput, Context);
+	float3 Result = Output11 * NiagaraScript_102_Particle_Func_Output_NewOutput;
+	float3 Output12;
+	Output12.x = In_Position.x;
+	Output12.y = In_Position.y;
+	Output12.z = In_Position.z;
+	float3 Result1 = Result + Output12;
+	Out_Vector = Result1;
+}
+
+#line 390 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void CustomHlsl9C02467B4D83C905ACF1F2A0F2645A43_Func_(float3 In_T, out float4x4 Out_TranslationMatrix)
 {
 
-int3 NumCells = int3(In_InNumCells);
-	int3 GridIndex = int3(0, 0 ,0);
-	GridIndex.z = In_Index / (NumCells.x * NumCells.y);
-	GridIndex.y = (In_Index % (NumCells.x * NumCells.y)) / NumCells.x;
-	GridIndex.z = (In_Index % (NumCells.x * NumCells.y)) % NumCells.x;
-
-	float3 UnitSpaceCenter = (float3(GridIndex) + 0.5) / In_InNumCells;
-
-	float4x4 UnitToSim = mul(In_TranslationMatrix, mul(In_ScaleMatrix, In_GridTranslationMatrix));
-
-	Out_SimPos = mul(float4(UnitSpaceCenter, 1.0), UnitToSim).xyz;
-
-	float4 deltaX_unit = float4(1.0 / In_InNumCells.x, 0, 0, 0);
-	float4 deltaY_unit = float4(0, 1.0 / In_InNumCells.y, 0, 0);
-	float4 deltaZ_unit = float4(0, 0, 1.0 / In_InNumCells.z, 0);
-
-	float3 deltaX_sim = mul(deltaX_unit, UnitToSim).xyz;
-	float3 deltaY_sim = mul(deltaY_unit, UnitToSim).xyz;
-	float3 deltaZ_sim = mul(deltaZ_unit, UnitToSim).xyz;
-
-	float cellSizeX = length(deltaX_sim);
-	float cellSizeY = length(deltaY_sim);
-	float cellSizeZ = length(deltaZ_sim);
-
-	Out_Scale = float3(cellSizeX, cellSizeY, cellSizeZ);
+Out_TranslationMatrix = float4x4(
+			float4(1.0f, 0.0f, 0.0f, 0.0f),
+			float4(0.0f, 1.0f, 0.0f, 0.0f),
+			float4(0.0f, 0.0f, 1.0f, 0.0f),
+			In_T, 1.0f);
 }
 
-#line 415 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 402 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void UnitToSim8339157945CA14E4C2CC4A847E926055_Func_(float4x4 In_TLocal, float4x4 In_S, float4x4 In_T, out float4x4 Out_ret)
+{
+
+Out_ret = (mul(mul(In_TLocal, In_S), In_T);
+}
+
+#line 410 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void NiagaraScript_103_Func_(float4x4 In_MATRIX_VAR, out float3 Out_Scale, inout FSimulationContext Context)
+{
+	float4 Row0;
+	float4 Row1;
+	float4 Row2;
+	float4 Row3;
+	Row0 = In_MATRIX_VAR[0];
+	Row1 = In_MATRIX_VAR[1];
+	Row2 = In_MATRIX_VAR[2];
+	Row3 = In_MATRIX_VAR[3];
+	float Result2 = length(Row0);
+	float Result3 = length(Row1);
+	float Result4 = length(Row2);
+	float3 Output14;
+	Output14.x = Result2;
+	Output14.y = Result3;
+	Output14.z = Result4;
+	Out_Scale = Output14;
+}
+
+#line 432 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void InitialiseDebug_Emitter_Func_(inout FSimulationContext Context)
 {
-	int Result = ExecIndex();
+	float Constant3 = -0.5;
+	float Constant4 = -0.5;
+	float Constant5 = -0.5;
+	float3 Output1;
+	Output1.x = Constant3;
+	Output1.y = Constant4;
+	Output1.z = Constant5;
+	float4x4 CustomHlslE37DE24747980A76DE7993AB870B9C71_Func_Output_TranslationMatrix;
+	CustomHlslE37DE24747980A76DE7993AB870B9C71_Func_(Output1, CustomHlslE37DE24747980A76DE7993AB870B9C71_Func_Output_TranslationMatrix);
+	float4x4 CustomHlsl18C2AD9F44D01813AE16B5BCE2EB6A02_Func_Output_ScaleMatrix;
+	CustomHlsl18C2AD9F44D01813AE16B5BCE2EB6A02_Func_(Context.MapSpawn.InitialiseDebug.worldbox, CustomHlsl18C2AD9F44D01813AE16B5BCE2EB6A02_Func_Output_ScaleMatrix);
+	float4x4 Constant6 = float4x4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1);
+	float4 Constant7 = float4(0,0,0,0);
+	float3 NiagaraScript_101_Particle_Func_Output_Vector;
+	NiagaraScript_101_Particle_Func_(Context.MapSpawn.Engine.Owner.Position, Constant6, Constant7, NiagaraScript_101_Particle_Func_Output_Vector, Context);
+	float4x4 CustomHlsl9C02467B4D83C905ACF1F2A0F2645A43_Func_Output_TranslationMatrix;
+	CustomHlsl9C02467B4D83C905ACF1F2A0F2645A43_Func_(NiagaraScript_101_Particle_Func_Output_Vector, CustomHlsl9C02467B4D83C905ACF1F2A0F2645A43_Func_Output_TranslationMatrix);
+	float4x4 UnitToSim8339157945CA14E4C2CC4A847E926055_Func_Output_ret;
+	UnitToSim8339157945CA14E4C2CC4A847E926055_Func_(CustomHlslE37DE24747980A76DE7993AB870B9C71_Func_Output_TranslationMatrix, CustomHlsl18C2AD9F44D01813AE16B5BCE2EB6A02_Func_Output_ScaleMatrix, CustomHlsl9C02467B4D83C905ACF1F2A0F2645A43_Func_Output_TranslationMatrix, UnitToSim8339157945CA14E4C2CC4A847E926055_Func_Output_ret);
+	float3 ExecutionToSimulation_System_MyAuroraDataOutput_Simulation;
+	ExecutionToSimulation_System_MyAuroraData(UnitToSim8339157945CA14E4C2CC4A847E926055_Func_Output_ret, ExecutionToSimulation_System_MyAuroraDataOutput_Simulation);
+	float3 Output13;
+	Output13.x = ExecutionToSimulation_System_MyAuroraDataOutput_Simulation.x;
+	Output13.y = ExecutionToSimulation_System_MyAuroraDataOutput_Simulation.y;
+	Output13.z = ExecutionToSimulation_System_MyAuroraDataOutput_Simulation.z;
+	float3 NiagaraScript_103_Func_Output_Scale;
+	NiagaraScript_103_Func_(UnitToSim8339157945CA14E4C2CC4A847E926055_Func_Output_ret, NiagaraScript_103_Func_Output_Scale, Context);
 	int GetNumCells_System_MyAuroraDataOutput_NumCellsX;
 	int GetNumCells_System_MyAuroraDataOutput_NumCellsY;
 	int GetNumCells_System_MyAuroraDataOutput_NumCellsZ;
 	GetNumCells_System_MyAuroraData(GetNumCells_System_MyAuroraDataOutput_NumCellsX, GetNumCells_System_MyAuroraDataOutput_NumCellsY, GetNumCells_System_MyAuroraDataOutput_NumCellsZ);
-	float3 Output1;
-	Output1.x = GetNumCells_System_MyAuroraDataOutput_NumCellsX;
-	Output1.y = GetNumCells_System_MyAuroraDataOutput_NumCellsY;
-	Output1.z = GetNumCells_System_MyAuroraDataOutput_NumCellsZ;
-	float3 Constant3 = float3(-0.5,-0.5,-1.2);
-	float4x4 NiagaraScript_773_Func_Output_NewOutput;
-	NiagaraScript_773_Func_(Constant3, NiagaraScript_773_Func_Output_NewOutput, Context);
-	float4x4 NiagaraScript_774_Func_Output_NewOutput;
-	NiagaraScript_774_Func_(Context.MapSpawn.InitialiseDebug.worldbox, NiagaraScript_774_Func_Output_NewOutput, Context);
-	float3 Output13;
-	Output13.x = Context.MapSpawn.Engine.Owner.Position.x;
-	Output13.y = Context.MapSpawn.Engine.Owner.Position.y;
-	Output13.z = Context.MapSpawn.Engine.Owner.Position.z;
-	float4x4 TD41B594649B68197FC50F888A1CF2587_Func_Output_OutMatrix;
-	TD41B594649B68197FC50F888A1CF2587_Func_(Output13, TD41B594649B68197FC50F888A1CF2587_Func_Output_OutMatrix);
-	float3 CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_Output_SimPos;
-	float3 CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_Output_Scale;
-	CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_(Result, Output1, Context.MapSpawn.System.SimToUnit, NiagaraScript_773_Func_Output_NewOutput, NiagaraScript_774_Func_Output_NewOutput, TD41B594649B68197FC50F888A1CF2587_Func_Output_OutMatrix, CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_Output_SimPos, CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_Output_Scale);
-	float3 Output14;
-	Output14.x = CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_Output_SimPos.x;
-	Output14.y = CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_Output_SimPos.y;
-	Output14.z = CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_Output_SimPos.z;
-	float3 Result1 = CalculatingPositionandScaleE15BC6FD4C7B202629A358B89A623184_Func_Output_Scale - Constants_Emitter_InitialiseDebug_CellMeshScaleOffset;
-	Context.MapSpawn.Particles.Position = Output14;
+	float3 Output15;
+	Output15.x = GetNumCells_System_MyAuroraDataOutput_NumCellsX;
+	Output15.y = GetNumCells_System_MyAuroraDataOutput_NumCellsY;
+	Output15.z = GetNumCells_System_MyAuroraDataOutput_NumCellsZ;
+	float3 Result5 = NiagaraScript_103_Func_Output_Scale / Output15;
+	float3 Result6 = Result5 - Constants_Emitter_InitialiseDebug_CellMeshScaleOffset;
+	Context.MapSpawn.Particles.Position = Output13;
 	Context.MapSpawn.Particles.MeshOrientation = Context.MapSpawn.Engine.Owner.Rotation;
-	Context.MapSpawn.Particles.Scale = Result1;
+	Context.MapSpawn.Particles.Scale = Result6;
 }
 
-#line 452 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 478 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void UpdateDebugGrid_Emitter_Func_(inout FSimulationContext Context)
 {
 
 }
 
-#line 464 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 490 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void InterpolateParameters(inout FSimulationContext Context)
 {
 
@@ -907,7 +931,7 @@ void InterpolateParameters(inout FSimulationContext Context)
 
 }
 
-#line 505 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 531 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void HandlePreviousValuesForSpawn(inout FSimulationContext Context)
 {
 Context.MapSpawn.Particles.Previous.MeshOrientation = Context.MapSpawn.Particles.MeshOrientation;
@@ -918,17 +942,17 @@ Context.MapSpawn.Particles.Previous.Scale = Context.MapSpawn.Particles.Scale;
 
 }
 
-#line 516 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 542 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void ReadDataSets(inout FSimulationContext Context)
 {
 }
 
-#line 520 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 546 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void WriteDataSets(inout FSimulationContext Context)
 {
 }
 
-#line 525 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 551 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void SimulateMapSpawn(inout FSimulationContext Context)
 {
 
@@ -955,7 +979,7 @@ void SimulateMapSpawn(inout FSimulationContext Context)
 
 }
 
-#line 552 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 578 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void SimulateMapUpdate(inout FSimulationContext Context)
 {
 
@@ -968,10 +992,27 @@ void SimulateMapUpdate(inout FSimulationContext Context)
 
 }
 
-#line 565 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 591 "/Engine/Generated/NiagaraEmitterInstance.ush"
 int3 System_MyAuroraData_NumCells;
 
-#line 573 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 599 "/Engine/Generated/NiagaraEmitterInstance.ush"
+void ExecutionToSimulation_System_MyAuroraData(float4x4 UnitToSim, out float3 SimPos)
+			{
+				float3 UnitSpace = float3(0.0, 0.0, 0.0);
+
+
+
+					const uint Linear = GLinearThreadId;
+					const uint IndexX = Linear % System_MyAuroraData_NumCells.x;
+					const uint IndexY = (Linear / System_MyAuroraData_NumCells.x) % System_MyAuroraData_NumCells.y;
+					const uint IndexZ = Linear / (System_MyAuroraData_NumCells.x * System_MyAuroraData_NumCells.y);				
+
+					UnitSpace = (float3(IndexX, IndexY, IndexZ) + .5) / System_MyAuroraData_NumCells;				
+
+				SimPos = mul(float4(UnitSpace, 1.0), UnitToSim).xyz;
+			}
+
+#line 615 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void GetNumCells_System_MyAuroraData(out int Out_NumCellsX, out int Out_NumCellsY, out int Out_NumCellsZ)
 			{
 				Out_NumCellsX = System_MyAuroraData_NumCells.x;
@@ -979,7 +1020,7 @@ void GetNumCells_System_MyAuroraData(out int Out_NumCellsX, out int Out_NumCells
 				Out_NumCellsZ = System_MyAuroraData_NumCells.z;
 			}
 
-#line 579 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 621 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void InitConstants(inout FSimulationContext Context)
 {
 
@@ -987,6 +1028,7 @@ void InitConstants(inout FSimulationContext Context)
 	Context.MapSpawn.Engine.Owner.Position = Engine_Owner_Position;
 	Context.MapSpawn.Engine.Owner.Rotation = Engine_Owner_Rotation;
 	Context.MapSpawn.System.SimToUnit = System_SimToUnit;
+	Context.MapSpawn.Engine.Owner.LWCTile = Engine_Owner_LWCTile;
 
 
 	Context.MapUpdate.Engine.Time = Engine_Time;
@@ -1002,7 +1044,7 @@ void InitConstants(inout FSimulationContext Context)
 
 }
 
-#line 601 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 644 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void InitSpawnVariables(inout FSimulationContext Context)
 {
 
@@ -1031,7 +1073,7 @@ void InitSpawnVariables(inout FSimulationContext Context)
 
 }
 
-#line 629 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 672 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void LoadUpdateVariables(inout FSimulationContext Context, int InstanceIdx)
 {
 
@@ -1057,13 +1099,13 @@ void LoadUpdateVariables(inout FSimulationContext Context, int InstanceIdx)
 
 }
 
-#line 654 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 697 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void ConditionalInterpolateParameters(inout FSimulationContext Context)
 {
 	InterpolateParameters(Context);
 }
 
-#line 659 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 702 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void TransferAttributes(inout FSimulationContext Context)
 {
 
@@ -1071,7 +1113,7 @@ void TransferAttributes(inout FSimulationContext Context)
 
 }
 
-#line 666 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 709 "/Engine/Generated/NiagaraEmitterInstance.ush"
 void StoreUpdateVariables(in FSimulationContext Context, bool bIsValidInstance)
 {
 
@@ -1111,7 +1153,7 @@ void StoreUpdateVariables(in FSimulationContext Context, bool bIsValidInstance)
 
 }
 
-#line 715 "/Engine/Generated/NiagaraEmitterInstance.ush"
+#line 758 "/Engine/Generated/NiagaraEmitterInstance.ush"
 [numthreads(64, 1, 1)]
 void SimulateMainComputeCS(
 	uint3 InDispatchThreadId	: SV_DispatchThreadID,

@@ -38,6 +38,7 @@ static const FName GetPlasmaPotentialWriteFunctionName("GetPlasmaPotentialWrite"
 static const FName GetChargeDensityFunctionName("GetChargeDensity");
 static const FName GetElectricFieldFunctionName("GetElectricField");
 
+static const FName ExecutionIndexToSimulationFunctionName("ExecutionToSimulation");
 
 /*---------------------*/
 /*------- NDI ---------*/
@@ -113,7 +114,7 @@ bool UNiagaraDataInterfaceAurora::AppendCompileHash(FNiagaraCompileHashVisitor* 
 }
 bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL)
 {
-	/// Precision value is 100,000;
+	/// Precision value is 1,000,000;
 	TMap<FString, FStringFormatArg> ArgsDeclaration =
 	{
 		{TEXT("FunctionName"),         FunctionInfo.InstanceName},
@@ -136,11 +137,6 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				int iVal = Index % GridSize.x;
 				int jVal = (Index / GridSize.x) % GridSize.y;
 				int kVal = Index / (GridSize.x * GridSize.y);
-				
-				// Get and Set tests
-				// {PlasmaPotentialWrite}[Index] = {PlasmaPotentialRead}[Index] + {PlasmaPotentialWrite}[Index];
-				// {ChargeDensity}[Index] += 1;
-				// {ElectricField}[Index].xyz += float3(1.1, 1.2, 1.3);
 
 				float sum = 0.0;
     
@@ -165,7 +161,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				sum += {PlasmaPotentialRead}[backIndex];
 				sum += {PlasmaPotentialRead}[frontIndex];
 
-				float ChargeDensityValue = float({ChargeDensity}[Index]) / 100000.0f;
+				float ChargeDensityValue = float({ChargeDensity}[Index]) / 1000000.0f;
 
 				{PlasmaPotentialWrite}[Index] = (sum - ChargeDensityValue * CellVolume) / 6.0f;
 				OutSuccess = true;
@@ -328,10 +324,10 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 			int Index111 = (i + 1) + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
 			int Index011 = i + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
 
-			float ScaledCharge = InCharge * 100000.0;
+			float ScaledCharge = InCharge * 1000000.0;
 
 			if (i >= 0 && i < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ)
-			{ 
+			{  
 				InterlockedAdd({ChargeDensity}[Index000], uint(ScaledCharge * (1.0 - di) * (1.0 - dj) * (1.0 - dk))); 
 			}
 			if (i + 1 >= 0 && i + 1 < GridSizeX && j >= 0 && j < GridSizeY && k >= 0 && k < GridSizeZ)
@@ -410,7 +406,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 			void {FunctionName}(int Index, out float OutValue)
 			{
 				int preValue = {ChargeDensity}[Index];
-				OutValue = float(preValue) / 100000;
+				OutValue = float(preValue) / 1000000;
 			}
 		)");
 		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
@@ -444,7 +440,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		static const TCHAR* FormatSample = TEXT(R"(
 			void {FunctionName}(int Index, float InValue, out bool OutSuccess)
 			{
-				uint value = uint(InValue * 100000);
+				uint value = uint(InValue * 1000000);
 				{ChargeDensity}[Index] = value;
 				OutSuccess = true;
 			}
@@ -459,6 +455,28 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 			{
 				{ElectricField}[Index].xyz = InValue;
 				OutSuccess = true;
+			}
+		)");
+		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
+		return true;
+	}
+	else if (FunctionInfo.DefinitionName == ExecutionIndexToSimulationFunctionName)
+	{
+		static const TCHAR* FormatSample = TEXT(R"(
+			void {FunctionName}(float4x4 UnitToSim, out float3 SimPos)
+			{
+				float3 UnitSpace = float3(0.0, 0.0, 0.0);
+				#if NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_THREE_D || NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_CUSTOM
+					UnitSpace = (float3(GDispatchThreadId.x, GDispatchThreadId.y, GDispatchThreadId.z) + .5) / {NumCells};
+				#else
+					const uint Linear = GLinearThreadId;
+					const uint IndexX = Linear % {NumCells}.x;
+					const uint IndexY = (Linear / {NumCells}.x) % {NumCells}.y;
+					const uint IndexZ = Linear / ({NumCells}.x * {NumCells}.y);				
+
+					UnitSpace = (float3(IndexX, IndexY, IndexZ) + .5) / {NumCells};				
+				#endif
+				SimPos = mul(float4(UnitSpace, 1.0), UnitToSim).xyz;
 			}
 		)");
 		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
@@ -551,10 +569,12 @@ bool UNiagaraDataInterfaceAurora::InitPerInstanceData(void* PerInstanceData, FNi
 	}
 
 	check(Proxy);
-	UE_LOG(LogTemp, Log, TEXT("Initialising a per instance data"));
 
 	FNDIAuroraInstanceDataGameThread* InstanceData = new (PerInstanceData) FNDIAuroraInstanceDataGameThread();
 	SystemInstancesToProxyData_GT.Emplace(SystemInstance->GetId(), InstanceData);
+
+	UE_LOG(LogTemp, Log, TEXT("Initialising a per instance data: id:%d"), SystemInstance->GetId());
+	
 
 	FIntVector RT_NumCells = NumCells;
 	FVector RT_WorldBBoxSize = WorldBBoxSize;
@@ -602,6 +622,11 @@ void UNiagaraDataInterfaceAurora::DestroyPerInstanceData(void* PerInstanceData, 
 	ENQUEUE_RENDER_COMMAND(FNiagaraDestroyInstanceData) (
 		[LocalProxy, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& CmdList)
 		{
+			FNDIAuroraInstanceDataRenderThread* ProxyData = LocalProxy->SystemInstancesToProxyData.Find(InstanceID);
+			ProxyData->PlasmaPotentialBufferRead.Release();
+			ProxyData->PlasmaPotentialBufferWrite.Release();
+			ProxyData->ChargeDensityBuffer.Release();
+			ProxyData->ElectricFieldBuffer.Release();
 			LocalProxy->SystemInstancesToProxyData.Remove(InstanceID);
 		}
 	);
@@ -609,6 +634,7 @@ void UNiagaraDataInterfaceAurora::DestroyPerInstanceData(void* PerInstanceData, 
 
 bool UNiagaraDataInterfaceAurora::PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds)
 {
+	UE_LOG(LogTemp, Log, TEXT("PerInstanceTickPostSimulate"));
 	FNDIAuroraInstanceDataGameThread* InstanceData = static_cast<FNDIAuroraInstanceDataGameThread*>(PerInstanceData);
 
 	if (InstanceData->bBoundsChanged || InstanceData->bNeedsRealloc)
@@ -810,6 +836,7 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 	SetPlasmaPotentialWriteSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 	SetPlasmaPotentialWriteSig.bMemberFunction = true;
 	SetPlasmaPotentialWriteSig.bRequiresContext = false;
+	SetPlasmaPotentialWriteSig.bRequiresExecPin = true;
 	SetPlasmaPotentialWriteSig.bSupportsCPU = false;
 	SetPlasmaPotentialWriteSig.bSupportsGPU = true;
 	OutFunctions.Add(SetPlasmaPotentialWriteSig);
@@ -822,6 +849,7 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 	SetChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 	SetChargeDensitySig.bMemberFunction = true;
 	SetChargeDensitySig.bRequiresContext = false;
+	SetChargeDensitySig.bRequiresExecPin = true;
 	SetChargeDensitySig.bSupportsCPU = false;
 	SetChargeDensitySig.bSupportsGPU = true;
 	OutFunctions.Add(SetChargeDensitySig);
@@ -833,10 +861,22 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 	SetElectricFieldSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("Value")));
 	SetElectricFieldSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 	SetElectricFieldSig.bMemberFunction = true;
+	SetElectricFieldSig.bRequiresExecPin = true;
 	SetElectricFieldSig.bRequiresContext = false;
 	SetElectricFieldSig.bSupportsCPU = false;
 	SetElectricFieldSig.bSupportsGPU = true;
 	OutFunctions.Add(SetElectricFieldSig);
+
+	FNiagaraFunctionSignature ExecutionIndexToSimulationSig;
+	ExecutionIndexToSimulationSig.Name = ExecutionIndexToSimulationFunctionName;
+	ExecutionIndexToSimulationSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+	ExecutionIndexToSimulationSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetMatrix4Def(), TEXT("UnitToSim")));
+	ExecutionIndexToSimulationSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("Simulation")));
+	ExecutionIndexToSimulationSig.bMemberFunction = true;
+	ExecutionIndexToSimulationSig.bRequiresContext = false;
+	ExecutionIndexToSimulationSig.bSupportsCPU = false;
+	ExecutionIndexToSimulationSig.bSupportsGPU = true;
+	OutFunctions.Add(ExecutionIndexToSimulationSig);
 }
 #endif
 
@@ -917,12 +957,12 @@ void FNiagaraDataInterfaceProxyAurora::ResetData(const FNDIGpuComputeResetContex
 	{
 		return;
 	}
+	UE_LOG(LogTemp, Log, TEXT("Reset data"));
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
 	AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
 	AddClearUAVFloatPass(GraphBuilder, ProxyData->PlasmaPotentialBufferRead.GetOrCreateUAV(GraphBuilder), 0.0f);
 	AddClearUAVFloatPass(GraphBuilder, ProxyData->PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder), 0.0f);
 	AddClearUAVFloatPass(GraphBuilder, ProxyData->ElectricFieldBuffer.GetOrCreateUAV(GraphBuilder), 0.0f);
-	
 }
 
 // Runs before each stage #todo add event debug logs
@@ -932,7 +972,7 @@ void FNiagaraDataInterfaceProxyAurora::PreStage(const FNDIGpuComputePreStageCont
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
 	FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
 
-	UE_LOG(LogTemp, Log, TEXT("Pre Stage"));
+	UE_LOG(LogTemp, Log, TEXT("Pre Stage: %d"), Context.GetSystemInstanceID());
 
 	if (ProxyData && ProxyData->bResizeBuffers)
 	{
@@ -951,23 +991,17 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Post Simulate"));
-
 	ProxyData->SwapBuffers();
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
 	AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
+	UE_LOG(LogTemp, Log, TEXT("Post Simulate: %d"), Context.GetSystemInstanceID());
 
 	if (Context.IsFinalPostSimulate())
 	{
-		UE_LOG(LogTemp, Log, TEXT("Final post simulate"));
-		for (auto it = SystemInstancesToProxyData.CreateIterator(); it; ++it)
-		{
-			FNDIAuroraInstanceDataRenderThread& InstanceData = it.Value();
-			InstanceData.PlasmaPotentialBufferRead.EndGraphUsage();
-			InstanceData.PlasmaPotentialBufferWrite.EndGraphUsage();
-			InstanceData.ChargeDensityBuffer.EndGraphUsage();
-			InstanceData.ElectricFieldBuffer.EndGraphUsage();
-		}
+		ProxyData->PlasmaPotentialBufferRead.EndGraphUsage();
+		ProxyData->PlasmaPotentialBufferWrite.EndGraphUsage();
+		ProxyData->ChargeDensityBuffer.EndGraphUsage();
+		ProxyData->ElectricFieldBuffer.EndGraphUsage();
 	}
 }
 
@@ -975,7 +1009,7 @@ void FNiagaraDataInterfaceProxyAurora::PostStage(const FNDIGpuComputePostStageCo
 {
 	FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
 	const FNiagaraSimStageData& SimData = Context.GetSimStageData();
-	UE_LOG(LogTemp, Log, TEXT("Current Sim index: %d"), SimData.StageIndex);
+	UE_LOG(LogTemp, Log, TEXT("Post-Stage: Current Sim index: %d"), SimData.StageIndex);
 
 
 	/*if (SimData.StageIndex == 1 && ProxyData)
