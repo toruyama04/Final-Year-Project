@@ -10,7 +10,19 @@ public class Aurora : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "Projects", "Niagara", "NiagaraCore", "VectorVM", "RenderCore", "RHI", "NiagaraShader" });
+		PrivateDependencyModuleNames.AddRange(new string[] { 
+			"Core", 
+			"CoreUObject", 
+			"Engine", 
+			"Projects", 
+			"Niagara", 
+			"NiagaraCore", 
+			"VectorVM", 
+			"Shaders",
+			"RenderCore", 
+			"RHI", 
+			"NiagaraShader" 
+		});
 
 		// Uncomment if you are using Slate UI
 		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

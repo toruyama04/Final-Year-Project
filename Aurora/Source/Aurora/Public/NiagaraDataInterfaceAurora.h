@@ -5,12 +5,20 @@
 #include "CoreMinimal.h"
 #include "NiagaraDataInterface.h"
 #include "NiagaraDataInterfaceRW.h"
+#include "RenderGraphBuilder.h"
 #include "NiagaraRenderGraphUtils.h"
 #include "RHIUtilities.h"
 #include "NiagaraCommon.h"
 
 #include "NiagaraDataInterfaceAurora.generated.h"
 
+inline void FNiagaraPooledRWTexture::InitializeInternal(FRDGBuilder& GraphBuilder, const TCHAR* ResourceName, const FRDGTextureDesc& TextureDesc)
+{
+	Release();
+
+	TransientRDGTexture = GraphBuilder.CreateTexture(TextureDesc, ResourceName);
+	Texture = GraphBuilder.ConvertToExternalTexture(TransientRDGTexture);
+}
 
 struct FNDIAuroraInstanceDataRenderThread
 {
@@ -19,7 +27,7 @@ struct FNDIAuroraInstanceDataRenderThread
 	void ResizeBuffers(FRDGBuilder& GraphBuilder);
 	void SwapBuffers();
 
-	FIntVector NumCells = FIntVector(10, 10, 10);
+	FIntVector NumCells = FIntVector(2, 2, 2);
 	FVector WorldBBoxSize = FVector(100., 100., 100.);
 	float CellSize = 0.0f;
 
@@ -29,12 +37,13 @@ struct FNDIAuroraInstanceDataRenderThread
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
 	FNiagaraPooledRWBuffer ChargeDensityBuffer;
 	FNiagaraPooledRWBuffer ElectricFieldBuffer;
+	FNiagaraPooledRWTexture VectorFieldTexture;
 };
 
 
 struct FNDIAuroraInstanceDataGameThread
 {
-	FIntVector NumCells = FIntVector(10, 10, 10);
+	FIntVector NumCells = FIntVector(2, 2, 2);
 	FVector WorldBBoxSize = FVector(100., 100., 100.);
 	bool bNeedsRealloc = false;
 	bool bBoundsChanged = false;
@@ -69,10 +78,11 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 		SHADER_PARAMETER(FVector3f,                           CellSize)
 		SHADER_PARAMETER(FVector3f,                           WorldBBoxSize)
 
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialRead)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<float>,        PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       ChargeDensity)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float4>,     ElectricField)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, VectorField)
 	END_SHADER_PARAMETER_STRUCT()
 
 	
@@ -87,9 +97,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FVector WorldBBoxSize;
-
-	UPROPERTY(EditAnywhere, Category = "AuroraData")
-	UTextureRenderTarget2D* DebugRenderTarget;
 
 	virtual void PostInitProperties() override;
 
