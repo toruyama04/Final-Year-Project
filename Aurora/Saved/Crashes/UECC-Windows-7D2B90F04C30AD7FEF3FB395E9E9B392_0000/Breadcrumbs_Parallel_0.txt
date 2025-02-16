@@ -1,6 +1,0 @@
-Breadcrumbs 'Parallel'
- - NiagaraGpuComputeDispatch
- - VisibilityCommands
- - Scene
- - FRDGBuilder::Execute
- - Frame 117175
