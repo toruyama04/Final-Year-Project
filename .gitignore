@@ -23,6 +23,8 @@ Aurora/*.log
 Aurora/*.dump
 Aurora/*.gpudump
 Aurora/Config/DefaultEditorPerProjectUserSettings.ini
+Aurora/Saved/Logs/
+Aurora/Saved/Crashes/
 
 # Ignore user-specific Unreal settings
 Aurora/Config/DefaultEditorPerProjectUserSettings.ini
