@@ -27,8 +27,8 @@ struct FNDIAuroraInstanceDataRenderThread
 	void ResizeBuffers(FRDGBuilder& GraphBuilder);
 	void SwapBuffers();
 
-	FIntVector NumCells = FIntVector(2, 2, 2);
-	FVector WorldBBoxSize = FVector(100., 100., 100.);
+	FIntVector NumCells = FIntVector(8, 8, 8);
+	FVector WorldBBoxSize = FVector(1500., 1500., 1500.);
 	float CellSize = 0.0f;
 
 	bool bResizeBuffers = false;
@@ -36,15 +36,15 @@ struct FNDIAuroraInstanceDataRenderThread
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
 	FNiagaraPooledRWBuffer ChargeDensityBuffer;
-	FNiagaraPooledRWBuffer ElectricFieldBuffer;
+	FNiagaraPooledRWTexture ElectricFieldTexture;
 	FNiagaraPooledRWTexture VectorFieldTexture;
 };
 
 
 struct FNDIAuroraInstanceDataGameThread
 {
-	FIntVector NumCells = FIntVector(2, 2, 2);
-	FVector WorldBBoxSize = FVector(100., 100., 100.);
+	FIntVector NumCells = FIntVector(8, 8, 8);
+	FVector WorldBBoxSize = FVector(1500., 1500., 1500.);
 	bool bNeedsRealloc = false;
 	bool bBoundsChanged = false;
 };
@@ -64,10 +64,6 @@ struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
 	TMap<FNiagaraSystemInstanceID, FNDIAuroraInstanceDataRenderThread> SystemInstancesToProxyData;
 };
 
-
-/**
- * 
- */
 UCLASS(EditInlineNew, Category = "Aurora", meta = (DisplayName = "Aurora Data"))
 class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBase
 {
@@ -81,7 +77,7 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<float>,        PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       ChargeDensity)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float4>,     ElectricField)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, ElectricField)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, VectorField)
 	END_SHADER_PARAMETER_STRUCT()
 
