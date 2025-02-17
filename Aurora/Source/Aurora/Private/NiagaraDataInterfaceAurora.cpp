@@ -21,6 +21,7 @@
 #include "TextureResource.h"
 #include "NiagaraRenderer.h"
 #include "NiagaraSettings.h"
+#include "Engine/TextureRenderTargetVolume.h"
 
 
 static const FString PlasmaPotentialReadParamName(TEXT("PlasmaPotentialRead"));
@@ -49,6 +50,8 @@ static const FName GetChargeDensityFunctionName("GetChargeDensity");
 static const FName GetElectricFieldFunctionName("GetElectricField");
 static const FName GetVectorFieldFunctionName("GetVectorField");
 
+FNiagaraVariableBase UNiagaraDataInterfaceAurora::ExposedRTVar;
+
 /*---------------------*/
 /*------- NDI ---------*/
 /*---------------------*/
@@ -62,6 +65,8 @@ UNiagaraDataInterfaceAurora::UNiagaraDataInterfaceAurora()
 	UE_LOG(LogTemp, Log, TEXT("Constructor"));
 
 	Proxy.Reset(new FNiagaraDataInterfaceProxyAurora());
+	FNiagaraTypeDefinition Def(UTextureRenderTarget::StaticClass());
+	RenderTargetUserParameter.Parameter.SetType(Def);
 }
 
 void UNiagaraDataInterfaceAurora::PostInitProperties()
@@ -72,6 +77,7 @@ void UNiagaraDataInterfaceAurora::PostInitProperties()
 	{
 		ENiagaraTypeRegistryFlags Flags = ENiagaraTypeRegistryFlags::AllowAnyVariable | ENiagaraTypeRegistryFlags::AllowParameter;
 		FNiagaraTypeRegistry::Register(FNiagaraTypeDefinition(GetClass()), Flags);
+		ExposedRTVar = FNiagaraVariableBase(FNiagaraTypeDefinition(UTexture::StaticClass()), TEXT("RenderTarget"));
 	}
 }
 
@@ -107,7 +113,8 @@ bool UNiagaraDataInterfaceAurora::Equals(const UNiagaraDataInterface* Other) con
 	return OtherType != nullptr &&
 		OtherType->NumCells == NumCells &&
 		FMath::IsNearlyEqual(OtherType->CellSize, CellSize) &&
-		OtherType->WorldBBoxSize.Equals(WorldBBoxSize);
+		OtherType->WorldBBoxSize.Equals(WorldBBoxSize) &&
+		OtherType->RenderTargetUserParameter == RenderTargetUserParameter;
 }
 
 #if WITH_EDITORONLY_DATA
@@ -417,7 +424,7 @@ e
 		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
 		return true;
 	}
-	else if (FunctionInfo.Definitionname == NeumannBoundaryNodeFunctionName)
+	else if (FunctionInfo.DefinitionName == NeumannBoundaryNodeFunctionName)
 	{
 		static const TCHAR* FormatSample = TEXT(R"(
 			void {FunctionName}(out bool OutSuccess)
@@ -698,11 +705,14 @@ bool UNiagaraDataInterfaceAurora::InitPerInstanceData(void* PerInstanceData, FNi
 	}
 	InstanceData->WorldBBoxSize = RT_WorldBBoxSize;
 	InstanceData->NumCells = RT_NumCells;
+	InstanceData->TargetTexture = nullptr;
+	InstanceData->RTUserParamBinding.Init(SystemInstance->GetInstanceParameters(), RenderTargetUserParameter.Parameter);
+	InstanceData->UpdateTargetTexture(ENiagaraGpuBufferFormat::Float);
 
 	FNiagaraDataInterfaceProxyAurora* LocalProxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
 
 	ENQUEUE_RENDER_COMMAND(FInitData)(
-		[LocalProxy, RT_InstanceData = *InstanceData, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
+		[LocalProxy, RT_InstanceData = *InstanceData, InstanceID = SystemInstance->GetId(), RT_Resource = InstanceData->TargetTexture ? InstanceData->TargetTexture->GetResource() : nullptr](FRHICommandListImmediate& RHICmdList)
 		{
 			check(!LocalProxy->SystemInstancesToProxyData.Contains(InstanceID));
 			FNDIAuroraInstanceDataRenderThread* TargetData = &LocalProxy->SystemInstancesToProxyData.Add(InstanceID);
@@ -713,6 +723,15 @@ bool UNiagaraDataInterfaceAurora::InitPerInstanceData(void* PerInstanceData, FNi
 			TargetData->WorldBBoxSize = RT_InstanceData.WorldBBoxSize;
 			TargetData->CellSize = static_cast<float>(RT_InstanceData.WorldBBoxSize.X / RT_InstanceData.NumCells.X);
 			TargetData->bResizeBuffers = true;
+
+			if (RT_Resource && RT_Resource->TextureRHI.IsValid())
+			{
+				TargetData->RenderTargetToCopyTo = RT_Resource->TextureRHI;
+			}
+			else
+			{
+				TargetData->RenderTargetToCopyTo = nullptr;
+			}
 		}
 		);
 	return true;
@@ -776,6 +795,45 @@ bool UNiagaraDataInterfaceAurora::PerInstanceTickPostSimulate(void* PerInstanceD
 				}
 				);
 		}
+	}
+	return false;
+}
+
+bool UNiagaraDataInterfaceAurora::PerInstanceTick(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds)
+{
+	FNDIAuroraInstanceDataGameThread* InstanceData = SystemInstancesToProxyData_GT.FindRef(SystemInstance->GetId());
+	bool NeedsReset = InstanceData->UpdateTargetTexture(ENiagaraGpuBufferFormat::Float);
+
+	FNiagaraDataInterfaceProxyAurora* RT_Proxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
+	ENQUEUE_RENDER_COMMAND(FUpdateTexture)(
+		[RT_Resource = InstanceData->TargetTexture ? InstanceData->TargetTexture->GetResource() : nullptr, RT_Proxy, InstanceID = SystemInstance->GetId()](FRHICommandListImmediate& RHICmdList)
+		{
+			FNDIAuroraInstanceDataRenderThread* TargetData = RT_Proxy->SystemInstancesToProxyData.Find(InstanceID);
+			if (RT_Resource && RT_Resource->TextureRHI.IsValid())
+			{
+				TargetData->RenderTargetToCopyTo = RT_Resource->TextureRHI;
+			}
+			else
+			{
+				TargetData->RenderTargetToCopyTo = nullptr;
+			}
+		});
+	return false;
+}
+
+void UNiagaraDataInterfaceAurora::GetExposedVariables(TArray<FNiagaraVariableBase>& OutVariables) const
+{
+	OutVariables.Emplace(ExposedRTVar);
+}
+
+bool UNiagaraDataInterfaceAurora::GetExposedVariableValue(const FNiagaraVariableBase& InVariable, void* InPerInstanceData, FNiagaraSystemInstance* InSystemInstance, void* OutData) const
+{
+	FNDIAuroraInstanceDataGameThread* InstanceData = static_cast<FNDIAuroraInstanceDataGameThread*>(InPerInstanceData);
+	if (InVariable.IsValid() && InVariable == ExposedRTVar && InstanceData && InstanceData->TargetTexture)
+	{
+		UTextureRenderTarget** Var = (UTextureRenderTarget**)OutData;
+		*Var = InstanceData->TargetTexture;
+		return true;
 	}
 	return false;
 }
@@ -1055,6 +1113,7 @@ bool UNiagaraDataInterfaceAurora::CopyToInternal(UNiagaraDataInterface* Destinat
 	CastedDestination->NumCells = NumCells;
 	CastedDestination->WorldBBoxSize = WorldBBoxSize;
 	CastedDestination->CellSize = CellSize;
+	CastedDestination->RenderTargetUserParameter = RenderTargetUserParameter;
 
 	return true;
 }
@@ -1107,6 +1166,30 @@ void FNDIAuroraInstanceDataRenderThread::SwapBuffers()
 	Swap(PlasmaPotentialBufferRead, PlasmaPotentialBufferWrite);
 }
 
+bool FNDIAuroraInstanceDataGameThread::UpdateTargetTexture(ENiagaraGpuBufferFormat BufferFormat)
+{
+	if (UObject* UserParamObject = RTUserParamBinding.GetValue())
+	{
+		TargetTexture = Cast<UTextureRenderTargetVolume>(UserParamObject);
+		if (TargetTexture == nullptr)
+		{
+			UE_LOG(LogTemp, Log, TEXT("Render target is not a UTextureRenderTargetVolume"));
+		}
+	}
+	if (TargetTexture != nullptr)
+	{
+		const FIntVector RTSize(NumCells.X, NumCells.Y, NumCells.Z);
+		if (TargetTexture->SizeX != RTSize.X || TargetTexture->SizeY != RTSize.Y || TargetTexture->SizeZ != RTSize.Z || TargetTexture->OverrideFormat != EPixelFormat::PF_A32B32G32R32F)
+		{
+			TargetTexture->OverrideFormat = EPixelFormat::PF_A32B32G32R32F;
+			TargetTexture->ClearColor = FLinearColor(0, 0, 0, 0);
+			TargetTexture->InitAutoFormat(RTSize.X, RTSize.Y, RTSize.Z);
+			TargetTexture->UpdateResourceImmediate(true);
+			return true;
+		}
+	}
+	return false;
+}
 
 /*---------------------*/
 /*------- PROXY -------*/
@@ -1152,6 +1235,11 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 	if (!ProxyData)
 	{
 		return;
+	}
+
+	if (ProxyData->RenderTargetToCopyTo != nullptr)
+	{
+		ProxyData->ElectricFieldTexture.CopyToTexture(Context.GetGraphBuilder(), ProxyData->RenderTargetToCopyTo, TEXT("NiagaraRenderTargetToCopyTO"));
 	}
 
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();

@@ -9,6 +9,10 @@
 #include "NiagaraRenderGraphUtils.h"
 #include "RHIUtilities.h"
 #include "NiagaraCommon.h"
+#include "NiagaraTypes.h"
+#include "NiagaraParameterStore.h"
+#include "Engine/TextureRenderTarget.h"
+#include "Engine/TextureRenderTargetVolume.h"
 
 #include "NiagaraDataInterfaceAurora.generated.h"
 
@@ -28,10 +32,12 @@ struct FNDIAuroraInstanceDataRenderThread
 	void SwapBuffers();
 
 	FIntVector NumCells = FIntVector(16, 16, 16);
-	FVector WorldBBoxSize = FVector(1500., 1500., 1500.);
+	FVector WorldBBoxSize = FVector(1600., 1600., 1600.);
 	float CellSize = 0.0f;
 
 	bool bResizeBuffers = false;
+
+	FTextureRHIRef RenderTargetToCopyTo;
 
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
@@ -43,10 +49,15 @@ struct FNDIAuroraInstanceDataRenderThread
 
 struct FNDIAuroraInstanceDataGameThread
 {
-	FIntVector NumCells = FIntVector(8, 8, 8);
-	FVector WorldBBoxSize = FVector(1500., 1500., 1500.);
+	FIntVector NumCells = FIntVector(16, 16, 16);
+	FVector WorldBBoxSize = FVector(1600., 1600., 1600.);
 	bool bNeedsRealloc = false;
 	bool bBoundsChanged = false;
+
+	FNiagaraParameterDirectBinding<UObject*> RTUserParamBinding;
+	UTextureRenderTargetVolume* TargetTexture = nullptr;
+
+	bool UpdateTargetTexture(ENiagaraGpuBufferFormat BufferFormat);
 };
 
 
@@ -94,6 +105,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FVector WorldBBoxSize;
 
+	UPROPERTY(EditAnywhere, Category = "AuroraData")
+	FNiagaraUserParameterBinding RenderTargetUserParameter;
+
 	virtual void PostInitProperties() override;
 
 	virtual void GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc) override;
@@ -110,9 +124,13 @@ public:
 	virtual void ProvidePerInstanceDataForRenderThread(void* DataForRenderThread, void* PerInstanceData, const FNiagaraSystemInstanceID& SystemInstance) override {}
 	virtual bool InitPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;
 	virtual void DestroyPerInstanceData(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance) override;
+	virtual bool PerInstanceTick(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
 	virtual int32 PerInstanceDataSize()const override { return sizeof(FNDIAuroraInstanceDataGameThread); }
 	virtual bool PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
+	virtual bool HasPreSimulateTick() const override { return true; }
 	virtual bool HasPostSimulateTick() const override { return true; }
+	virtual void GetExposedVariables(TArray<FNiagaraVariableBase>& OutVariables) const override;
+	virtual bool GetExposedVariableValue(const FNiagaraVariableBase& InVariable, void* InPerInstanceData, FNiagaraSystemInstance* InSystemInstance, void* OutData) const override;
 
 	void GetNumCells(FVectorVMExternalFunctionContext& Context);
 	void SetNumCells(FVectorVMExternalFunctionContext& Context);
@@ -125,6 +143,8 @@ public:
 
 protected:
 	TMap<FNiagaraSystemInstanceID, FNDIAuroraInstanceDataGameThread*> SystemInstancesToProxyData_GT;
+
+	static FNiagaraVariableBase ExposedRTVar;
 
 #if WITH_EDITORONLY_DATA
 	virtual void GetFunctionsInternal(TArray<FNiagaraFunctionSignature>& OutFunctions) const override;
