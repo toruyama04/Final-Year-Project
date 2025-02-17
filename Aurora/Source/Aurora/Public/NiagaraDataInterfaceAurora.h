@@ -27,7 +27,7 @@ struct FNDIAuroraInstanceDataRenderThread
 	void ResizeBuffers(FRDGBuilder& GraphBuilder);
 	void SwapBuffers();
 
-	FIntVector NumCells = FIntVector(8, 8, 8);
+	FIntVector NumCells = FIntVector(16, 16, 16);
 	FVector WorldBBoxSize = FVector(1500., 1500., 1500.);
 	float CellSize = 0.0f;
 

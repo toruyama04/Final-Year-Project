@@ -36,6 +36,7 @@ static const FName ScatterToGridFunctionName("ScatterToGrid");
 static const FName GetNumCellsFunctionName("GetNumCells");
 static const FName SetNumCellsFunctionName("SetNumCells");
 static const FName ExecutionIndexToSimulationFunctionName("ExecutionToSimulation");
+static const FName NeumannBoundaryNodeFunctionName("ExecuteNeumannBoundaries");
 
 static const FName SetPlasmaPotentialWriteFunctionName("SetPlasmaPotentialWrite");
 static const FName SetChargeDensityFunctionName("SetChargeDensity");
@@ -54,7 +55,7 @@ static const FName GetVectorFieldFunctionName("GetVectorField");
 
 // change default world box size to 1000, 1000, 1000
 UNiagaraDataInterfaceAurora::UNiagaraDataInterfaceAurora()
-	: NumCells(8, 8, 8)
+	: NumCells(16, 16, 16)
 	, CellSize(1.)
 	, WorldBBoxSize(1500., 1500., 1500.)
 {
@@ -154,8 +155,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 					const int IndexY = (Linear / GridSize.x) % GridSize.y;
 					const int IndexZ = Linear / (GridSize.x * GridSize.y);							
 				#endif
-
-				// Check we aren't at grid bounds - copy plasma_potential from inner node
+e
 				if (IndexX == 0 || IndexX == GridSize.x - 1 || IndexY == 0 || IndexY == GridSize.y - 1 || IndexZ == 0 || IndexZ == GridSize.z - 1)
 				{
 					OutSuccess = false;
@@ -348,8 +348,8 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				int k = (int)Index.z;
 				float dk = Index.z - k;
 
-				// check particle is within grid and not in boundary
-				if (i < 0 || i > {NumCells}.x - 1 || j < 0 || j > {NumCells}.y - 1 || k < 0 || k > {NumCells}.z - 1)
+				// check particle is within grid and not in boundary 
+				if (i < 0 || i >= {NumCells}.x || j < 0 || j >= {NumCells}.y || k < 0 || k >= {NumCells}.z)
 				{
 					OutSuccess = false;
 					return;
@@ -412,6 +412,42 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 					UnitSpace = (float3(IndexX, IndexY, IndexZ) + .5) / {NumCells};				
 				#endif
 				SimPos = mul(float4(UnitSpace, 1.0), UnitToSim).xyz;
+			}
+		)");
+		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
+		return true;
+	}
+	else if (FunctionInfo.Definitionname == NeumannBoundaryNodeFunctionName)
+	{
+		static const TCHAR* FormatSample = TEXT(R"(
+			void {FunctionName}(out bool OutSuccess)
+			{
+				int3 GridSize = {NumCells};
+
+				#if NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_THREE_D || NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_CUSTOM
+					const int IndexX = GDispatchThreadId.x;
+					const int IndexY = GDispatchThreadId.y;
+					const int IndexZ = GDispatchThreadId.z;
+					const int Linear = IndexX + (IndexY * GridSize.x) + (IndexZ * GridSize.x * GridSize.y);
+				#else
+					const int Linear = GLinearThreadId;
+					const int IndexX = Linear % GridSize.x;
+					const int IndexY = (Linear / GridSize.x) % GridSize.y;
+					const int IndexZ = Linear / (GridSize.x * GridSize.y);
+				#endif
+
+				if (IndexX == 0 || IndexX == GridSize.x - 1 ||
+					IndexY == 0 || IndexY == GridSize.y - 1 ||
+					IndexZ == 0 || IndexZ == GridSize.z - 1)
+				{
+					int interiorX = clamp(IndexX, 1, GridSize.x - 2);
+					int interiorY = clamp(IndexY, 1, GridSize.y - 2);
+					int interiorZ = clamp(IndexZ, 1, GridSize.z - 2);
+					int interiorLinear = interiorX + (interiorY * GridSize.x) + (interiorZ * GridSize.x * GridSize.y);
+
+					{PlasmaPotentialWrite}[Linear] = {PlasmaPotentialWrite}[interiorLinear];
+				}
+				OutSuccess = true;
 			}
 		)");
 		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
@@ -840,6 +876,19 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 		ExecutionIndexToSimulationSig.bSupportsCPU = false;
 		ExecutionIndexToSimulationSig.bSupportsGPU = true;
 		OutFunctions.Add(ExecutionIndexToSimulationSig);
+	}
+	{
+		FNiagaraFunctionSignature NeumannBoundaryNodeSig;
+		NeumannBoundaryNodeSig.Name = NeumannBoundaryNodeFunctionName;
+		NeumannBoundaryNodeSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		NeumannBoundaryNodeSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
+		NeumannBoundaryNodeSig.bMemberFunction = true;
+		NeumannBoundaryNodeSig.bRequiresContext = false;
+		NeumannBoundaryNodeSig.bRequiresExecPin = true;
+		NeumannBoundaryNodeSig.bWriteFunction = true;
+		NeumannBoundaryNodeSig.bSupportsCPU = false;
+		NeumannBoundaryNodeSig.bSupportsGPU = true;
+		OutFunctions.Add(NeumannBoundaryNodeSig);
 	}
 	{
 		FNiagaraFunctionSignature GetNumCellsSig;
