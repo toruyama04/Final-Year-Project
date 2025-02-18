@@ -22,6 +22,7 @@
 #include "NiagaraRenderer.h"
 #include "NiagaraSettings.h"
 #include "Engine/TextureRenderTargetVolume.h"
+#include "NiagaraGpuComputeDebugInterface.h"
 
 
 static const FString PlasmaPotentialReadParamName(TEXT("PlasmaPotentialRead"));
@@ -61,10 +62,12 @@ UNiagaraDataInterfaceAurora::UNiagaraDataInterfaceAurora()
 	: NumCells(16, 16, 16)
 	, CellSize(1.)
 	, WorldBBoxSize(1500., 1500., 1500.)
+#if WITH_EDITORONLY_DATA
+	, bPreviewTexture(false)
+#endif
 {
-	UE_LOG(LogTemp, Log, TEXT("Constructor"));
-
 	Proxy.Reset(new FNiagaraDataInterfaceProxyAurora());
+
 	FNiagaraTypeDefinition Def(UTextureRenderTarget::StaticClass());
 	RenderTargetUserParameter.Parameter.SetType(Def);
 }
@@ -114,7 +117,10 @@ bool UNiagaraDataInterfaceAurora::Equals(const UNiagaraDataInterface* Other) con
 		OtherType->NumCells == NumCells &&
 		FMath::IsNearlyEqual(OtherType->CellSize, CellSize) &&
 		OtherType->WorldBBoxSize.Equals(WorldBBoxSize) &&
-		OtherType->RenderTargetUserParameter == RenderTargetUserParameter;
+		OtherType->RenderTargetUserParameter == RenderTargetUserParameter &&
+#if WITH_EDITORONLY_DATA
+		OtherType->bPreviewTexture == bPreviewTexture;
+#endif
 }
 
 #if WITH_EDITORONLY_DATA
@@ -162,14 +168,14 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 					const int IndexY = (Linear / GridSize.x) % GridSize.y;
 					const int IndexZ = Linear / (GridSize.x * GridSize.y);							
 				#endif
-e
+
 				if (IndexX == 0 || IndexX == GridSize.x - 1 || IndexY == 0 || IndexY == GridSize.y - 1 || IndexZ == 0 || IndexZ == GridSize.z - 1)
 				{
 					OutSuccess = false;
 					return;
 				}
 
-				float sum = 0.0;
+				float sum = 0.0f;
 
 				int leftIndex   = (IndexX - 1) + GridSize.x * (IndexY + GridSize.y * IndexZ);
 				int rightIndex  = (IndexX + 1) + GridSize.x * (IndexY + GridSize.y * IndexZ);
@@ -709,6 +715,10 @@ bool UNiagaraDataInterfaceAurora::InitPerInstanceData(void* PerInstanceData, FNi
 	InstanceData->RTUserParamBinding.Init(SystemInstance->GetInstanceParameters(), RenderTargetUserParameter.Parameter);
 	InstanceData->UpdateTargetTexture(ENiagaraGpuBufferFormat::Float);
 
+#if WITH_EDITOR
+	InstanceData->bPreviewTexture = bPreviewTexture;
+#endif
+
 	FNiagaraDataInterfaceProxyAurora* LocalProxy = GetProxyAs<FNiagaraDataInterfaceProxyAurora>();
 
 	ENQUEUE_RENDER_COMMAND(FInitData)(
@@ -724,6 +734,9 @@ bool UNiagaraDataInterfaceAurora::InitPerInstanceData(void* PerInstanceData, FNi
 			TargetData->CellSize = static_cast<float>(RT_InstanceData.WorldBBoxSize.X / RT_InstanceData.NumCells.X);
 			TargetData->bResizeBuffers = true;
 
+#if WITH_EDITOR
+			TargetData->bPreviewTexture = RT_InstanceData.bPreviewTexture;
+#endif
 			if (RT_Resource && RT_Resource->TextureRHI.IsValid())
 			{
 				TargetData->RenderTargetToCopyTo = RT_Resource->TextureRHI;
@@ -1243,6 +1256,15 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 	}
 
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
+
+#if WITH_EDITOR
+	if (ProxyData->bPreviewTexture)
+	{
+		FNiagaraGpuComputeDebugInterface DebugInterface = Context.GetComputeDispatchInterface().GetGpuComputeDebugInterface();
+		DebugInterface.AddTexture(GraphBuilder, Context.GetSystemInstanceID(), SourceDIName, ProxyData->ElectricFieldTexture.GetOrCreateTexture(GraphBuilder));
+	}
+#endif
+
 	AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
 	UE_LOG(LogTemp, Log, TEXT("Post Simulate"));
 

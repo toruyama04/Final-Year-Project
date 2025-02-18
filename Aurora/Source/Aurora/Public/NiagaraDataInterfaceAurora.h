@@ -36,6 +36,7 @@ struct FNDIAuroraInstanceDataRenderThread
 	float CellSize = 0.0f;
 
 	bool bResizeBuffers = false;
+	bool bPreviewTexture = false;
 
 	FTextureRHIRef RenderTargetToCopyTo;
 
@@ -53,6 +54,7 @@ struct FNDIAuroraInstanceDataGameThread
 	FVector WorldBBoxSize = FVector(1600., 1600., 1600.);
 	bool bNeedsRealloc = false;
 	bool bBoundsChanged = false;
+	bool bPreviewTexture = false;
 
 	FNiagaraParameterDirectBinding<UObject*> RTUserParamBinding;
 	UTextureRenderTargetVolume* TargetTexture = nullptr;
@@ -107,6 +109,11 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FNiagaraUserParameterBinding RenderTargetUserParameter;
+
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(EditAnywhere, Category = "AuroraData")
+	uint8 bPreviewTexture : 1;
+#endif
 
 	virtual void PostInitProperties() override;
 
