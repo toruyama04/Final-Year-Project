@@ -36,12 +36,18 @@ struct FNDIAuroraInstanceDataRenderThread
 	float CellSize = 0.0f;
 
 	bool bResizeBuffers = false;
+#if WITH_EDITOR
 	bool bPreviewTexture = false;
+	FIntVector4 PreviewAttribute = FIntVector4(INDEX_NONE, INDEX_NONE, INDEX_NONE, INDEX_NONE);
+#endif
 
 	FTextureRHIRef RenderTargetToCopyTo;
 
+	// Could define getters and setters for both buffers. 
+	// however, they are designed so that read is only read from and write is only written to
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
+
 	FNiagaraPooledRWBuffer ChargeDensityBuffer;
 	FNiagaraPooledRWTexture ElectricFieldTexture;
 	FNiagaraPooledRWTexture VectorFieldTexture;
@@ -54,7 +60,11 @@ struct FNDIAuroraInstanceDataGameThread
 	FVector WorldBBoxSize = FVector(1600., 1600., 1600.);
 	bool bNeedsRealloc = false;
 	bool bBoundsChanged = false;
+
+#if WITH_EDITOR
 	bool bPreviewTexture = false;
+	FIntVector4 PreviewAttribute = FIntVector4(INDEX_NONE, INDEX_NONE, INDEX_NONE, INDEX_NONE);
+#endif
 
 	FNiagaraParameterDirectBinding<UObject*> RTUserParamBinding;
 	UTextureRenderTargetVolume* TargetTexture = nullptr;
@@ -89,9 +99,12 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 
 		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<float>,        PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       ChargeDensity)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, ElectricField)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, VectorField)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       OutputChargeDensity)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<uint>,         ChargeDensity)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputElectricField)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   ElectricField)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputVectorField)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   VectorField)
 	END_SHADER_PARAMETER_STRUCT()
 
 	
@@ -113,6 +126,9 @@ public:
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	uint8 bPreviewTexture : 1;
+
+	UPROPERTY(EditAnywhere, Category = "Grid", meta = (EditCondition = "bPreviewGrid", ToolTip = "When enabled allows you to preview the grid in a debug display"))
+	FName PreviewAttribute = NAME_None;
 #endif
 
 	virtual void PostInitProperties() override;
