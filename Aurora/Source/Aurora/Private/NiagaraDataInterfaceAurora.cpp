@@ -87,7 +87,7 @@ void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder
 
 	const FIntVector size(NumCells.X, NumCells.Y, NumCells.Z);
 	const FRDGTextureDesc EFieldTextureDesc = FRDGTextureDesc::Create3D(size, PF_A32B32G32R32F, FClearValueBinding::Black, ETextureCreateFlags::ShaderResource | ETextureCreateFlags::Dynamic | ETextureCreateFlags::UAV);
-	const FRDGTextureDesc VectorFTextureDesc = FRDGTextureDesc::Create3D(size, PF_A32B32G32R32F, FClearValueBinding::Black, ETextureCreateFlags::ShaderResource);
+	const FRDGTextureDesc VectorFTextureDesc = FRDGTextureDesc::Create3D(size, PF_A32B32G32R32F, FClearValueBinding::Black, ETextureCreateFlags::ShaderResource | ETextureCreateFlags::UAV);
 	ElectricFieldTexture.Initialize(GraphBuilder, TEXT("ElectricFieldTexture"), EFieldTextureDesc);
 	VectorFieldTexture.Initialize(GraphBuilder, TEXT("VectorFieldTexture"), VectorFTextureDesc);
 
@@ -1323,7 +1323,8 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 
 	AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0);
 	AddClearUAVFloatPass(GraphBuilder, ProxyData->PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder), 0.0f);
-	AddClearUAVPass(GraphBuilder, ProxyData->ElectricFieldTexture.GetOrCreateUAV(GraphBuilder), FVector4f(0.0f, 0.0f, 0.0f, 0.0f));
+	// AddClearUAVPass(GraphBuilder, ProxyData->ElectricFieldTexture.GetOrCreateUAV(GraphBuilder), FVector4f(0.0f, 0.0f, 0.0f, 0.0f));
+
 	UE_LOG(LogTemp, Log, TEXT("Post Simulate"));
 
 	if (Context.IsFinalPostSimulate())
