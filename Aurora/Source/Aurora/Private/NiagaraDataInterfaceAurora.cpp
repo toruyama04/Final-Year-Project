@@ -487,23 +487,23 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 
 				float ScaledCharge = InCharge * 1000000.0;
 
-				// InterlockedAdd({OutputChargeDensity}[Index000], uint(ScaledCharge * (1.0 - di) * (1.0 - dj) * (1.0 - dk)));
-				// InterlockedAdd({OutputChargeDensity}[Index100], uint(ScaledCharge * di * (1.0 - dj) * (1.0 - dk)));
-				// InterlockedAdd({OutputChargeDensity}[Index110], uint(ScaledCharge * di * dj * (1.0 - dk)));
-				// InterlockedAdd({OutputChargeDensity}[Index010], uint(ScaledCharge * (1.0 - di) * dj * (1.0 - dk)));
-				// InterlockedAdd({OutputChargeDensity}[Index001], uint(ScaledCharge * (1.0 - di) * (1.0 - dj) * dk));
-				// InterlockedAdd({OutputChargeDensity}[Index101], uint(ScaledCharge * di * (1.0 - dj) * dk));
-				// InterlockedAdd({OutputChargeDensity}[Index111], uint(ScaledCharge * di * dj * dk));
-				// InterlockedAdd({OutputChargeDensity}[Index011], uint(ScaledCharge * (1.0 - di) * dj * dk));
+				InterlockedAdd({OutputChargeDensity}[Index000], uint(ScaledCharge * (1.0 - di) * (1.0 - dj) * (1.0 - dk)));
+				InterlockedAdd({OutputChargeDensity}[Index100], uint(ScaledCharge * di * (1.0 - dj) * (1.0 - dk)));
+				InterlockedAdd({OutputChargeDensity}[Index110], uint(ScaledCharge * di * dj * (1.0 - dk)));
+				InterlockedAdd({OutputChargeDensity}[Index010], uint(ScaledCharge * (1.0 - di) * dj * (1.0 - dk)));
+				InterlockedAdd({OutputChargeDensity}[Index001], uint(ScaledCharge * (1.0 - di) * (1.0 - dj) * dk));
+				InterlockedAdd({OutputChargeDensity}[Index101], uint(ScaledCharge * di * (1.0 - dj) * dk));
+				InterlockedAdd({OutputChargeDensity}[Index111], uint(ScaledCharge * di * dj * dk));
+				InterlockedAdd({OutputChargeDensity}[Index011], uint(ScaledCharge * (1.0 - di) * dj * dk));
 				
-				InterlockedAdd({OutputChargeDensity}[Index000], uint(1000000));
-				InterlockedAdd({OutputChargeDensity}[Index100], uint(1000000));
-				InterlockedAdd({OutputChargeDensity}[Index110], uint(1000000));
-				InterlockedAdd({OutputChargeDensity}[Index010], uint(1000000));
-				InterlockedAdd({OutputChargeDensity}[Index001], uint(1000000));
-				InterlockedAdd({OutputChargeDensity}[Index101], uint(1000000));
-				InterlockedAdd({OutputChargeDensity}[Index111], uint(1000000));
-				InterlockedAdd({OutputChargeDensity}[Index011], uint(1000000));
+				// InterlockedAdd({OutputChargeDensity}[Index000], uint(1000000));
+				// InterlockedAdd({OutputChargeDensity}[Index100], uint(1000000));
+				// InterlockedAdd({OutputChargeDensity}[Index110], uint(1000000));
+				// InterlockedAdd({OutputChargeDensity}[Index010], uint(1000000));
+				// InterlockedAdd({OutputChargeDensity}[Index001], uint(1000000));
+				// InterlockedAdd({OutputChargeDensity}[Index101], uint(1000000));
+				// InterlockedAdd({OutputChargeDensity}[Index111], uint(1000000));
+				// InterlockedAdd({OutputChargeDensity}[Index011], uint(1000000));
 
 				OutSuccess = true;
 			}
