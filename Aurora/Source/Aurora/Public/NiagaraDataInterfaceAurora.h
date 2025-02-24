@@ -31,8 +31,8 @@ struct FNDIAuroraInstanceDataRenderThread
 	void ResizeBuffers(FRDGBuilder& GraphBuilder);
 	void SwapBuffers();
 
-	FIntVector NumCells = FIntVector(16, 16, 16);
-	FVector WorldBBoxSize = FVector(1600., 1600., 1600.);
+	FIntVector NumCells = FIntVector(64, 64, 64);
+	FVector WorldBBoxSize = FVector(5120., 5120., 5120.);
 	float CellSize = 0.0f;
 
 	bool bResizeBuffers = false;
@@ -56,8 +56,8 @@ struct FNDIAuroraInstanceDataRenderThread
 
 struct FNDIAuroraInstanceDataGameThread
 {
-	FIntVector NumCells = FIntVector(16, 16, 16);
-	FVector WorldBBoxSize = FVector(1600., 1600., 1600.);
+	FIntVector NumCells = FIntVector(128, 128, 128);
+	FVector WorldBBoxSize = FVector(5120., 5120., 5120.);
 	bool bNeedsRealloc = false;
 	bool bBoundsChanged = false;
 
@@ -99,8 +99,8 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 
 		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<float>,        PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       OutputChargeDensity)
-		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<uint>,         ChargeDensity)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<int>,       OutputChargeDensity)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<int>,         ChargeDensity)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputElectricField)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   ElectricField)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputVectorField)

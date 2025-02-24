@@ -83,7 +83,7 @@ void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder
 	// Volatile?
 	PlasmaPotentialBufferWrite.Initialize(GraphBuilder, TEXT("PlasmaPotentialWriteBuffer"), PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource);
 	// Volatile?
-	ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), PF_R32_UINT, sizeof(uint32), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource);
+	ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), PF_R32_SINT, sizeof(int32), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource);
 
 	const FIntVector size(NumCells.X, NumCells.Y, NumCells.Z);
 	const FRDGTextureDesc EFieldTextureDesc = FRDGTextureDesc::Create3D(size, PF_A32B32G32R32F, FClearValueBinding::Black, ETextureCreateFlags::ShaderResource | ETextureCreateFlags::Dynamic | ETextureCreateFlags::UAV);
@@ -135,11 +135,11 @@ bool FNDIAuroraInstanceDataGameThread::UpdateTargetTexture(ENiagaraGpuBufferForm
 /*------- NDI ---------*/
 /*---------------------*/
 
-// change default world box size to 1000, 1000, 1000
+
 UNiagaraDataInterfaceAurora::UNiagaraDataInterfaceAurora()
-	: NumCells(16, 16, 16)
+	: NumCells(128, 128, 128)
 	, CellSize(1.)
-	, WorldBBoxSize(1500., 1500., 1500.)
+	, WorldBBoxSize(5120., 5120., 5120.)
 #if WITH_EDITORONLY_DATA
 	, bPreviewTexture(false)
 #endif
@@ -219,8 +219,8 @@ void UNiagaraDataInterfaceAurora::GetParameterDefinitionHLSL(const FNiagaraDataI
 
 	OutHLSL.Appendf(TEXT("Buffer<float>       %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialReadParamName);
 	OutHLSL.Appendf(TEXT("RWBuffer<float>     %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialWriteParamName);
-	OutHLSL.Appendf(TEXT("RWBuffer<uint>      %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *OutputChargeDensityParamName);
-	OutHLSL.Appendf(TEXT("Buffer<uint>        %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *ChargeDensityParamName);
+	OutHLSL.Appendf(TEXT("RWBuffer<int>      %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *OutputChargeDensityParamName);
+	OutHLSL.Appendf(TEXT("Buffer<int>        %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *ChargeDensityParamName);
 	OutHLSL.Appendf(TEXT("RWTexture3D<float4> %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *OutputElectricFieldParamName);
 	OutHLSL.Appendf(TEXT("Texture3D<float4>   %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *ElectricFieldParamName);
 	OutHLSL.Appendf(TEXT("RWTexture3D<float4> %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *OutputVectorFieldParamName);
@@ -237,7 +237,6 @@ bool UNiagaraDataInterfaceAurora::AppendCompileHash(FNiagaraCompileHashVisitor* 
 }
 bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPUParamInfo& ParamInfo, const FNiagaraDataInterfaceGeneratedFunction& FunctionInfo, int FunctionInstanceIndex, FString& OutHLSL)
 {
-	/// Precision value is 1,000,000;
 	TMap<FString, FStringFormatArg> ArgsDeclaration =
 	{
 		{TEXT("FunctionName"),         FunctionInfo.InstanceName},
@@ -258,6 +257,11 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(out bool OutSuccess)
 			{
+				if ({bConverged == true)
+				{
+					OutSuccess = true;
+					return;
+				}
 				int3 GridSize = {NumCells};
 				float CellVolume = {CellSize}.x * {CellSize}.y * {CellSize}.z;	
 
@@ -295,7 +299,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				sum += {PlasmaPotentialRead}[backIndex];
 				sum += {PlasmaPotentialRead}[frontIndex];
 
-				float ChargeDensityValue = float({ChargeDensity}[Linear]) / 1000000.0f;
+				float ChargeDensityValue = float({ChargeDensity}[Linear]) / 1e9;
 				float val = (sum - ChargeDensityValue * CellVolume) / 6.0f;
 				{PlasmaPotentialWrite}[Linear] = val;
 				OutSuccess = true;
@@ -496,15 +500,6 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				InterlockedAdd({OutputChargeDensity}[Index111], uint(ScaledCharge * di * dj * dk));
 				InterlockedAdd({OutputChargeDensity}[Index011], uint(ScaledCharge * (1.0 - di) * dj * dk));
 				
-				// InterlockedAdd({OutputChargeDensity}[Index000], uint(1000000));
-				// InterlockedAdd({OutputChargeDensity}[Index100], uint(1000000));
-				// InterlockedAdd({OutputChargeDensity}[Index110], uint(1000000));
-				// InterlockedAdd({OutputChargeDensity}[Index010], uint(1000000));
-				// InterlockedAdd({OutputChargeDensity}[Index001], uint(1000000));
-				// InterlockedAdd({OutputChargeDensity}[Index101], uint(1000000));
-				// InterlockedAdd({OutputChargeDensity}[Index111], uint(1000000));
-				// InterlockedAdd({OutputChargeDensity}[Index011], uint(1000000));
-
 				OutSuccess = true;
 			}
 		)");
@@ -1298,6 +1293,37 @@ void FNiagaraDataInterfaceProxyAurora::PreStage(const FNDIGpuComputePreStageCont
 	}
 }
 
+void FNiagaraDataInterfaceProxyAurora::PostStage(const FNDIGpuComputePostStageContext& Context)
+{
+	if (Context.GetSimStageData().StageMetaData->SimulationStageName == TEXT("Solve Plasma Potential"))
+	{
+		UE_LOG(LogTemp, Log, TEXT("Post-Stage"));
+		if (!Context.IsOutputStage())
+		{
+			FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
+			ProxyData->SwapBuffers();
+		}
+	}
+	else if (Context.GetSimStageData().StageMetaData->SimulationStageName == TEXT("Solve Electric Field"))
+	{
+		FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
+		FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
+		if (ProxyData->RenderTargetToCopyTo != nullptr)
+		{
+			ProxyData->ElectricFieldTexture.CopyToTexture(GraphBuilder, ProxyData->RenderTargetToCopyTo, TEXT("NiagaraRenderTargetToCopyTO"));
+		}
+
+#if WITH_EDITOR
+		if (ProxyData->bPreviewTexture)
+		{
+			FNiagaraGpuComputeDebugInterface DebugInterface = Context.GetComputeDispatchInterface().GetGpuComputeDebugInterface();
+			DebugInterface.AddTexture(GraphBuilder, Context.GetSystemInstanceID(), SourceDIName, ProxyData->ElectricFieldTexture.GetOrCreateTexture(GraphBuilder));
+		}
+#endif
+		UE_LOG(LogTemp, Log, TEXT("Post-Stage: Solve Electric Field just ran with debug"));
+	}
+}
+
 // Runs once after each tick
 void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimulateContext& Context)
 {
@@ -1339,36 +1365,6 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 	}
 }
 
-void FNiagaraDataInterfaceProxyAurora::PostStage(const FNDIGpuComputePostStageContext& Context)
-{
-	if (Context.GetSimStageData().StageMetaData->SimulationStageName == TEXT("Solve Plasma Potential"))
-	{
-		UE_LOG(LogTemp, Log, TEXT("Post-Stage"));
-		if (!Context.IsOutputStage())
-		{
-			FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
-			ProxyData->SwapBuffers();
-		}
-	}
-	else if (Context.GetSimStageData().StageMetaData->SimulationStageName == TEXT("Solve Electric Field"))
-	{
-		FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
-		FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
-		if (ProxyData->RenderTargetToCopyTo != nullptr)
-		{
-			ProxyData->ElectricFieldTexture.CopyToTexture(GraphBuilder, ProxyData->RenderTargetToCopyTo, TEXT("NiagaraRenderTargetToCopyTO"));
-		}
-
-#if WITH_EDITOR
-		if (ProxyData->bPreviewTexture)
-		{
-			FNiagaraGpuComputeDebugInterface DebugInterface = Context.GetComputeDispatchInterface().GetGpuComputeDebugInterface();
-			DebugInterface.AddTexture(GraphBuilder, Context.GetSystemInstanceID(), SourceDIName, ProxyData->ElectricFieldTexture.GetOrCreateTexture(GraphBuilder));
-		}
-#endif
-		UE_LOG(LogTemp, Log, TEXT("Post-Stage: Solve Electric Field just ran with debug"));
-	}
-}
 
 void FNiagaraDataInterfaceProxyAurora::GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context)
 {
