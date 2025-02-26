@@ -42,8 +42,8 @@ struct FNDIAuroraInstanceDataRenderThread
 
 	FTextureRHIRef RenderTargetToCopyTo;
 
-	FNiagaraPooledRWBuffer Converged;
-	FNiagaraPooledRWBuffer MaxResidual;
+	FNiagaraPooledRWBuffer MaxResidualRead;
+	FNiagaraPooledRWBuffer MaxResidualWrite;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
 	FNiagaraPooledRWBuffer ChargeDensityBuffer;
@@ -51,7 +51,6 @@ struct FNDIAuroraInstanceDataRenderThread
 	FNiagaraPooledRWTexture ElectricFieldTexture;
 	FNiagaraPooledRWTexture VectorFieldTexture;
 };
-
 
 struct FNDIAuroraInstanceDataGameThread
 {
@@ -69,7 +68,6 @@ struct FNDIAuroraInstanceDataGameThread
 
 	bool UpdateTargetTexture(ENiagaraGpuBufferFormat BufferFormat);
 };
-
 
 struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
 {
@@ -94,8 +92,8 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 		SHADER_PARAMETER(FIntVector,                          NumCells)
 		SHADER_PARAMETER(FVector3f,                           CellSize)
 		SHADER_PARAMETER(FVector3f,                           WorldBBoxSize)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<int>,        Converged)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       MaxResidual)
+		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<uint>,         MaxResidualRead)
+		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       MaxResidualWrite)
 
 		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<float>,        PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
@@ -111,6 +109,7 @@ public:
 
 	UNiagaraDataInterfaceAurora();
 
+	// NumCells should be divideable by 4 for size of maxresidual buffer
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FIntVector NumCells;
 
@@ -158,6 +157,7 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual ENiagaraGpuDispatchType GetGpuDispatchType() const override { return ENiagaraGpuDispatchType::ThreeD; }
+	virtual FIntVector GetGpuDispatchNumThreads() const { return FIntVector(4, 4, 4); }
 #endif
 
 protected:
