@@ -492,6 +492,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				if (i < 0 || i >= {NumCells}.x - 1 || j < 0 || j >= {NumCells}.y - 1 || k < 0 || k >= {NumCells}.z - 1)
 				{
 					OutSuccess = false;
+					OutVector = float3(0.0f, 0.0f, 0.0f);
 					return;
 				}
 
