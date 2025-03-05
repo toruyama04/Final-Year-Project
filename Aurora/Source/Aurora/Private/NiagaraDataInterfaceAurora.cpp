@@ -73,7 +73,7 @@ void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder
 	PlasmaPotentialBufferRead.Release();
 	PlasmaPotentialBufferWrite.Release();
 	NumberDensityBuffer.Release();
-	ChargeDensityBuffer.Release();
+	ChargeDensityTexture.Release();
 	ElectricFieldTexture.Release();
 	VectorFieldTexture.Release();
 	MaxResidualRead.Release();
@@ -93,25 +93,26 @@ void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder
 	PlasmaPotentialBufferWrite.Initialize(GraphBuilder, TEXT("PlasmaPotentialBufferWrite"), PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource);
 	// Volatile?
 	NumberDensityBuffer.Initialize(GraphBuilder, TEXT("NumberDensityBuffer"), PF_R32_UINT, sizeof(uint32), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource);
-	ChargeDensityBuffer.Initialize(GraphBuilder, TEXT("ChargeDensityBuffer"), PF_R32_FLOAT, sizeof(float), FMath::Max<uint32>(CellCount, 1u), BUF_UnorderedAccess | BUF_ShaderResource);
 
 	// ThreadGroup count = DispatchCount / DispatchNumThreads
 	// since GetGpuDispatchNumThreads returns (4,4,4) and line 1762 in NiagaraGpuComputeDispatch.cpp defines threadgroup to be elementcount / dispatchnumthread
 	int32 ThreadGroupCount = (NumCells.X / 4) * (NumCells.Y / 4) * (NumCells.Z / 4);
-	MaxResidualRead.Initialize(GraphBuilder, TEXT("MaxResidualRead"), PF_R32_UINT, sizeof(uint32), ThreadGroupCount, BUF_UnorderedAccess | BUF_ShaderResource);
-	MaxResidualWrite.Initialize(GraphBuilder, TEXT("MaxResidualWrite"), PF_R32_UINT, sizeof(uint32), ThreadGroupCount, BUF_UnorderedAccess | BUF_ShaderResource);
+	MaxResidualRead.Initialize(GraphBuilder, TEXT("MaxResidualRead"), PF_R32_UINT, sizeof(uint32), 1, BUF_UnorderedAccess | BUF_ShaderResource);
+	MaxResidualWrite.Initialize(GraphBuilder, TEXT("MaxResidualWrite"), PF_R32_UINT, sizeof(uint32), 1, BUF_UnorderedAccess | BUF_ShaderResource);
 
 	const FIntVector size(NumCells.X, NumCells.Y, NumCells.Z);
 	const FRDGTextureDesc EFieldTextureDesc = FRDGTextureDesc::Create3D(size, PF_A32B32G32R32F, FClearValueBinding::Black, ETextureCreateFlags::ShaderResource | ETextureCreateFlags::Dynamic | ETextureCreateFlags::UAV);
 	const FRDGTextureDesc VectorFTextureDesc = FRDGTextureDesc::Create3D(size, PF_A32B32G32R32F, FClearValueBinding::Black, ETextureCreateFlags::ShaderResource | ETextureCreateFlags::UAV);
+	const FRDGTextureDesc ChargeDTextureDesc = FRDGTextureDesc::Create3D(size, PF_R32_FLOAT, FClearValueBinding::Black, ETextureCreateFlags::ShaderResource | ETextureCreateFlags::Dynamic | ETextureCreateFlags::UAV);
 	ElectricFieldTexture.Initialize(GraphBuilder, TEXT("ElectricFieldTexture"), EFieldTextureDesc);
 	VectorFieldTexture.Initialize(GraphBuilder, TEXT("VectorFieldTexture"), VectorFTextureDesc);
+	ChargeDensityTexture.Initialize(GraphBuilder, TEXT("ChargeDensityTexture"), ChargeDTextureDesc);
 
 	const float DefaultValue = 0.0f;
 	AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialBufferRead.GetOrCreateUAV(GraphBuilder), DefaultValue);
 	AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder), DefaultValue);
 	AddClearUAVPass(GraphBuilder, NumberDensityBuffer.GetOrCreateUAV(GraphBuilder), uint32(0));
-	AddClearUAVFloatPass(GraphBuilder, ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), DefaultValue);
+	AddClearUAVPass(GraphBuilder, ChargeDensityTexture.GetOrCreateUAV(GraphBuilder), DefaultValue);
 	AddClearUAVPass(GraphBuilder, MaxResidualRead.GetOrCreateUAV(GraphBuilder), 0);
 	AddClearUAVPass(GraphBuilder, MaxResidualWrite.GetOrCreateUAV(GraphBuilder), 0);
 }
@@ -231,8 +232,8 @@ void UNiagaraDataInterfaceAurora::GetParameterDefinitionHLSL(const FNiagaraDataI
 	OutHLSL.Appendf(TEXT("RWBuffer<float> %s%s;\n"),     *ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialWriteParamName);
 	OutHLSL.Appendf(TEXT("RWBuffer<uint> %s%s;\n"),      *ParamInfo.DataInterfaceHLSLSymbol, *OutputNumberDensityParamName);
 	OutHLSL.Appendf(TEXT("Buffer<uint> %s%s;\n"),        *ParamInfo.DataInterfaceHLSLSymbol, *NumberDensityParamName);
-	OutHLSL.Appendf(TEXT("RWBuffer<float> %s%s;\n"),     *ParamInfo.DataInterfaceHLSLSymbol, *OutputChargeDensityParamName);
-	OutHLSL.Appendf(TEXT("Buffer<float> %s%s;\n"),       *ParamInfo.DataInterfaceHLSLSymbol, *ChargeDensityParamName);
+	OutHLSL.Appendf(TEXT("RWTexture3D<float> %s%s;\n"),  *ParamInfo.DataInterfaceHLSLSymbol, *OutputChargeDensityParamName);
+	OutHLSL.Appendf(TEXT("Texture3D<float> %s%s;\n"),    *ParamInfo.DataInterfaceHLSLSymbol, *ChargeDensityParamName);
 	OutHLSL.Appendf(TEXT("RWTexture3D<float4> %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *OutputElectricFieldParamName);
 	OutHLSL.Appendf(TEXT("Texture3D<float4> %s%s;\n"),   *ParamInfo.DataInterfaceHLSLSymbol, *ElectricFieldParamName);
 	OutHLSL.Appendf(TEXT("RWTexture3D<float4> %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *OutputVectorFieldParamName);
@@ -273,11 +274,10 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(out bool OutSuccess)
 			{
+				// we want to check if the residual is smaller than tolerance before we execute rest of code
 				float currentMaxResidual = 0.0f;
-
 				currentMaxResidual = asfloat({MaxResidualRead}[0]);
-
-				if (currentMaxResidual < 1e-2f)
+				if (currentMaxResidual < 1e-4f)
 				{
 					OutSuccess = false;
 					return;
@@ -296,6 +296,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 					const int IndexZ = Linear / (GridSize.x * GridSize.y);							
 				#endif
 				
+				// we want to find the potential value, we implement absorbing boundaries 
 				float val = 0.0f;
 				if (IndexX == 0 || IndexX == GridSize.x - 1 || IndexY == 0 || IndexY == GridSize.y - 1 || IndexZ == 0 || IndexZ == GridSize.z - 1)
 				{
@@ -338,6 +339,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				}
 				else 
 				{
+					// otherwise we do the jacobi iteration
 					float CellVolume = {CellSize}.x * {CellSize}.y * {CellSize}.z;
 
 					int leftIndex   = (IndexX - 1) + GridSize.x * (IndexY + GridSize.y * IndexZ);
@@ -351,20 +353,23 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 								{PlasmaPotentialRead}[downIndex] + {PlasmaPotentialRead}[upIndex] +
 								{PlasmaPotentialRead}[backIndex] + {PlasmaPotentialRead}[frontIndex];
 
-					static const float omega = 0.666f;
+					// damping factor (can be changed)
+					static const float omega = 0.8f;
 					float prev = {PlasmaPotentialRead}[Linear];
 
-					float ChargeDensityValue = {ChargeDensity}[Linear];
+					float ChargeDensityValue = -{ChargeDensity}.Load(uint4(IndexX, IndexY, IndexZ, 0));
 					// epsilon_0 = 8.854e-12
 					float SourceTerm = ({CellSize}.x * {CellSize}.x) * (ChargeDensityValue / 8.854e-12f);
 
 					val = (1.0f - omega) * prev + omega * ((sum + SourceTerm) / 6.0f);
 
+					// finding residual value
 					float Residual = abs(val - prev);
 	
-					// comparing asuint(float) < asuint(float) is fine as long as floats aren't negative which they can't be cause we used abs(Residual)
+					// comparing asuint(float) < asuint(float) is fine as long as the floats aren't negative which they can't be cause we used abs(Residual)
 					uint ResidualAsuint = asuint(Residual);
 
+					// finally assign this residual if greater than current residual
 					InterlockedMax({MaxResidualWrite}[0], ResidualAsuint);
 				}
 
@@ -404,6 +409,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 
 			float cur = {PlasmaPotentialRead}[Linear];
 
+			// calculate new electric field
 			if (IndexX == 0) 
 			{
 				int idx = 1 + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
@@ -489,6 +495,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				int k = (int)Index.z;
 				float dk = Index.z - k;
 
+				// we dont gather if outside the grid, set Electric field force to 0
 				if (i < 0 || i >= {NumCells}.x - 1 || j < 0 || j >= {NumCells}.y - 1 || k < 0 || k >= {NumCells}.z - 1)
 				{
 					OutSuccess = false;
@@ -538,9 +545,12 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(float3 InPosition, float4x4 InSimulationToUnitTransform, float mpw, out bool OutSuccess)
 			{
+				// converting world pos (InPosition) into unit space (UnitIndex). 
 				float3 UnitIndex = mul(float4(InPosition, 1.0), InSimulationToUnitTransform).xyz;
+				
 				float3 Index = UnitIndex * {NumCells} - 0.5f;
-
+				
+				// finding the grid index and fractional grid index
 				int i = (int)Index.x;
 				float di = Index.x - i;
 				int j = (int)Index.y;
@@ -548,6 +558,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				int k = (int)Index.z;
 				float dk = Index.z - k;
 
+				// dont scatter if outside the grid
 				if (i < 0 || i >= {NumCells}.x || j < 0 || j >= {NumCells}.y || k < 0 || k >= {NumCells}.z)
 				{
 					OutSuccess = false;
@@ -558,6 +569,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				int GridSizeY = {NumCells}.y;
 				int GridSizeZ = {NumCells}.z;
 
+				// get indices of grid nodes around particle
 				int Index000 = i + j * GridSizeX + k * GridSizeX * GridSizeY;
 				int Index100 = (i + 1) + j * GridSizeX + k * GridSizeX * GridSizeY;
 				int Index110 = (i + 1) + (j + 1) * GridSizeX + k * GridSizeX * GridSizeY;
@@ -567,7 +579,9 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				int Index111 = (i + 1) + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
 				int Index011 = i + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
 
-				float mpww = 1e8f;
+				// pre-defined macro-particle weight (can be changed if needed)
+				float mpww = mpw;
+				// assigning fractional amounts to each index
 				float Index000Value = mpww * (1.0f - di) * (1.0f - dj) * (1.0f - dk);
 				float Index100Value = mpww * di * (1.0f - dj) * (1.0f - dk);
 				float Index110Value = mpww * di * dj * (1.0f - dk);
@@ -577,6 +591,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				float Index111Value = mpww * di * dj * dk;
 				float Index011Value = mpww * (1.0f - di) * dj * dk;
 
+				// atomically add to number density buffer
 				InterlockedAdd({OutputNumberDensity}[Index000], uint(Index000Value));
 				InterlockedAdd({OutputNumberDensity}[Index100], uint(Index100Value));
 				InterlockedAdd({OutputNumberDensity}[Index110], uint(Index110Value));
@@ -599,6 +614,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 			{
 				int3 GridSize = {NumCells};				
 
+				// get index of grid node
 				#if NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_THREE_D || NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_CUSTOM
 					const int IndexX = GDispatchThreadId.x;
 					const int IndexY = GDispatchThreadId.y;
@@ -612,11 +628,12 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				#endif
 				
 				float CellVol = {CellSize}.x * {CellSize}.y * {CellSize}.z;				
-
+				
+				// divide number density by volume, then multiply by charge of electron and store in ChargeDensity buffer
 				float NumDensity = float({NumberDensity}[Linear]);
 				float toDensity = NumDensity / CellVol;
-				float ChargeDensity = toDensity * -1.602e-19;
-				{OutputChargeDensity}[Linear] = ChargeDensity;
+				float ChargeDensity = toDensity * 1.602e-19;
+				{OutputChargeDensity}[uint3(IndexX, IndexY, IndexZ)] = ChargeDensity;
 				OutSuccess = true;
 			}
 		)");
@@ -674,7 +691,10 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		static const TCHAR* FormatSample = TEXT(R"(
 			void {FunctionName}(int Index, out float OutValue)
 			{
-				OutValue = {ChargeDensity}[Index];
+				const int IndexX = Index % {NumCells}.x;
+				const int IndexY = (Index / {NumCells}.x) % {NumCells}.y;
+				const int IndexZ = Index / ({NumCells}.x * {NumCells}.y);
+				OutValue = {ChargeDensity}.Load(uint4(IndexX, IndexY, IndexZ, 0));
 			}
 		)");
 		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
@@ -750,7 +770,10 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		static const TCHAR* FormatSample = TEXT(R"(
 			void {FunctionName}(int Index, float InValue, out bool OutSuccess)
 			{
-				{OutputChargeDensity}[Index] = InValue;
+				const int IndexX = Index % {NumCells}.x;
+				const int IndexY = (Index / {NumCells}.x) % {NumCells}.y;
+				const int IndexZ = Index / ({NumCells}.x * {NumCells}.y);
+				{OutputChargeDensity}[uint3(IndexX, IndexY, IndexZ)] = InValue;
 				OutSuccess = true;
 			}
 		)");
@@ -832,8 +855,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 			ShaderParameters->PlasmaPotentialWrite = InstanceData->PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder);
 			ShaderParameters->OutputNumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
 			ShaderParameters->NumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
-			ShaderParameters->OutputChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
-			ShaderParameters->ChargeDensity = InstanceData->ChargeDensityBuffer.GetOrCreateSRV(GraphBuilder);
+			ShaderParameters->OutputChargeDensity = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_R32_FLOAT, ETextureDimension::Texture3D);
+			ShaderParameters->ChargeDensity = InstanceData->ChargeDensityTexture.GetOrCreateSRV(GraphBuilder);
 			ShaderParameters->OutputElectricField = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_A32B32G32R32F, ETextureDimension::Texture3D);
 			ShaderParameters->ElectricField = Context.GetComputeDispatchInterface().GetBlackTextureSRV(GraphBuilder, ETextureDimension::Texture3D);
 			ShaderParameters->OutputVectorField = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_A32B32G32R32F, ETextureDimension::Texture3D);
@@ -851,8 +874,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 			ShaderParameters->PlasmaPotentialWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 			ShaderParameters->OutputNumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
 			ShaderParameters->NumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
-			ShaderParameters->OutputChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
-			ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_FLOAT);
+			ShaderParameters->OutputChargeDensity = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_R32_FLOAT, ETextureDimension::Texture3D);
+			ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetBlackTextureSRV(GraphBuilder, ETextureDimension::Texture3D);
 			ShaderParameters->OutputElectricField = InstanceData->ElectricFieldTexture.GetOrCreateUAV(GraphBuilder);
 			ShaderParameters->ElectricField = Context.GetComputeDispatchInterface().GetBlackTextureSRV(GraphBuilder, ETextureDimension::Texture3D);
 			ShaderParameters->OutputVectorField = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_A32B32G32R32F, ETextureDimension::Texture3D);
@@ -867,8 +890,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 			ShaderParameters->PlasmaPotentialWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 			ShaderParameters->OutputNumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
 			ShaderParameters->NumberDensity = InstanceData->NumberDensityBuffer.GetOrCreateSRV(GraphBuilder);
-			ShaderParameters->OutputChargeDensity = InstanceData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder);
-			ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_FLOAT);
+			ShaderParameters->OutputChargeDensity = InstanceData->ChargeDensityTexture.GetOrCreateUAV(GraphBuilder);
+			ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetBlackTextureSRV(GraphBuilder, ETextureDimension::Texture3D);
 			ShaderParameters->OutputElectricField = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_A32B32G32R32F, ETextureDimension::Texture3D);
 			ShaderParameters->ElectricField = Context.GetComputeDispatchInterface().GetBlackTextureSRV(GraphBuilder, ETextureDimension::Texture3D);
 			ShaderParameters->OutputVectorField = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_A32B32G32R32F, ETextureDimension::Texture3D);
@@ -883,8 +906,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 			ShaderParameters->PlasmaPotentialWrite = InstanceData->PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder);
 			ShaderParameters->OutputNumberDensity = InstanceData->NumberDensityBuffer.GetOrCreateUAV(GraphBuilder);
 			ShaderParameters->NumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
-			ShaderParameters->OutputChargeDensity = InstanceData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder);
-			ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_FLOAT);
+			ShaderParameters->OutputChargeDensity = InstanceData->ChargeDensityTexture.GetOrCreateUAV(GraphBuilder);
+			ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetBlackTextureSRV(GraphBuilder, ETextureDimension::Texture3D);
 			ShaderParameters->OutputElectricField = InstanceData->ElectricFieldTexture.GetOrCreateUAV(GraphBuilder);
 			ShaderParameters->ElectricField = Context.GetComputeDispatchInterface().GetBlackTextureSRV(GraphBuilder, ETextureDimension::Texture3D);
 			ShaderParameters->OutputVectorField = InstanceData->VectorFieldTexture.GetOrCreateUAV(GraphBuilder);
@@ -899,8 +922,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 			ShaderParameters->PlasmaPotentialWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 			ShaderParameters->OutputNumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
 			ShaderParameters->NumberDensity = InstanceData->NumberDensityBuffer.GetOrCreateSRV(GraphBuilder);
-			ShaderParameters->OutputChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
-			ShaderParameters->ChargeDensity = InstanceData->ChargeDensityBuffer.GetOrCreateSRV(GraphBuilder);
+			ShaderParameters->OutputChargeDensity = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_R32_FLOAT, ETextureDimension::Texture3D);
+			ShaderParameters->ChargeDensity = InstanceData->ChargeDensityTexture.GetOrCreateSRV(GraphBuilder);
 			ShaderParameters->OutputElectricField = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_A32B32G32R32F, ETextureDimension::Texture3D);
 			ShaderParameters->ElectricField = InstanceData->ElectricFieldTexture.GetOrCreateSRV(GraphBuilder);
 			ShaderParameters->OutputVectorField = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_A32B32G32R32F, ETextureDimension::Texture3D);
@@ -919,8 +942,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 		ShaderParameters->PlasmaPotentialWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 		ShaderParameters->OutputNumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
 		ShaderParameters->NumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
-		ShaderParameters->OutputChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
-		ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_FLOAT);
+		ShaderParameters->OutputChargeDensity = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_R32_FLOAT, ETextureDimension::Texture3D);
+		ShaderParameters->ChargeDensity = Context.GetComputeDispatchInterface().GetBlackTextureSRV(GraphBuilder, ETextureDimension::Texture3D);
 		ShaderParameters->OutputElectricField = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_A32B32G32R32F, ETextureDimension::Texture3D);
 		ShaderParameters->ElectricField = Context.GetComputeDispatchInterface().GetBlackTextureSRV(GraphBuilder, ETextureDimension::Texture3D);
 		ShaderParameters->OutputVectorField = Context.GetComputeDispatchInterface().GetEmptyTextureUAV(GraphBuilder, PF_A32B32G32R32F, ETextureDimension::Texture3D);
@@ -1450,7 +1473,7 @@ void FNiagaraDataInterfaceProxyAurora::ResetData(const FNDIGpuComputeResetContex
 	AddClearUAVFloatPass(GraphBuilder, ProxyData->PlasmaPotentialBufferRead.GetOrCreateUAV(GraphBuilder), 0.0f);
 	AddClearUAVFloatPass(GraphBuilder, ProxyData->PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder), 0.0f);
 	AddClearUAVPass(GraphBuilder, ProxyData->NumberDensityBuffer.GetOrCreateUAV(GraphBuilder), uint32(0));
-	AddClearUAVFloatPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0.0f);
+	AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityTexture.GetOrCreateUAV(GraphBuilder), 0.0f);
 
 	AddClearUAVPass(GraphBuilder, ProxyData->ElectricFieldTexture.GetOrCreateUAV(GraphBuilder), FVector4f(ForceInitToZero));
 	AddClearUAVPass(GraphBuilder, ProxyData->VectorFieldTexture.GetOrCreateUAV(GraphBuilder), FVector4f(ForceInitToZero));
@@ -1528,7 +1551,6 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 	}
 #endif*/
 
-	// AddClearUAVFloatPass(GraphBuilder, ProxyData->ChargeDensityBuffer.GetOrCreateUAV(GraphBuilder), 0.0f);
 	AddClearUAVPass(GraphBuilder, ProxyData->NumberDensityBuffer.GetOrCreateUAV(GraphBuilder), uint32(0));
 
 	UE_LOG(LogTemp, Log, TEXT("Post Simulate"));
@@ -1540,7 +1562,7 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 		ProxyData->MaxResidualWrite.EndGraphUsage();
 		ProxyData->PlasmaPotentialBufferRead.EndGraphUsage();
 		ProxyData->PlasmaPotentialBufferWrite.EndGraphUsage();
-		ProxyData->ChargeDensityBuffer.EndGraphUsage();
+		ProxyData->ChargeDensityTexture.EndGraphUsage();
 		ProxyData->NumberDensityBuffer.EndGraphUsage();
 
 		ProxyData->ElectricFieldTexture.EndGraphUsage();

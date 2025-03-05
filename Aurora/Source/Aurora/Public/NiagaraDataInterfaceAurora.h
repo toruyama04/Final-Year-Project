@@ -46,9 +46,9 @@ struct FNDIAuroraInstanceDataRenderThread
 	FNiagaraPooledRWBuffer MaxResidualWrite;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
-	FNiagaraPooledRWBuffer ChargeDensityBuffer;
 	FNiagaraPooledRWBuffer NumberDensityBuffer;
 
+	FNiagaraPooledRWTexture ChargeDensityTexture;
 	FNiagaraPooledRWTexture ElectricFieldTexture;
 	FNiagaraPooledRWTexture VectorFieldTexture;
 };
@@ -65,6 +65,7 @@ struct FNDIAuroraInstanceDataGameThread
 #endif
 
 	FNiagaraParameterDirectBinding<UObject*> RTUserParamBinding;
+	FNiagaraParameterDirectBinding<UObject*> VTUserParamBinding;
 	UTextureRenderTargetVolume* TargetTexture = nullptr;
 
 	bool UpdateTargetTexture(ENiagaraGpuBufferFormat BufferFormat);
@@ -100,8 +101,8 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       OutputNumberDensity)
 		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<uint>,         NumberDensity)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      OutputChargeDensity)
-		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<float>,        ChargeDensity)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>,  OutputChargeDensity)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>,    ChargeDensity)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputElectricField)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   ElectricField)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputVectorField)
@@ -123,6 +124,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FNiagaraUserParameterBinding RenderTargetUserParameter;
+
+	UPROPERTY(EditAnywhere, Category = "AuroraData")
+	FNiagaraUserParameterBinding VolumeTextureUserParameter;
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
