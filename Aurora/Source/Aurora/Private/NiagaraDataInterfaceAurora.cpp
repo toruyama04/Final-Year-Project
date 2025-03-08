@@ -26,8 +26,8 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(NiagaraDataInterfaceAurora)
 
-static const FString MaxResidualReadParamName(TEXT("_MaxResidualRead"));
-static const FString MaxResidualWriteParamName(TEXT("_MaxResidualWrite"));
+// static const FString MaxResidualReadParamName(TEXT("_MaxResidualRead"));
+// static const FString MaxResidualWriteParamName(TEXT("_MaxResidualWrite"));
 static const FString PlasmaPotentialReadParamName(TEXT("_PlasmaPotentialRead"));
 static const FString PlasmaPotentialWriteParamName(TEXT("_PlasmaPotentialWrite"));
 static const FString OutputNumberDensityParamName(TEXT("_OutputNumberDensity"));
@@ -76,8 +76,8 @@ void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder
 	ChargeDensityTexture.Release();
 	ElectricFieldTexture.Release();
 	VectorFieldTexture.Release();
-	MaxResidualRead.Release();
-	MaxResidualWrite.Release();
+	// MaxResidualRead.Release();
+	// MaxResidualWrite.Release();
 
 	UE_LOG(LogTemp, Log, TEXT("Resizing buffers and initialising with default values"));
 	if (CellCount == 0)
@@ -96,9 +96,9 @@ void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder
 
 	// ThreadGroup count = DispatchCount / DispatchNumThreads
 	// since GetGpuDispatchNumThreads returns (4,4,4) and line 1762 in NiagaraGpuComputeDispatch.cpp defines threadgroup to be elementcount / dispatchnumthread
-	int32 ThreadGroupCount = (NumCells.X / 4) * (NumCells.Y / 4) * (NumCells.Z / 4);
-	MaxResidualRead.Initialize(GraphBuilder, TEXT("MaxResidualRead"), PF_R32_UINT, sizeof(uint32), 1, BUF_UnorderedAccess | BUF_ShaderResource);
-	MaxResidualWrite.Initialize(GraphBuilder, TEXT("MaxResidualWrite"), PF_R32_UINT, sizeof(uint32), 1, BUF_UnorderedAccess | BUF_ShaderResource);
+	// int32 ThreadGroupCount = (NumCells.X / 4) * (NumCells.Y / 4) * (NumCells.Z / 4);
+	// MaxResidualRead.Initialize(GraphBuilder, TEXT("MaxResidualRead"), PF_R32_UINT, sizeof(uint32), 1, BUF_UnorderedAccess | BUF_ShaderResource);
+	// MaxResidualWrite.Initialize(GraphBuilder, TEXT("MaxResidualWrite"), PF_R32_UINT, sizeof(uint32), 1, BUF_UnorderedAccess | BUF_ShaderResource);
 
 	const FIntVector size(NumCells.X, NumCells.Y, NumCells.Z);
 	const FRDGTextureDesc EFieldTextureDesc = FRDGTextureDesc::Create3D(size, PF_A32B32G32R32F, FClearValueBinding::Black, ETextureCreateFlags::ShaderResource | ETextureCreateFlags::Dynamic | ETextureCreateFlags::UAV);
@@ -113,8 +113,8 @@ void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder
 	AddClearUAVFloatPass(GraphBuilder, PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder), DefaultValue);
 	AddClearUAVPass(GraphBuilder, NumberDensityBuffer.GetOrCreateUAV(GraphBuilder), uint32(0));
 	AddClearUAVPass(GraphBuilder, ChargeDensityTexture.GetOrCreateUAV(GraphBuilder), DefaultValue);
-	AddClearUAVPass(GraphBuilder, MaxResidualRead.GetOrCreateUAV(GraphBuilder), 0);
-	AddClearUAVPass(GraphBuilder, MaxResidualWrite.GetOrCreateUAV(GraphBuilder), 0);
+	// AddClearUAVPass(GraphBuilder, MaxResidualRead.GetOrCreateUAV(GraphBuilder), 0);
+	// AddClearUAVPass(GraphBuilder, MaxResidualWrite.GetOrCreateUAV(GraphBuilder), 0);
 }
 
 // Swap between iterations in shader rather than cpu?
@@ -122,7 +122,7 @@ void FNDIAuroraInstanceDataRenderThread::SwapBuffers()
 {
 	UE_LOG(LogTemp, Log, TEXT("Swapping buffers"));
 	Swap(PlasmaPotentialBufferRead, PlasmaPotentialBufferWrite);
-	Swap(MaxResidualRead, MaxResidualWrite);
+	// Swap(MaxResidualRead, MaxResidualWrite);
 }
 
 bool FNDIAuroraInstanceDataGameThread::UpdateTargetTexture(ENiagaraGpuBufferFormat BufferFormat)
@@ -226,8 +226,8 @@ void UNiagaraDataInterfaceAurora::GetParameterDefinitionHLSL(const FNiagaraDataI
 	OutHLSL.Appendf(TEXT("int3 %s%s;\n"),                *ParamInfo.DataInterfaceHLSLSymbol, *UNiagaraDataInterfaceRWBase::NumCellsName);
 	OutHLSL.Appendf(TEXT("float3 %s%s;\n"),              *ParamInfo.DataInterfaceHLSLSymbol, *UNiagaraDataInterfaceRWBase::CellSizeName);
 	OutHLSL.Appendf(TEXT("float3 %s%s;\n"),              *ParamInfo.DataInterfaceHLSLSymbol, *UNiagaraDataInterfaceRWBase::WorldBBoxSizeName);
-	OutHLSL.Appendf(TEXT("Buffer<uint> %s%s;\n"),        *ParamInfo.DataInterfaceHLSLSymbol, *MaxResidualReadParamName);
-	OutHLSL.Appendf(TEXT("RWBuffer<uint> %s%s;\n"),      *ParamInfo.DataInterfaceHLSLSymbol, *MaxResidualWriteParamName);
+	// OutHLSL.Appendf(TEXT("Buffer<uint> %s%s;\n"),        *ParamInfo.DataInterfaceHLSLSymbol, *MaxResidualReadParamName);
+	// OutHLSL.Appendf(TEXT("RWBuffer<uint> %s%s;\n"),      *ParamInfo.DataInterfaceHLSLSymbol, *MaxResidualWriteParamName);
 	OutHLSL.Appendf(TEXT("Buffer<float> %s%s;\n"),       *ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialReadParamName);
 	OutHLSL.Appendf(TEXT("RWBuffer<float> %s%s;\n"),     *ParamInfo.DataInterfaceHLSLSymbol, *PlasmaPotentialWriteParamName);
 	OutHLSL.Appendf(TEXT("RWBuffer<uint> %s%s;\n"),      *ParamInfo.DataInterfaceHLSLSymbol, *OutputNumberDensityParamName);
@@ -256,8 +256,8 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		{TEXT("NumCells"),             ParamInfo.DataInterfaceHLSLSymbol + UNiagaraDataInterfaceRWBase::NumCellsName},
 		{TEXT("CellSize"),             ParamInfo.DataInterfaceHLSLSymbol + UNiagaraDataInterfaceRWBase::CellSizeName},
 		{TEXT("WorldBBoxSize"),        ParamInfo.DataInterfaceHLSLSymbol + UNiagaraDataInterfaceRWBase::WorldBBoxSizeName},
-		{TEXT("MaxResidualRead"),      ParamInfo.DataInterfaceHLSLSymbol + MaxResidualReadParamName},
-		{TEXT("MaxResidualWrite"),     ParamInfo.DataInterfaceHLSLSymbol + MaxResidualWriteParamName},
+		// {TEXT("MaxResidualRead"),      ParamInfo.DataInterfaceHLSLSymbol + MaxResidualReadParamName},
+		// {TEXT("MaxResidualWrite"),     ParamInfo.DataInterfaceHLSLSymbol + MaxResidualWriteParamName},
 		{TEXT("PlasmaPotentialRead"),  ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialReadParamName},
 		{TEXT("PlasmaPotentialWrite"), ParamInfo.DataInterfaceHLSLSymbol + PlasmaPotentialWriteParamName},
 		{TEXT("OutputNumberDensity"),  ParamInfo.DataInterfaceHLSLSymbol + OutputNumberDensityParamName},
@@ -269,15 +269,15 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		{TEXT("OutputVectorField"),    ParamInfo.DataInterfaceHLSLSymbol + OutputVectorFieldParamName},
 		{TEXT("VectorField"),          ParamInfo.DataInterfaceHLSLSymbol + VectorFieldParamName},
 	};
-	if (FunctionInfo.DefinitionName == SolvePlasmaPotentialFunctionName)
+	/*if (FunctionInfo.DefinitionName == SolvePlasmaPotentialFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(out bool OutSuccess)
+			void {FunctionName}(float Tolerance, float DampingFactor, float Epsilon, out bool OutSuccess)
 			{
 				// we want to check if the residual is smaller than tolerance before we execute rest of code
 				float currentMaxResidual = 0.0f;
 				currentMaxResidual = asfloat({MaxResidualRead}[0]);
-				if (currentMaxResidual < 1e-4f)
+				if (currentMaxResidual < Tolerance)
 				{
 					OutSuccess = false;
 					return;
@@ -354,12 +354,12 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 								{PlasmaPotentialRead}[backIndex] + {PlasmaPotentialRead}[frontIndex];
 
 					// damping factor (can be changed)
-					static const float omega = 0.8f;
+					float omega = DampingFactor;
 					float prev = {PlasmaPotentialRead}[Linear];
 
-					float ChargeDensityValue = -{ChargeDensity}.Load(uint4(IndexX, IndexY, IndexZ, 0));
+					float ChargeDensityValue = {ChargeDensity}.Load(uint4(IndexX, IndexY, IndexZ, 0));
 					// epsilon_0 = 8.854e-12
-					float SourceTerm = ({CellSize}.x * {CellSize}.x) * (ChargeDensityValue / 8.854e-12f);
+					float SourceTerm = ({CellSize}.x * {CellSize}.x) * (ChargeDensityValue / Epsilon);
 
 					val = (1.0f - omega) * prev + omega * ((sum + SourceTerm) / 6.0f);
 
@@ -380,107 +380,120 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 		OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
 		return true;
 	}
-	else if (FunctionInfo.DefinitionName == SolveElectricFieldFunctionName)
+	*/
+	/*else if (FunctionInfo.DefinitionName == SolveElectricFieldFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-		void {FunctionName}(out bool OutSuccess)
-		{
-			int3 GridSize = {NumCells};
-
-			float dx = {CellSize}.x;
-			float dy = {CellSize}.y;
-			float dz = {CellSize}.z;
-
-			#if NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_THREE_D || NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_CUSTOM
-				const int IndexX = GDispatchThreadId.x;
-				const int IndexY = GDispatchThreadId.y;
-				const int IndexZ = GDispatchThreadId.z;
-				const int Linear = GDispatchThreadId.x + (GDispatchThreadId.y * GridSize.x) + (GDispatchThreadId.z * GridSize.y * GridSize.x);
-			#else
-				const int Linear = GLinearThreadId;
-				const int IndexX = Linear % GridSize.x;
-				const int IndexY = (Linear / GridSize.x) % GridSize.y;
-				const int IndexZ = Linear / (GridSize.x * GridSize.y);							
-			#endif
-
-			float ef_x = 0.0f;
-			float ef_y = 0.0f;
-			float ef_z = 0.0f;
-
-			float cur = {PlasmaPotentialRead}[Linear];
-
-			// calculate new electric field
-			if (IndexX == 0) 
+			void {FunctionName}(out bool OutSuccess)
 			{
-				int idx = 1 + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
-				float adj = {PlasmaPotentialRead}[idx];
-				ef_x = -(adj - cur) / dx;
-			} 
-			else if (IndexX == GridSize.x - 1) 
-			{
-				int idx = (IndexX - 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
-				float adj = {PlasmaPotentialRead}[idx];
-				ef_x = -(cur - adj) / dx;
-			} 
-			else
-			{
-				int idxr = (IndexX - 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
-				int idxl = (IndexX + 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
-				float adjr = {PlasmaPotentialRead}[idxr];
-				float adjl = {PlasmaPotentialRead}[idxl];
-				ef_x = -(adjl - adjr) / (2.0f * dx);
+				int3 GridSize = {NumCells};
+
+				float dx = {CellSize}.x;
+				float dy = {CellSize}.y;
+				float dz = {CellSize}.z;
+
+				#if NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_THREE_D || NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_CUSTOM
+					const int IndexX = GDispatchThreadId.x;
+					const int IndexY = GDispatchThreadId.y;
+					const int IndexZ = GDispatchThreadId.z;
+					const int Linear = GDispatchThreadId.x + (GDispatchThreadId.y * GridSize.x) + (GDispatchThreadId.z * GridSize.y * GridSize.x);
+				#else
+					const int Linear = GLinearThreadId;
+					const int IndexX = Linear % GridSize.x;
+					const int IndexY = (Linear / GridSize.x) % GridSize.y;
+					const int IndexZ = Linear / (GridSize.x * GridSize.y);							
+				#endif
+
+				float ef_x = 0.0f;
+				float ef_y = 0.0f;
+				float ef_z = 0.0f;
+
+				float cur = {PlasmaPotentialRead}[Linear];
+
+				// calculate new electric field
+				if (IndexX == 0) 
+				{
+					int idxo = 1 + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+					int idxt = 2 + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+					float po = {PlasmaPotentialRead}[idxo];
+					float pt = {PlasmaPotentialRead}[idxt];
+					ef_x = -(-3 * cur + 4 * po - pt) / (2 * dx);
+				} 
+				else if (IndexX == GridSize.x - 1) 
+				{
+					int idxo = (IndexX - 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+					int idxt = (IndexX - 2) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+					float po = {PlasmaPotentialRead}[idxo];
+					float pt = {PlasmaPotentialRead}[idxt];
+					ef_x = -(pt - 4 * po + 3 * cur) / (2 * dx);
+				} 
+				else
+				{
+					int idxr = (IndexX - 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+					int idxl = (IndexX + 1) + GridSize.x * IndexY + GridSize.x * GridSize.y * IndexZ;
+					float adjr = {PlasmaPotentialRead}[idxr];
+					float adjl = {PlasmaPotentialRead}[idxl];
+					ef_x = -(adjl - adjr) / (2.0f * dx);
+				}
+
+				if (IndexY == 0) 
+				{
+					int idxo = IndexX + GridSize.x * 1 + GridSize.x * GridSize.y * IndexZ;
+					int idxt = IndexX + GridSize.x * 2 + GridSize.x * GridSize.y * IndexZ;
+					float po = {PlasmaPotentialRead}[idxo];
+					float pt = {PlasmaPotentialRead}[idxt];
+					ef_y = -(-3 * cur + 4 * po - pt) / (2 * dy);
+				} 
+				else if (IndexY == GridSize.y - 1) 
+				{
+					int idxo = IndexX + GridSize.x * (IndexY - 1) + GridSize.x * GridSize.y * IndexZ;
+					int idxt = IndexX + GridSize.x * (IndexY - 2) + GridSize.x * GridSize.y * IndexZ;
+					float po = {PlasmaPotentialRead}[idxo];
+					float pt = {PlasmaPotentialRead}[idxt];
+					ef_y = -(pt - 4 * po + 3 * cur) / (2 * dy);
+				} 
+				else 
+				{
+					int idxr = IndexX + GridSize.x * (IndexY - 1) + GridSize.x * GridSize.y * IndexZ;
+					int idxl = IndexX + GridSize.x * (IndexY + 1) + GridSize.x * GridSize.y * IndexZ;
+					float adjr = {PlasmaPotentialRead}[idxr];
+					float adjl = {PlasmaPotentialRead}[idxl];
+					ef_y = -(adjl - adjr) / (2.0f * dy);
+				}
+
+				if (IndexZ == 0) 
+				{
+					int idxo = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * 1;
+					int idxt = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * 2;
+					float po = {PlasmaPotentialRead}[idxo];
+					float pt = {PlasmaPotentialRead}[idxt];
+					ef_z = -(-3 * cur + 4 * po - pt) / (2 * dz);
+				} 
+				else if (IndexZ == GridSize.z - 1) 
+				{
+					int idxo = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ - 1);
+					int idxt = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ - 2);
+					float po = {PlasmaPotentialRead}[idxo];
+					float pt = {PlasmaPotentialRead}[idxt];
+					ef_z = -(pt - 4 * po + 3 * cur) / (2 * dz);
+				} 
+				else 
+				{
+					int idxr = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ - 1);
+					int idxl = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ + 1);
+					float adjr = {PlasmaPotentialRead}[idxr];
+					float adjl = {PlasmaPotentialRead}[idxl];
+					ef_z = -(adjl - adjr) / (2.0f * dz);
+				}
+
+				{OutputElectricField}[uint3(IndexX, IndexY, IndexZ)] = float4(ef_x, ef_y, ef_z, 0.0f);
+				OutSuccess = true;
 			}
-
-			if (IndexY == 0) 
-			{
-				int idx = IndexX + GridSize.x * 1 + GridSize.x * GridSize.y * IndexZ;
-				float adj = {PlasmaPotentialRead}[idx];
-				ef_y = -(adj - cur) / dy;
-			} 
-			else if (IndexY == GridSize.y - 1) 
-			{
-				int idx = IndexX + GridSize.x * (IndexY - 1) + GridSize.x * GridSize.y * IndexZ;
-				float adj = {PlasmaPotentialRead}[idx];
-				ef_y = -(cur - adj) / dy;
-			} 
-			else 
-			{
-				int idxr = IndexX + GridSize.x * (IndexY - 1) + GridSize.x * GridSize.y * IndexZ;
-				int idxl = IndexX + GridSize.x * (IndexY + 1) + GridSize.x * GridSize.y * IndexZ;
-				float adjr = {PlasmaPotentialRead}[idxr];
-				float adjl = {PlasmaPotentialRead}[idxl];
-				ef_y = -(adjl - adjr) / (2.0f * dy);
-			}
-
-			if (IndexZ == 0) 
-			{
-				int idx = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * 1;
-				float adj = {PlasmaPotentialRead}[idx];
-				ef_z = -(adj - cur) / dz;
-			} 
-			else if (IndexZ == GridSize.z - 1) 
-			{
-				int idx = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ - 1);
-				float adj = {PlasmaPotentialRead}[idx];
-				ef_z = -(cur - adj) / dz;
-			} 
-			else 
-			{
-				int idxr = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ - 1);
-				int idxl = IndexX + GridSize.x * IndexY + GridSize.x * GridSize.y * (IndexZ + 1);
-				float adjr = {PlasmaPotentialRead}[idxr];
-				float adjl = {PlasmaPotentialRead}[idxl];
-				ef_z = -(adjl - adjr) / (2.0f * dz);
-			}
-
-			{OutputElectricField}[uint3(IndexX, IndexY, IndexZ)] = float4(ef_x, ef_y, ef_z, 0.0f);
-			OutSuccess = true;
-		}
 		)");
 		OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
 		return true;
-	}
-	else if (FunctionInfo.DefinitionName == GatherToParticleFunctionName)
+	}*/
+	/*else if (FunctionInfo.DefinitionName == GatherToParticleFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(float3 InWorldPositionParticle, float4x4 InSimulationToUnitTransform, out float3 OutVector, out bool OutSuccess)
@@ -525,7 +538,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				float3 value111 = {ElectricField}.Load(pos111).xyz;
 				float3 value011 = {ElectricField}.Load(pos011).xyz;
 
-				OutVector = 
+				OutVector =
 					value000 * (1.0f - di) * (1.0f - dj) * (1.0f - dk) +
 					value100 * di          * (1.0f - dj) * (1.0f - dk) +
 					value110 * di          * dj          * (1.0f - dk) +
@@ -536,20 +549,20 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 					value011 * (1.0f - di) * dj          * dk;
 				OutSuccess = true;
 			}
-			)");
-	OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
-	return true;
-	}
-	else if (FunctionInfo.DefinitionName == ScatterToGridFunctionName)
+		)");
+		OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
+		return true;
+	}*/
+	/*else if (FunctionInfo.DefinitionName == ScatterToGridFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
 			void {FunctionName}(float3 InPosition, float4x4 InSimulationToUnitTransform, float mpw, out bool OutSuccess)
 			{
-				// converting world pos (InPosition) into unit space (UnitIndex). 
+				// converting world pos (InPosition) into unit space (UnitIndex).
 				float3 UnitIndex = mul(float4(InPosition, 1.0), InSimulationToUnitTransform).xyz;
-				
+
 				float3 Index = UnitIndex * {NumCells} - 0.5f;
-				
+
 				// finding the grid index and fractional grid index
 				int i = (int)Index.x;
 				float di = Index.x - i;
@@ -564,7 +577,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 					OutSuccess = false;
 					return;
 				}
-			
+
 				int GridSizeX = {NumCells}.x;
 				int GridSizeY = {NumCells}.y;
 				int GridSizeZ = {NumCells}.z;
@@ -579,7 +592,6 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				int Index111 = (i + 1) + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
 				int Index011 = i + (j + 1) * GridSizeX + (k + 1) * GridSizeX * GridSizeY;
 
-				// pre-defined macro-particle weight (can be changed if needed)
 				float mpww = mpw;
 				// assigning fractional amounts to each index
 				float Index000Value = mpww * (1.0f - di) * (1.0f - dj) * (1.0f - dk);
@@ -600,7 +612,236 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				InterlockedAdd({OutputNumberDensity}[Index101], uint(Index101Value));
 				InterlockedAdd({OutputNumberDensity}[Index111], uint(Index111Value));
 				InterlockedAdd({OutputNumberDensity}[Index011], uint(Index011Value));
+
+				OutSuccess = true;
+			}
+		)");
+		OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
+		return true;
+	}*/
+	if (FunctionInfo.DefinitionName == SolvePlasmaPotentialFunctionName)
+	{
+		static const TCHAR* FormatBounds = TEXT(R"(
+			void {FunctionName}(out bool OutSuccess)
+			{
+				int3 GridSize = {NumCells};
+
+				#if NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_THREE_D || NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_CUSTOM
+					const int IndexX = GDispatchThreadId.x;
+					const int IndexY = GDispatchThreadId.y;
+					const int IndexZ = GDispatchThreadId.z;
+					const int Linear = GDispatchThreadId.x + (GDispatchThreadId.y * GridSize.x) + (GDispatchThreadId.z * GridSize.y * GridSize.x);
+				#else
+					const int Linear = GLinearThreadId;
+					const int IndexX = Linear % GridSize.x;
+					const int IndexY = (Linear / GridSize.x) % GridSize.y;
+					const int IndexZ = Linear / (GridSize.x * GridSize.y);							
+				#endif
 				
+				float dx = {CellSize}.x;
+				float dx2 = dx * dx;
+	
+				int iEast  = (IndexX + 1) % GridSize.x;
+				int iWest  = (IndexX - 1 + GridSize.x) % GridSize.x;
+				int jNorth = (IndexY + 1) % GridSize.y;
+				int jSouth = (IndexY - 1 + GridSize.y) % GridSize.y;
+				int kTop   = (IndexZ + 1) % GridSize.z;
+				int kBottom= (IndexZ - 1 + GridSize.z) % GridSize.z;
+    
+				int LinearEast  = iEast  + IndexY * GridSize.x + IndexZ * GridSize.x * GridSize.y;
+				int LinearWest  = iWest  + IndexY * GridSize.x + IndexZ * GridSize.x * GridSize.y;
+				int LinearNorth = IndexX + jNorth * GridSize.x + IndexZ * GridSize.x * GridSize.y;
+				int LinearSouth = IndexX + jSouth * GridSize.x + IndexZ * GridSize.x * GridSize.y;
+				int LinearTop   = IndexX + IndexY * GridSize.x + kTop * GridSize.x * GridSize.y;
+				int LinearBottom= IndexX + IndexY * GridSize.x + kBottom * GridSize.x * GridSize.y;
+
+				float phiEast   = {PlasmaPotentialRead}[LinearEast];
+				float phiWest   = {PlasmaPotentialRead}[LinearWest];
+				float phiNorth  = {PlasmaPotentialRead}[LinearNorth];
+				float phiSouth  = {PlasmaPotentialRead}[LinearSouth];
+				float phiTop    = {PlasmaPotentialRead}[LinearTop];
+				float phiBottom = {PlasmaPotentialRead}[LinearBottom];
+
+				float bVal = {ChargeDensity}.Load(uint4(IndexX, IndexY, IndexZ, 0));
+				float newPhi = (phiEast + phiWest + phiNorth + phiSouth + phiTop + phiBottom + dx2 * bVal) / 6.0;
+
+				{PlasmaPotentialWrite}[Linear] = newPhi;
+				OutSuccess = true;
+			}
+			)");
+		OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
+		return true;
+	}
+	else if (FunctionInfo.DefinitionName == SolveElectricFieldFunctionName)
+	{
+		static const TCHAR* FormatBounds = TEXT(R"(
+			void {FunctionName}(out bool OutSuccess)
+			{
+				int3 GridSize = {NumCells};
+
+				#if NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_THREE_D || NIAGARA_DISPATCH_TYPE == NIAGARA_DISPATCH_TYPE_CUSTOM
+					const int IndexX = GDispatchThreadId.x;
+					const int IndexY = GDispatchThreadId.y;
+					const int IndexZ = GDispatchThreadId.z;
+					const int Linear = GDispatchThreadId.x + (GDispatchThreadId.y * GridSize.x) + (GDispatchThreadId.z * GridSize.y * GridSize.x);
+				#else
+					const int Linear = GLinearThreadId;
+					const int IndexX = Linear % GridSize.x;
+					const int IndexY = (Linear / GridSize.x) % GridSize.y;
+					const int IndexZ = Linear / (GridSize.x * GridSize.y);							
+				#endif
+
+				float dx = {CellSize}.x;
+				float inv2dx = 1.0 / (2.0 * dx);
+
+				int iEast  = (IndexX + 1) % GridSize.x;
+				int iWest  = (IndexX - 1 + GridSize.x) % GridSize.x;
+				int jNorth = (IndexY + 1) % GridSize.y;
+				int jSouth = (IndexY - 1 + GridSize.y) % GridSize.y;
+				int kTop   = (IndexZ + 1) % GridSize.z;
+				int kBottom= (IndexZ - 1 + GridSize.z) % GridSize.z;
+    
+				int LinearEast  = iEast  + IndexY * GridSize.x + IndexZ * GridSize.x * GridSize.y;
+				int LinearWest  = iWest  + IndexY * GridSize.x + IndexZ * GridSize.x * GridSize.y;
+				int LinearNorth = IndexX + jNorth * GridSize.x + IndexZ * GridSize.x * GridSize.y;
+				int LinearSouth = IndexX + jSouth * GridSize.x + IndexZ * GridSize.x * GridSize.y;
+				int LinearTop   = IndexX + IndexY * GridSize.x + kTop * GridSize.x * GridSize.y;
+				int LinearBottom= IndexX + IndexY * GridSize.x + kBottom * GridSize.x * GridSize.y;
+
+				// Read potential values from neighboring grid nodes.
+				float phiEast   = {PlasmaPotentialRead}[LinearEast];
+				float phiWest   = {PlasmaPotentialRead}[LinearWest];
+				float phiNorth  = {PlasmaPotentialRead}[LinearNorth];
+				float phiSouth  = {PlasmaPotentialRead}[LinearSouth];
+				float phiTop    = {PlasmaPotentialRead}[LinearTop];
+				float phiBottom = {PlasmaPotentialRead}[LinearBottom];
+
+				float Ex = -(phiEast - phiWest) * inv2dx;
+				float Ey = -(phiNorth - phiSouth) * inv2dx;
+				float Ez = -(phiTop - phiBottom) * inv2dx;
+
+				{OutputElectricField}[uint3(IndexX, IndexY, IndexZ)] = float4(Ex, Ey, Ez, 0.0f);
+				OutSuccess = true;
+			}
+		)");
+		OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
+		return true;
+	}
+	else if (FunctionInfo.DefinitionName == GatherToParticleFunctionName)
+	{
+		static const TCHAR* FormatBounds = TEXT(R"(
+			void {FunctionName}(float3 InWorldPositionParticle, float4x4 InSimulationToUnitTransform, out float3 OutVector, out bool OutSuccess)
+			{
+				float3 UnitIndex = mul(float4(InWorldPositionParticle, 1.0f), InSimulationToUnitTransform).xyz;
+				float3 Index = UnitIndex * {NumCells} - 0.5f;
+
+				int i = (int)Index.x;
+				float di = Index.x - i;
+				int j = (int)Index.y;
+				float dj = Index.y - j;
+				int k = (int)Index.z;
+				float dk = Index.z - k;
+
+				int GridSizeX = {NumCells}.x;
+				int GridSizeY = {NumCells}.y;
+				int GridSizeZ = {NumCells}.z;
+			
+				int iWrapped = ((i % GridSizeX) + GridSizeX) % GridSizeX;
+				int jWrapped = ((j % GridSizeY) + GridSizeY) % GridSizeY;
+				int kWrapped = ((k % GridSizeZ) + GridSizeZ) % GridSizeZ;
+
+				int i1 = (iWrapped + 1) % GridSizeX;
+				int j1 = (jWrapped + 1) % GridSizeY;
+				int k1 = (kWrapped + 1) % GridSizeZ;
+
+				int4 pos000 = int4(iWrapped, jWrapped, kWrapped, 0);
+				int4 pos100 = int4(i1,       jWrapped, kWrapped, 0);
+				int4 pos110 = int4(i1,       j1,       kWrapped, 0);
+				int4 pos010 = int4(iWrapped, j1,       kWrapped, 0);
+				int4 pos001 = int4(iWrapped, jWrapped, k1,       0);
+				int4 pos101 = int4(i1,       jWrapped, k1,       0);
+				int4 pos111 = int4(i1,       j1,       k1,       0);
+				int4 pos011 = int4(iWrapped, j1,       k1,       0);
+
+				float3 value000 = {ElectricField}.Load(pos000).xyz;
+				float3 value100 = {ElectricField}.Load(pos100).xyz;
+				float3 value110 = {ElectricField}.Load(pos110).xyz;
+				float3 value010 = {ElectricField}.Load(pos010).xyz;
+				float3 value001 = {ElectricField}.Load(pos001).xyz;
+				float3 value101 = {ElectricField}.Load(pos101).xyz;
+				float3 value111 = {ElectricField}.Load(pos111).xyz;
+				float3 value011 = {ElectricField}.Load(pos011).xyz;
+
+				OutVector = 
+					value000 * (1.0f - di) * (1.0f - dj) * (1.0f - dk) +
+					value100 * di          * (1.0f - dj) * (1.0f - dk) +
+					value110 * di          * dj          * (1.0f - dk) +
+					value010 * (1.0f - di) * dj          * (1.0f - dk) +
+					value001 * (1.0f - di) * (1.0f - dj) * dk +
+					value101 * di          * (1.0f - dj) * dk +
+					value111 * di          * dj          * dk +
+					value011 * (1.0f - di) * dj          * dk;
+				OutSuccess = true;
+			}
+		)");
+		OutHLSL += FString::Format(FormatBounds, ArgsDeclaration);
+		return true;
+		}
+	else if (FunctionInfo.DefinitionName == ScatterToGridFunctionName)
+	{
+		static const TCHAR* FormatBounds = TEXT(R"(
+			void {FunctionName}(float3 InPosition, float4x4 InSimulationToUnitTransform, float mpw, out bool OutSuccess)
+			{
+				float3 UnitIndex = mul(float4(InPosition, 1.0), InSimulationToUnitTransform).xyz;
+				float3 IndexF = UnitIndex * {NumCells} - 0.5f;
+
+				int i = (int)IndexF.x;
+				float di = IndexF.x - i;
+				int j = (int)IndexF.y;
+				float dj = IndexF.y - j;
+				int k = (int)IndexF.z;
+				float dk = IndexF.z - k;
+    
+				int GridSizeX = {NumCells}.x;
+				int GridSizeY = {NumCells}.y;
+				int GridSizeZ = {NumCells}.z;
+    
+				i = ((i % GridSizeX) + GridSizeX) % GridSizeX;
+				j = ((j % GridSizeY) + GridSizeY) % GridSizeY;
+				k = ((k % GridSizeZ) + GridSizeZ) % GridSizeZ;
+    
+				int i1 = (i + 1) % GridSizeX;
+				int j1 = (j + 1) % GridSizeY;
+				int k1 = (k + 1) % GridSizeZ;
+    
+				int Index000 = i  + j * GridSizeX + k * GridSizeX * GridSizeY;
+				int Index100 = i1 + j * GridSizeX + k * GridSizeX * GridSizeY;
+				int Index110 = i1 + j1 * GridSizeX + k * GridSizeX * GridSizeY;
+				int Index010 = i  + j1 * GridSizeX + k * GridSizeX * GridSizeY;
+				int Index001 = i  + j * GridSizeX + k1 * GridSizeX * GridSizeY;
+				int Index101 = i1 + j * GridSizeX + k1 * GridSizeX * GridSizeY;
+				int Index111 = i1 + j1 * GridSizeX + k1 * GridSizeX * GridSizeY;
+				int Index011 = i  + j1 * GridSizeX + k1 * GridSizeX * GridSizeY;
+    
+				float mpww = mpw;
+				float Index000Value = mpww * (1.0f - di) * (1.0f - dj) * (1.0f - dk);
+				float Index100Value = mpww * di          * (1.0f - dj) * (1.0f - dk);
+				float Index110Value = mpww * di          * dj          * (1.0f - dk);
+				float Index010Value = mpww * (1.0f - di) * dj          * (1.0f - dk);
+				float Index001Value = mpww * (1.0f - di) * (1.0f - dj) * dk;
+				float Index101Value = mpww * di          * (1.0f - dj) * dk;
+				float Index111Value = mpww * di          * dj          * dk;
+				float Index011Value = mpww * (1.0f - di) * dj          * dk;
+    
+				InterlockedAdd({OutputNumberDensity}[Index000], uint(Index000Value));
+				InterlockedAdd({OutputNumberDensity}[Index100], uint(Index100Value));
+				InterlockedAdd({OutputNumberDensity}[Index110], uint(Index110Value));
+				InterlockedAdd({OutputNumberDensity}[Index010], uint(Index010Value));
+				InterlockedAdd({OutputNumberDensity}[Index001], uint(Index001Value));
+				InterlockedAdd({OutputNumberDensity}[Index101], uint(Index101Value));
+				InterlockedAdd({OutputNumberDensity}[Index111], uint(Index111Value));
+				InterlockedAdd({OutputNumberDensity}[Index011], uint(Index011Value));
+    
 				OutSuccess = true;
 			}
 		)");
@@ -610,7 +851,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 	else if (FunctionInfo.DefinitionName == ComputeChargeDensityFunctionName)
 	{
 		static const TCHAR* FormatSample = TEXT(R"(
-			void {FunctionName}(out bool OutSuccess)
+			void {FunctionName}(float Charge, float IonDensity, float Epsilon, out bool OutSuccess)
 			{
 				int3 GridSize = {NumCells};				
 
@@ -632,7 +873,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				// divide number density by volume, then multiply by charge of electron and store in ChargeDensity buffer
 				float NumDensity = float({NumberDensity}[Linear]);
 				float toDensity = NumDensity / CellVol;
-				float ChargeDensity = toDensity * 1.602e-19;
+				float ChargeDensity = ((toDensity * Charge) - IonDensity) / Epsilon;
 				{OutputChargeDensity}[uint3(IndexX, IndexY, IndexZ)] = ChargeDensity;
 				OutSuccess = true;
 			}
@@ -722,7 +963,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				const int IndexX = Index % {NumCells}.x;
 				const int IndexY = (Index / {NumCells}.x) % {NumCells}.y;
 				const int IndexZ = Index / ({NumCells}.x * {NumCells}.y);
-				OutValue = {VectorField}.Load(uint3(IndexX, IndexY, IndexZ)).xyz;
+				OutValue = {VectorField}.Load(uint4(IndexX, IndexY, IndexZ, 0)).xyz;
 			}
 		)");
 		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
@@ -747,7 +988,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				const int IndexX = Index % {NumCells}.x;
 				const int IndexY = (Index / {NumCells}.x) % {NumCells}.y;
 				const int IndexZ = Index / ({NumCells}.x * {NumCells}.y);
-				OutValue = {VectorField}.Load(uint3(IndexX, IndexY, IndexZ)).xyz;
+				OutValue = {ChargeDensity}.Load(uint4(IndexX, IndexY, IndexZ, 0));
 			}
 		)");
 		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
@@ -849,8 +1090,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 		if (Context.GetSimStageData().StageMetaData->SimulationStageName == TEXT("Solve Plasma Potential"))
 		{
 			UE_LOG(LogTemp, Log, TEXT("Setting Shader parameters for SolvePlasmaPotential"));
-			ShaderParameters->MaxResidualRead = InstanceData->MaxResidualRead.GetOrCreateSRV(GraphBuilder);
-			ShaderParameters->MaxResidualWrite = InstanceData->MaxResidualWrite.GetOrCreateUAV(GraphBuilder);
+			// ShaderParameters->MaxResidualRead = InstanceData->MaxResidualRead.GetOrCreateSRV(GraphBuilder);
+			// ShaderParameters->MaxResidualWrite = InstanceData->MaxResidualWrite.GetOrCreateUAV(GraphBuilder);
 			ShaderParameters->PlasmaPotentialRead = InstanceData->PlasmaPotentialBufferRead.GetOrCreateSRV(GraphBuilder); 
 			ShaderParameters->PlasmaPotentialWrite = InstanceData->PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder);
 			ShaderParameters->OutputNumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
@@ -868,8 +1109,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 			// Read: PlasmaPotentialRead
 			// Write: OutputElectricField
 			// KNOWN ISSUE: if we converge early, potential buffers will still swap, potential data may be 1 iteration behind for electric field
-			ShaderParameters->MaxResidualRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
-			ShaderParameters->MaxResidualWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
+			// ShaderParameters->MaxResidualRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
+			// ShaderParameters->MaxResidualWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
 			ShaderParameters->PlasmaPotentialRead = InstanceData->PlasmaPotentialBufferRead.GetOrCreateSRV(GraphBuilder);
 			ShaderParameters->PlasmaPotentialWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 			ShaderParameters->OutputNumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
@@ -884,8 +1125,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 		else if (Context.GetSimStageData().StageMetaData->SimulationStageName == TEXT("Compute Charge Density"))
 		{
 			UE_LOG(LogTemp, Log, TEXT("Setting Shader parameters: Compute Charge Density"));
-			ShaderParameters->MaxResidualRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
-			ShaderParameters->MaxResidualWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
+			// ShaderParameters->MaxResidualRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
+			// ShaderParameters->MaxResidualWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
 			ShaderParameters->PlasmaPotentialRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_FLOAT);
 			ShaderParameters->PlasmaPotentialWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 			ShaderParameters->OutputNumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
@@ -900,8 +1141,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 		else if (Context.IsOutputStage())
 		{
 			UE_LOG(LogTemp, Log, TEXT("Setting Shader parameters: writing stage"));
-			ShaderParameters->MaxResidualRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
-			ShaderParameters->MaxResidualWrite = InstanceData->MaxResidualWrite.GetOrCreateUAV(GraphBuilder);
+			// ShaderParameters->MaxResidualRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
+			// ShaderParameters->MaxResidualWrite = InstanceData->MaxResidualWrite.GetOrCreateUAV(GraphBuilder);
 			ShaderParameters->PlasmaPotentialRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_FLOAT);
 			ShaderParameters->PlasmaPotentialWrite = InstanceData->PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder);
 			ShaderParameters->OutputNumberDensity = InstanceData->NumberDensityBuffer.GetOrCreateUAV(GraphBuilder);
@@ -916,8 +1157,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 		else
 		{
 			UE_LOG(LogTemp, Log, TEXT("Setting Shader parameters: Reading stage"));
-			ShaderParameters->MaxResidualRead = InstanceData->MaxResidualRead.GetOrCreateSRV(GraphBuilder);
-			ShaderParameters->MaxResidualWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
+			// ShaderParameters->MaxResidualRead = InstanceData->MaxResidualRead.GetOrCreateSRV(GraphBuilder);
+			// ShaderParameters->MaxResidualWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
 			ShaderParameters->PlasmaPotentialRead = InstanceData->PlasmaPotentialBufferRead.GetOrCreateSRV(GraphBuilder);
 			ShaderParameters->PlasmaPotentialWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 			ShaderParameters->OutputNumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
@@ -936,8 +1177,8 @@ void UNiagaraDataInterfaceAurora::SetShaderParameters(const FNiagaraDataInterfac
 		ShaderParameters->NumCells = FIntVector::ZeroValue;
 		ShaderParameters->CellSize = FVector3f::ZeroVector;
 		ShaderParameters->WorldBBoxSize = FVector3f::ZeroVector;
-		ShaderParameters->MaxResidualRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
-		ShaderParameters->MaxResidualWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
+		// ShaderParameters->MaxResidualRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_UINT);
+		// ShaderParameters->MaxResidualWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
 		ShaderParameters->PlasmaPotentialRead = Context.GetComputeDispatchInterface().GetEmptyBufferSRV(GraphBuilder, PF_R32_FLOAT);
 		ShaderParameters->PlasmaPotentialWrite = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_FLOAT);
 		ShaderParameters->OutputNumberDensity = Context.GetComputeDispatchInterface().GetEmptyBufferUAV(GraphBuilder, PF_R32_UINT);
@@ -1170,6 +1411,9 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 		FNiagaraFunctionSignature SolvePlasmaPotentialSig;
 		SolvePlasmaPotentialSig.Name = SolvePlasmaPotentialFunctionName;
 		SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(GetClass(), TEXT("Aurora")));
+		// SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("Tolerance")));
+		// SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("DampingFactor")));
+		// SolvePlasmaPotentialSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("Epsilon")));
 		SolvePlasmaPotentialSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		SolvePlasmaPotentialSig.bMemberFunction = true;
 		SolvePlasmaPotentialSig.bRequiresContext = false;
@@ -1255,6 +1499,9 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 		FNiagaraFunctionSignature ComputeChargeDensitySig;
 		ComputeChargeDensitySig.Name = ComputeChargeDensityFunctionName;
 		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("Charge")));
+		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("IonDensity")));
+		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("Epsilon")));
 		ComputeChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		ComputeChargeDensitySig.bMemberFunction = true;
 		ComputeChargeDensitySig.bRequiresContext = false;
@@ -1468,8 +1715,8 @@ void FNiagaraDataInterfaceProxyAurora::ResetData(const FNDIGpuComputeResetContex
 	}
 	UE_LOG(LogTemp, Log, TEXT("Reset data"));
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
-	AddClearUAVPass(GraphBuilder, ProxyData->MaxResidualRead.GetOrCreateUAV(GraphBuilder), uint32(0));
-	AddClearUAVPass(GraphBuilder, ProxyData->MaxResidualWrite.GetOrCreateUAV(GraphBuilder), uint32(0));
+	// AddClearUAVPass(GraphBuilder, ProxyData->MaxResidualRead.GetOrCreateUAV(GraphBuilder), uint32(0));
+	// AddClearUAVPass(GraphBuilder, ProxyData->MaxResidualWrite.GetOrCreateUAV(GraphBuilder), uint32(0));
 	AddClearUAVFloatPass(GraphBuilder, ProxyData->PlasmaPotentialBufferRead.GetOrCreateUAV(GraphBuilder), 0.0f);
 	AddClearUAVFloatPass(GraphBuilder, ProxyData->PlasmaPotentialBufferWrite.GetOrCreateUAV(GraphBuilder), 0.0f);
 	AddClearUAVPass(GraphBuilder, ProxyData->NumberDensityBuffer.GetOrCreateUAV(GraphBuilder), uint32(0));
@@ -1490,13 +1737,13 @@ void FNiagaraDataInterfaceProxyAurora::PreStage(const FNDIGpuComputePreStageCont
 	{
 		ProxyData->ResizeBuffers(GraphBuilder);
 	}
-	if (Context.GetSimStageData().IterationIndex == 0 && Context.GetSimStageData().StageMetaData->SimulationStageName == TEXT("Solve Plasma Potential"))
+	/*if (Context.GetSimStageData().IterationIndex == 0 && Context.GetSimStageData().StageMetaData->SimulationStageName == TEXT("Solve Plasma Potential"))
 	{
 		UE_LOG(LogTemp, Log, TEXT("Clearing max residual for first iteration"));
 		constexpr float InitialResidual = 1.0f;
 		const uint32_t InitialResidualAsUint = FMath::AsUInt(InitialResidual);
-		AddClearUAVPass(GraphBuilder, ProxyData->MaxResidualRead.GetOrCreateUAV(GraphBuilder), InitialResidualAsUint);
-	}
+		// AddClearUAVPass(GraphBuilder, ProxyData->MaxResidualRead.GetOrCreateUAV(GraphBuilder), InitialResidualAsUint);
+	}*/
 }
 
 void FNiagaraDataInterfaceProxyAurora::PostStage(const FNDIGpuComputePostStageContext& Context)
@@ -1507,7 +1754,7 @@ void FNiagaraDataInterfaceProxyAurora::PostStage(const FNDIGpuComputePostStageCo
 		UE_LOG(LogTemp, Log, TEXT("Post-Stage: Solve Plasma Potential index %d"), Context.GetSimStageData().IterationIndex);
 		FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
 		ProxyData->SwapBuffers();
-		AddClearUAVPass(GraphBuilder, ProxyData->MaxResidualWrite.GetOrCreateUAV(GraphBuilder), uint32(0));
+		// AddClearUAVPass(GraphBuilder, ProxyData->MaxResidualWrite.GetOrCreateUAV(GraphBuilder), uint32(0));
 	}
 	else if (Context.GetSimStageData().StageMetaData->SimulationStageName == TEXT("Solve Electric Field"))
 	{
@@ -1558,8 +1805,8 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 	if (Context.IsFinalPostSimulate())
 	{
 		UE_LOG(LogTemp, Log, TEXT("Final Post Simulate"));
-		ProxyData->MaxResidualRead.EndGraphUsage();
-		ProxyData->MaxResidualWrite.EndGraphUsage();
+		// ProxyData->MaxResidualRead.EndGraphUsage();
+		// ProxyData->MaxResidualWrite.EndGraphUsage();
 		ProxyData->PlasmaPotentialBufferRead.EndGraphUsage();
 		ProxyData->PlasmaPotentialBufferWrite.EndGraphUsage();
 		ProxyData->ChargeDensityTexture.EndGraphUsage();

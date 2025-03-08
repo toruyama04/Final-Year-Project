@@ -42,8 +42,8 @@ struct FNDIAuroraInstanceDataRenderThread
 
 	FTextureRHIRef RenderTargetToCopyTo;
 
-	FNiagaraPooledRWBuffer MaxResidualRead;
-	FNiagaraPooledRWBuffer MaxResidualWrite;
+	// FNiagaraPooledRWBuffer MaxResidualRead;
+	// FNiagaraPooledRWBuffer MaxResidualWrite;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
 	FNiagaraPooledRWBuffer NumberDensityBuffer;
@@ -65,7 +65,6 @@ struct FNDIAuroraInstanceDataGameThread
 #endif
 
 	FNiagaraParameterDirectBinding<UObject*> RTUserParamBinding;
-	FNiagaraParameterDirectBinding<UObject*> VTUserParamBinding;
 	UTextureRenderTargetVolume* TargetTexture = nullptr;
 
 	bool UpdateTargetTexture(ENiagaraGpuBufferFormat BufferFormat);
@@ -94,8 +93,6 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 		SHADER_PARAMETER(FIntVector,                          NumCells)
 		SHADER_PARAMETER(FVector3f,                           CellSize)
 		SHADER_PARAMETER(FVector3f,                           WorldBBoxSize)
-		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<uint>,         MaxResidualRead)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       MaxResidualWrite)
 
 		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<float>,        PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
@@ -124,9 +121,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FNiagaraUserParameterBinding RenderTargetUserParameter;
-
-	UPROPERTY(EditAnywhere, Category = "AuroraData")
-	FNiagaraUserParameterBinding VolumeTextureUserParameter;
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
