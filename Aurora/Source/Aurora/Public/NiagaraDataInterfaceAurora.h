@@ -41,13 +41,14 @@ struct FNDIAuroraInstanceDataRenderThread
 #endif
 
 	FTextureRHIRef RenderTargetToCopyTo;
+	FTextureReferenceRHIRef TextureReferenceRHI;
+	FSamplerStateRHIRef SamplerStateRHI;
+	FRDGTextureRef TransientRDGTexture = nullptr;
 
-	// FNiagaraPooledRWBuffer MaxResidualRead;
-	// FNiagaraPooledRWBuffer MaxResidualWrite;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
-	FNiagaraPooledRWBuffer NumberDensityBuffer;
 
+	FNiagaraPooledRWTexture NumberDensityTexture;
 	FNiagaraPooledRWTexture ChargeDensityTexture;
 	FNiagaraPooledRWTexture ElectricFieldTexture;
 	FNiagaraPooledRWTexture VectorFieldTexture;
@@ -66,6 +67,11 @@ struct FNDIAuroraInstanceDataGameThread
 
 	FNiagaraParameterDirectBinding<UObject*> RTUserParamBinding;
 	UTextureRenderTargetVolume* TargetTexture = nullptr;
+	
+	// note this
+	TWeakObjectPtr<UTexture> CurrentTexture = nullptr;
+	FIntVector CurrentTextureSize = FIntVector::ZeroValue;
+	FNiagaraParameterDirectBinding<UObject*> UserRayMarchBinding;
 
 	bool UpdateTargetTexture(ENiagaraGpuBufferFormat BufferFormat);
 };
@@ -96,14 +102,16 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 
 		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<float>,        PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<uint>,       OutputNumberDensity)
-		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<uint>,         NumberDensity)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<uint>,   OutputNumberDensity)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<uint>,     NumberDensity)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>,  OutputChargeDensity)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>,    ChargeDensity)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputElectricField)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   ElectricField)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputVectorField)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   VectorField)
+				
+		SHADER_PARAMETER_SAMPLER(SamplerState, TextureSampler)
 	END_SHADER_PARAMETER_STRUCT()
 
 public:
@@ -121,6 +129,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FNiagaraUserParameterBinding RenderTargetUserParameter;
+
+	UPROPERTY(EditAnywhere, Category = "AuroraData")
+	FNiagaraUserParameterBinding TextureUserParameter;
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
@@ -153,6 +164,8 @@ public:
 
 	void GetNumCells(FVectorVMExternalFunctionContext& Context);
 	void SetNumCells(FVectorVMExternalFunctionContext& Context);
+	//void SampleTexture(FVectorVMExternalFunctionContext& Context);
+	//void GetTextureDimensions(FVectorVMExternalFunctionContext& Context);
 
 
 #if WITH_EDITOR
