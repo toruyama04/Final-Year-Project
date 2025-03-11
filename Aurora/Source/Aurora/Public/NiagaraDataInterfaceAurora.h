@@ -41,9 +41,6 @@ struct FNDIAuroraInstanceDataRenderThread
 #endif
 
 	FTextureRHIRef RenderTargetToCopyTo;
-	FTextureReferenceRHIRef TextureReferenceRHI;
-	FSamplerStateRHIRef SamplerStateRHI;
-	FRDGTextureRef TransientRDGTexture = nullptr;
 
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
 	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
@@ -52,6 +49,7 @@ struct FNDIAuroraInstanceDataRenderThread
 	FNiagaraPooledRWTexture ChargeDensityTexture;
 	FNiagaraPooledRWTexture ElectricFieldTexture;
 	FNiagaraPooledRWTexture VectorFieldTexture;
+	FNiagaraPooledRWTexture CopyTexture;
 };
 
 struct FNDIAuroraInstanceDataGameThread
@@ -67,11 +65,6 @@ struct FNDIAuroraInstanceDataGameThread
 
 	FNiagaraParameterDirectBinding<UObject*> RTUserParamBinding;
 	UTextureRenderTargetVolume* TargetTexture = nullptr;
-	
-	// note this
-	TWeakObjectPtr<UTexture> CurrentTexture = nullptr;
-	FIntVector CurrentTextureSize = FIntVector::ZeroValue;
-	FNiagaraParameterDirectBinding<UObject*> UserRayMarchBinding;
 
 	bool UpdateTargetTexture(ENiagaraGpuBufferFormat BufferFormat);
 };
@@ -110,15 +103,16 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   ElectricField)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputVectorField)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   VectorField)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputCopyTexture)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   CopyTexture)
 				
-		SHADER_PARAMETER_SAMPLER(SamplerState, TextureSampler)
+		SHADER_PARAMETER_SAMPLER(SamplerState,                GridSampler)
 	END_SHADER_PARAMETER_STRUCT()
 
 public:
 
 	UNiagaraDataInterfaceAurora();
 
-	// NumCells should be divideable by 4 for size of maxresidual buffer
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FIntVector NumCells;
 
@@ -129,9 +123,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FNiagaraUserParameterBinding RenderTargetUserParameter;
-
-	UPROPERTY(EditAnywhere, Category = "AuroraData")
-	FNiagaraUserParameterBinding TextureUserParameter;
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
@@ -164,9 +155,6 @@ public:
 
 	void GetNumCells(FVectorVMExternalFunctionContext& Context);
 	void SetNumCells(FVectorVMExternalFunctionContext& Context);
-	//void SampleTexture(FVectorVMExternalFunctionContext& Context);
-	//void GetTextureDimensions(FVectorVMExternalFunctionContext& Context);
-
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
