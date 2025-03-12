@@ -616,7 +616,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				const int IndexX = Index % {NumCells}.x;
 				const int IndexY = (Index / {NumCells}.x) % {NumCells}.y;
 				const int IndexZ = Index / ({NumCells}.x * {NumCells}.y);
-				OutValue = float({NumberDensity}.Load(uint4(IndexX, IndexY, IndexZ, 0)));
+				OutDensity = float({NumberDensity}.Load(uint4(IndexX, IndexY, IndexZ, 0)));
 			}
 		)");
 		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
