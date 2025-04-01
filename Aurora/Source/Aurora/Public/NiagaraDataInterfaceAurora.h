@@ -42,9 +42,8 @@ struct FNDIAuroraInstanceDataRenderThread
 
 	FTextureRHIRef RenderTargetToCopyTo;
 
-	FNiagaraPooledRWBuffer PlasmaPotentialBufferRead;
-	FNiagaraPooledRWBuffer PlasmaPotentialBufferWrite;
-
+	FNiagaraPooledRWTexture PlasmaPotentialTextureRead;
+	FNiagaraPooledRWTexture PlasmaPotentialTextureWrite;
 	FNiagaraPooledRWTexture NumberDensityTexture;
 	FNiagaraPooledRWTexture ChargeDensityTexture;
 	FNiagaraPooledRWTexture ElectricFieldTexture;
@@ -91,22 +90,22 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 	BEGIN_SHADER_PARAMETER_STRUCT(FShaderParameters, )
 		SHADER_PARAMETER(FIntVector,                          NumCells)
 		SHADER_PARAMETER(FVector3f,                           CellSize)
-		SHADER_PARAMETER(FVector3f,                           WorldBBoxSize)
-
-		SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<float>,        PlasmaPotentialRead)
-		SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>,      PlasmaPotentialWrite)
+		SHADER_PARAMETER(FVector3f,							  WorldBBoxSize)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>,  PlasmaPotentialWrite)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>,    PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<uint>,   OutputNumberDensity)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<uint>,     NumberDensity)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>,  OutputChargeDensity)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>,    ChargeDensity)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputElectricField)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   ElectricField)
+
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputVectorField)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   VectorField)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>, VectorField)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputCopyTexture)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   CopyTexture)
-				
-		SHADER_PARAMETER_SAMPLER(SamplerState,                GridSampler)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>, CopyTexture)
+
+		SHADER_PARAMETER_SAMPLER(SamplerState, GridSampler)
 	END_SHADER_PARAMETER_STRUCT()
 
 public:
