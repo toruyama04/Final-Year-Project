@@ -232,7 +232,7 @@ void UNiagaraDataInterfaceAurora::GetParameterDefinitionHLSL(const FNiagaraDataI
 	OutHLSL.Appendf(TEXT("RWTexture3D<float4> %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *OutputVectorFieldParamName);
 	OutHLSL.Appendf(TEXT("Texture3D<float4> %s%s;\n"),   *ParamInfo.DataInterfaceHLSLSymbol, *VectorFieldParamName);
 	OutHLSL.Appendf(TEXT("RWTexture3D<float4> %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *OutputCopyTextureParamName);
-	OutHLSL.Appendf(TEXT("Texture3D<float4> %s%s\n"),    *ParamInfo.DataInterfaceHLSLSymbol, *CopyTextureParamName);
+	OutHLSL.Appendf(TEXT("Texture3D<float4> %s%s;\n"),    *ParamInfo.DataInterfaceHLSLSymbol, *CopyTextureParamName);
 	OutHLSL.Appendf(TEXT("SamplerState %s%s;\n"),        *ParamInfo.DataInterfaceHLSLSymbol, *SamplerParamName);
 }
 bool UNiagaraDataInterfaceAurora::AppendCompileHash(FNiagaraCompileHashVisitor* InVisitor) const
@@ -313,7 +313,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 	else if (FunctionInfo.DefinitionName == NumberDensityToChargeFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(float Charge, float IonDensity, float Epsilon, out bool OutSuccess)
+			void {FunctionName}(float Charge, float IonDensity, float Epsilon, float mpw, out bool OutSuccess)
 			{
 				int3 GridSize = {NumCells};
 
@@ -332,7 +332,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				float CellVol = {CellSize}.x * {CellSize}.y * {CellSize}.z;		
 				float NumDensity = float({NumberDensity}.Load(uint4(IndexX, IndexY, IndexZ, 0)));
 
-				{OutputCopyTexture}[uint3(IndexX, IndexY, IndexZ)] = float4(NumDensity, 0.0f, 0.0f, 0.0f);
+				{OutputCopyTexture}[uint3(IndexX, IndexY, IndexZ)] = float4((NumDensity / mpw), 0.0f, 0.0f, 0.0f);
 
 				float toDensity = NumDensity / CellVol;
 				float ChargeDensity = ((toDensity * Charge) - IonDensity) / Epsilon;
@@ -1161,6 +1161,7 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("Charge")));
 		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("IonDensity")));
 		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("Epsilon")));
+		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("mpw")));
 		ComputeChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		ComputeChargeDensitySig.bMemberFunction = true;
 		ComputeChargeDensitySig.bRequiresContext = false;
@@ -1245,6 +1246,19 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 		GetVectorFieldSig.bSupportsCPU = false;
 		GetVectorFieldSig.bSupportsGPU = true;
 		OutFunctions.Add(GetVectorFieldSig);
+	}
+	{
+		FNiagaraFunctionSignature GetCopyTextureSig;
+		GetCopyTextureSig.Name = GetCopyTextureFunctionName;
+		GetCopyTextureSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition(GetClass()), TEXT("Grid")));
+		GetCopyTextureSig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetIntDef(), TEXT("Index")));
+		GetCopyTextureSig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetVec3Def(), TEXT("OutValue")));
+		GetCopyTextureSig.bMemberFunction = true;
+		GetCopyTextureSig.bRequiresContext = false;
+		GetCopyTextureSig.bReadFunction = true;
+		GetCopyTextureSig.bSupportsCPU = false;
+		GetCopyTextureSig.bSupportsGPU = true;
+		OutFunctions.Add(GetCopyTextureSig);
 	}
 	// SETTERS
 	{
