@@ -16,14 +16,7 @@
 
 #include "NiagaraDataInterfaceAurora.generated.h"
 
-inline void FNiagaraPooledRWTexture::InitializeInternal(FRDGBuilder& GraphBuilder, const TCHAR* ResourceName, const FRDGTextureDesc& TextureDesc)
-{
-	Release();
-
-	TransientRDGTexture = GraphBuilder.CreateTexture(TextureDesc, ResourceName);
-	Texture = GraphBuilder.ConvertToExternalTexture(TransientRDGTexture);
-}
-
+/* Render-thread struct: stores and manages data for the GPU */
 struct FNDIAuroraInstanceDataRenderThread
 {
 	FName SourceDIName;
@@ -32,7 +25,7 @@ struct FNDIAuroraInstanceDataRenderThread
 	void SwapBuffers();
 
 	FIntVector NumCells = FIntVector(64, 64, 64);
-	FVector WorldBBoxSize = FVector(2560., 2560., 2560.);
+	FVector WorldBBoxSize;
 	float CellSize = 0.0f;
 	
 	bool bResizeBuffers = false;
@@ -51,10 +44,11 @@ struct FNDIAuroraInstanceDataRenderThread
 	FNiagaraPooledRWTexture CopyTexture;
 };
 
+/* Game-thread struct: stores data for the CPU */
 struct FNDIAuroraInstanceDataGameThread
 {
 	FIntVector NumCells = FIntVector(64, 64, 64);
-	FVector WorldBBoxSize = FVector(2560., 2560., 2560.);
+	FVector WorldBBoxSize;
 	bool bNeedsRealloc = false;
 	bool bBoundsChanged = false;
 
@@ -68,17 +62,21 @@ struct FNDIAuroraInstanceDataGameThread
 	bool UpdateTargetTexture(ENiagaraGpuBufferFormat BufferFormat);
 };
 
+/* Proxy: manages GPU execution and stores all render-thread instances */
 struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
 {
 	FNiagaraDataInterfaceProxyAurora() {}
 
+	// controlling execution
 	virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
 	virtual void PreStage(const FNDIGpuComputePreStageContext& Context) override;
 	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
 	virtual void PostStage(const FNDIGpuComputePostStageContext& Context) override;
 
+	// how many elements we iterate over in 3D
 	virtual void GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context) override;
 
+	// storing our render-thread instances
 	TMap<FNiagaraSystemInstanceID, FNDIAuroraInstanceDataRenderThread> SystemInstancesToProxyData;
 };
 
@@ -87,6 +85,9 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 {
 	GENERATED_BODY()
 
+	UNiagaraDataInterfaceAurora();
+
+	/* Shader parameters: accessible in all shader functions */
 	BEGIN_SHADER_PARAMETER_STRUCT(FShaderParameters, )
 		SHADER_PARAMETER(FIntVector,                          NumCells)
 		SHADER_PARAMETER(FVector3f,                           CellSize)
@@ -108,17 +109,14 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 		SHADER_PARAMETER_SAMPLER(SamplerState, GridSampler)
 	END_SHADER_PARAMETER_STRUCT()
 
+
 public:
-
-	UNiagaraDataInterfaceAurora();
-
+	/* properties exposed to the user when creating an instance of this NDI */
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FIntVector NumCells;
 
-	float CellSize = 0.0f;
-
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
-	FVector WorldBBoxSize;
+	FVector WorldBBoxSize = FVector(384.0f);
 
 	UPROPERTY(EditAnywhere, Category = "AuroraData")
 	FNiagaraUserParameterBinding RenderTargetUserParameter;
@@ -128,8 +126,8 @@ public:
 	uint8 bPreviewTexture : 1;
 #endif
 
+	float CellSize = 0.0f;
 	virtual void PostInitProperties() override;
-
 	virtual void GetVMExternalFunction(const FVMExternalFunctionBindingInfo& BindingInfo, void* InstanceData, FVMExternalFunction& OutFunc) override;
 	virtual bool CanExecuteOnTarget(ENiagaraSimTarget Target) const override { return Target == ENiagaraSimTarget::GPUComputeSim; }
 	virtual bool Equals(const UNiagaraDataInterface* Other) const override;
@@ -154,6 +152,7 @@ public:
 
 	void GetNumCells(FVectorVMExternalFunctionContext& Context);
 	void SetNumCells(FVectorVMExternalFunctionContext& Context);
+	void SetWorldBBoxSize(FVectorVMExternalFunctionContext& Context);
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -162,6 +161,7 @@ public:
 #endif
 
 protected:
+	/* storing game-thread data instances */
 	TMap<FNiagaraSystemInstanceID, FNDIAuroraInstanceDataGameThread*> SystemInstancesToProxyData_GT;
 
 	static FNiagaraVariableBase ExposedRTVar;
@@ -172,5 +172,13 @@ protected:
 	virtual bool CopyToInternal(UNiagaraDataInterface* Destination) const override;
 };
 
+// this function was causing me issues for compilation, so I inline it in order to use textures
+inline void FNiagaraPooledRWTexture::InitializeInternal(FRDGBuilder& GraphBuilder, const TCHAR* ResourceName, const FRDGTextureDesc& TextureDesc)
+{
+	Release();
+
+	TransientRDGTexture = GraphBuilder.CreateTexture(TextureDesc, ResourceName);
+	Texture = GraphBuilder.ConvertToExternalTexture(TransientRDGTexture);
+}
 
 
