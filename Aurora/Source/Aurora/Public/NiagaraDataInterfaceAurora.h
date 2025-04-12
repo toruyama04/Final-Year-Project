@@ -27,6 +27,8 @@ struct FNDIAuroraInstanceDataRenderThread
 	FIntVector NumCells = FIntVector(64, 64, 64);
 	FVector WorldBBoxSize;
 	float CellSize = 0.0f;
+
+	int Counter = 0;
 	
 	bool bResizeBuffers = false;
 #if WITH_EDITOR
@@ -35,8 +37,7 @@ struct FNDIAuroraInstanceDataRenderThread
 
 	FTextureRHIRef RenderTargetToCopyTo;
 
-	FNiagaraPooledRWTexture PlasmaPotentialTextureRead;
-	FNiagaraPooledRWTexture PlasmaPotentialTextureWrite;
+	FNiagaraPooledRWTexture PlasmaPotentialTexture;
 	FNiagaraPooledRWTexture NumberDensityTexture;
 	FNiagaraPooledRWTexture ChargeDensityTexture;
 	FNiagaraPooledRWTexture ElectricFieldTexture;
@@ -63,22 +64,22 @@ struct FNDIAuroraInstanceDataGameThread
 };
 
 /* Proxy: manages GPU execution and stores all render-thread instances */
-struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
-{
-	FNiagaraDataInterfaceProxyAurora() {}
 
-	// controlling execution
-	virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
-	virtual void PreStage(const FNDIGpuComputePreStageContext& Context) override;
-	virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
-	virtual void PostStage(const FNDIGpuComputePostStageContext& Context) override;
+	struct FNiagaraDataInterfaceProxyAurora : public FNiagaraDataInterfaceProxyRW
+	{
+		FNiagaraDataInterfaceProxyAurora() {}
 
-	// how many elements we iterate over in 3D
-	virtual void GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context) override;
+		// controlling execution
+		virtual void ResetData(const FNDIGpuComputeResetContext& Context) override;
+		virtual void PreStage(const FNDIGpuComputePreStageContext& Context) override;
+		virtual void PostStage(const FNDIGpuComputePostStageContext& Context) override;
+		virtual void PostSimulate(const FNDIGpuComputePostSimulateContext& Context) override;
 
-	// storing our render-thread instances
-	TMap<FNiagaraSystemInstanceID, FNDIAuroraInstanceDataRenderThread> SystemInstancesToProxyData;
-};
+		// how many elements we iterate over in 3D
+		virtual void GetDispatchArgs(const FNDIGpuComputeDispatchArgsGenContext& Context) override;
+
+		TMap<FNiagaraSystemInstanceID, FNDIAuroraInstanceDataRenderThread> SystemInstancesToProxyData;
+	};
 
 UCLASS(EditInlineNew, Category = "Aurora", meta = (DisplayName = "Aurora Data"))
 class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBase
@@ -88,25 +89,27 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 	UNiagaraDataInterfaceAurora();
 
 	/* Shader parameters: accessible in all shader functions */
+
 	BEGIN_SHADER_PARAMETER_STRUCT(FShaderParameters, )
-		SHADER_PARAMETER(FIntVector,                          NumCells)
-		SHADER_PARAMETER(FVector3f,                           CellSize)
-		SHADER_PARAMETER(FVector3f,							  WorldBBoxSize)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>,  PlasmaPotentialWrite)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>,    PlasmaPotentialRead)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<uint>,   OutputNumberDensity)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<uint>,     NumberDensity)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>,  OutputChargeDensity)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>,    ChargeDensity)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputElectricField)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>,   ElectricField)
+		SHADER_PARAMETER(FIntVector, NumCells)
+		SHADER_PARAMETER(FVector3f, CellSize)
+		SHADER_PARAMETER(FVector3f, WorldBBoxSize)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, PlasmaPotentialWrite)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>, PlasmaPotentialRead)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<uint>, NumberDensityWrite)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<uint>, NumberDensityRead)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, ChargeDensityWrite)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>, ChargeDensityRead)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, ElectricFieldWrite)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>, ElectricFieldRead)
 
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputVectorField)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>, VectorField)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, OutputCopyTexture)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>, CopyTexture)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, VectorFieldWrite)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>, VectorFieldRead)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, CopyTextureWrite)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>, CopyTextureRead)
 
-		SHADER_PARAMETER_SAMPLER(SamplerState, GridSampler)
+		SHADER_PARAMETER(int, RedBlackValue)
+
 	END_SHADER_PARAMETER_STRUCT()
 
 
@@ -146,7 +149,7 @@ public:
 	virtual int32 PerInstanceDataSize()const override { return sizeof(FNDIAuroraInstanceDataGameThread); }
 	virtual bool PerInstanceTickPostSimulate(void* PerInstanceData, FNiagaraSystemInstance* SystemInstance, float DeltaSeconds) override;
 	virtual bool HasPreSimulateTick() const override { return true; }
-	virtual bool HasPostSimulateTick() const override { return true; }
+	// virtual bool HasPostSimulateTick() const override { return true; }
 	virtual void GetExposedVariables(TArray<FNiagaraVariableBase>& OutVariables) const override;
 	virtual bool GetExposedVariableValue(const FNiagaraVariableBase& InVariable, void* InPerInstanceData, FNiagaraSystemInstance* InSystemInstance, void* OutData) const override;
 
