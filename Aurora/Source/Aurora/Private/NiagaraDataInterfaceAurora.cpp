@@ -313,8 +313,8 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				const int IndexY = GDispatchThreadId.y;
 				const int IndexZ = GDispatchThreadId.z;
 
-				float NumDens = (float({NumberDensityRead}.Load(uint4(IndexX, IndexY, IndexZ, 0))) / precision) / mpw;
-				{CopyTextureWrite}[uint3(IndexX, IndexY, IndexZ)] = NumDens;
+				float NumDens = (float({NumberDensityRead}.Load(uint4(IndexX, IndexY, IndexZ, 0))) / precision);
+				{CopyTextureWrite}[uint3(IndexX, IndexY, IndexZ)] = NumDens / mpw;
 
 				float toDensity = NumDens / CellVol;
 				float ChargeDensity = ((toDensity * Charge) - IonDensity) / Epsilon;
@@ -377,14 +377,12 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				int i = ((int(IndexF.x) % GridSize.x) + GridSize.x) % GridSize.x;
 				int j = ((int(IndexF.y) % GridSize.y) + GridSize.y) % GridSize.y;
 				int k = ((int(IndexF.z) % GridSize.z) + GridSize.z) % GridSize.z;
-
-				float di = IndexF.x - i;
-				float dj = IndexF.y - j;
-				float dk = IndexF.z - k;
-
 				int i1 = (i + 1) % GridSize.x;
 				int j1 = (j + 1) % GridSize.y;
 				int k1 = (k + 1) % GridSize.z;
+				float di = IndexF.x - i;
+				float dj = IndexF.y - j;
+				float dk = IndexF.z - k;
 
 				float3 ef000 = {ElectricFieldRead}.Load(uint4(i,j,k,0)).xyz;
 				float3 ef100 = {ElectricFieldRead}.Load(uint4(i1,j,k,0)).xyz;
@@ -416,19 +414,17 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				float3 UnitIndex = mul(float4(InPosition, 1.0), matrx).xyz;
 				float3 IndexF = UnitIndex * {NumCells} - 0.5f;
 
-				int GridSizeX = {NumCells}.x;
-				int GridSizeY = {NumCells}.y;
-				int GridSizeZ = {NumCells}.z;	
+				int3 GridSize = {NumCells};  
 
-				int i = ((int(IndexF.x) % GridSizeX) + GridSizeX) % GridSizeX;
-				int j = ((int(IndexF.y) % GridSizeY) + GridSizeY) % GridSizeY;
-				int k = ((int(IndexF.z) % GridSizeZ) + GridSizeZ) % GridSizeZ;
+				int i = ((int(IndexF.x) % GridSize.x) + GridSize.x) % GridSize.x;
+				int j = ((int(IndexF.y) % GridSize.y) + GridSize.y) % GridSize.y;
+				int k = ((int(IndexF.z) % GridSize.z) + GridSize.z) % GridSize.z;
+				int i1 = (i + 1) % GridSize.x;
+				int j1 = (j + 1) % GridSize.y;
+				int k1 = (k + 1) % GridSize.z;
 				float di = IndexF.x - i;
 				float dj = IndexF.y - j;
 				float dk = IndexF.z - k;
-				int i1 = (i + 1) % GridSizeX;
-				int j1 = (j + 1) % GridSizeY;
-				int k1 = (k + 1) % GridSizeZ;
     
 				float w000 = precision * mpw * (1.0f - di) * (1.0f - dj) * (1.0f - dk);
 				float w100 = precision * mpw * di * (1.0f - dj) * (1.0f - dk);
