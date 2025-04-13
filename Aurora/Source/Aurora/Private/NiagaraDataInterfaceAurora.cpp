@@ -314,7 +314,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				const int IndexZ = GDispatchThreadId.z;
 
 				float NumDens = (float({NumberDensityRead}.Load(uint4(IndexX, IndexY, IndexZ, 0))) / precision) / mpw;
-				{CopyTextureWrite}[uint3(IndexX, IndexY, IndexZ)] = NumDens / mpw;
+				{CopyTextureWrite}[uint3(IndexX, IndexY, IndexZ)] = NumDens;
 
 				float toDensity = NumDens / CellVol;
 				float ChargeDensity = ((toDensity * Charge) - IonDensity) / Epsilon;
