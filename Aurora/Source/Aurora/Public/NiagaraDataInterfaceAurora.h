@@ -94,6 +94,7 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 		SHADER_PARAMETER(FIntVector, NumCells)
 		SHADER_PARAMETER(FVector3f, CellSize)
 		SHADER_PARAMETER(FVector3f, WorldBBoxSize)
+		SHADER_PARAMETER(int, RedBlackCheck)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, PlasmaPotentialWrite)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>, PlasmaPotentialRead)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<uint>, NumberDensityWrite)
@@ -107,9 +108,6 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>, VectorFieldRead)
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, CopyTextureWrite)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>, CopyTextureRead)
-
-		SHADER_PARAMETER(int, RedBlackValue)
-
 	END_SHADER_PARAMETER_STRUCT()
 
 
