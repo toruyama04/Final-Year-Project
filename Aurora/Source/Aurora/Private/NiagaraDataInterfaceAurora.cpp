@@ -304,7 +304,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 	else if (FunctionInfo.DefinitionName == NumberDensityToChargeFunctionName)
 	{
 		static const TCHAR* FormatBounds = TEXT(R"(
-			void {FunctionName}(float Charge, float IonDensity, float Epsilon, float mpw, float precision, out bool OutSuccess)
+			void {FunctionName}(float Charge, float IonDensity, float Epsilon, float mpw, float precision, float avgParticles, out bool OutSuccess)
 			{
 				int3 GridSize = {NumCells};
 				float CellVol = {CellSize}.x * {CellSize}.y * {CellSize}.z;
@@ -314,7 +314,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				const int IndexZ = GDispatchThreadId.z;
 
 				float NumDens = (float({NumberDensityRead}.Load(uint4(IndexX, IndexY, IndexZ, 0))) / precision);
-				{CopyTextureWrite}[uint3(IndexX, IndexY, IndexZ)].x = NumDens / mpw;
+				{CopyTextureWrite}[uint3(IndexX, IndexY, IndexZ)].x = NumDens / (mpw * avgParticles);
 
 				float toDensity = NumDens / CellVol;
 				float ChargeDensity = ((toDensity * Charge) - IonDensity) / Epsilon;
@@ -1107,6 +1107,7 @@ void UNiagaraDataInterfaceAurora::GetFunctionsInternal(TArray<FNiagaraFunctionSi
 		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("Epsilon")));
 		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("mpw")));
 		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("precision")));
+		ComputeChargeDensitySig.Inputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetFloatDef(), TEXT("avgParticles")));
 		ComputeChargeDensitySig.Outputs.Add(FNiagaraVariable(FNiagaraTypeDefinition::GetBoolDef(), TEXT("OutSuccess")));
 		ComputeChargeDensitySig.bMemberFunction = true;
 		ComputeChargeDensitySig.bRequiresContext = false;
