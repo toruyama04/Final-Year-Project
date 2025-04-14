@@ -106,8 +106,8 @@ class AURORA_API UNiagaraDataInterfaceAurora : public UNiagaraDataInterfaceRWBas
 
 		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, VectorFieldWrite)
 		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>, VectorFieldRead)
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float>, CopyTextureWrite)
-		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float>, CopyTextureRead)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture3D<float4>, CopyTextureWrite)
+		SHADER_PARAMETER_RDG_TEXTURE_SRV(Texture3D<float4>, CopyTextureRead)
 	END_SHADER_PARAMETER_STRUCT()
 
 

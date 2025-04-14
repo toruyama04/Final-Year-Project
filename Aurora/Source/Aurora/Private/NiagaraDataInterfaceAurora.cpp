@@ -96,7 +96,7 @@ void FNDIAuroraInstanceDataRenderThread::ResizeBuffers(FRDGBuilder& GraphBuilder
 	VectorFieldTexture.Initialize(GraphBuilder, TEXT("VectorFieldTexture"), Float4TextureDesc);
 	ChargeDensityTexture.Initialize(GraphBuilder, TEXT("ChargeDensityTexture"), FloatTextureDesc);
 	NumberDensityTexture.Initialize(GraphBuilder, TEXT("NumberDensityTexture"), UIntTextureDesc);
-	CopyTexture.Initialize(GraphBuilder, TEXT("CopyTexture"), FloatTextureDesc);
+	CopyTexture.Initialize(GraphBuilder, TEXT("CopyTexture"), Float4TextureDesc);
 	PlasmaPotentialTexture.Initialize(GraphBuilder, TEXT("PlasmaPotentialTextureRead"), FloatTextureDesc);
 }
 
@@ -225,8 +225,8 @@ void UNiagaraDataInterfaceAurora::GetParameterDefinitionHLSL(const FNiagaraDataI
 	OutHLSL.Appendf(TEXT("Texture3D<float4> %s%s;\n"),   *ParamInfo.DataInterfaceHLSLSymbol, *ElectricFieldReadParamName);
 	OutHLSL.Appendf(TEXT("RWTexture3D<float4> %s%s;\n"), *ParamInfo.DataInterfaceHLSLSymbol, *VectorFieldWriteParamName);
 	OutHLSL.Appendf(TEXT("Texture3D<float4> %s%s;\n"),   *ParamInfo.DataInterfaceHLSLSymbol, *VectorFieldReadParamName);
-	OutHLSL.Appendf(TEXT("RWTexture3D<float> %s%s;\n"),  *ParamInfo.DataInterfaceHLSLSymbol, *CopyTextureWriteParamName);
-	OutHLSL.Appendf(TEXT("Texture3D<float> %s%s;\n"),    *ParamInfo.DataInterfaceHLSLSymbol, *CopyTextureReadParamName);
+	OutHLSL.Appendf(TEXT("RWTexture3D<float4> %s%s;\n"),  *ParamInfo.DataInterfaceHLSLSymbol, *CopyTextureWriteParamName);
+	OutHLSL.Appendf(TEXT("Texture3D<float4> %s%s;\n"),    *ParamInfo.DataInterfaceHLSLSymbol, *CopyTextureReadParamName);
 }
 /* if shader parameters change, we force recompilation of the shader */
 bool UNiagaraDataInterfaceAurora::AppendCompileHash(FNiagaraCompileHashVisitor* InVisitor) const
@@ -314,7 +314,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				const int IndexZ = GDispatchThreadId.z;
 
 				float NumDens = (float({NumberDensityRead}.Load(uint4(IndexX, IndexY, IndexZ, 0))) / precision);
-				{CopyTextureWrite}[uint3(IndexX, IndexY, IndexZ)] = NumDens / mpw;
+				{CopyTextureWrite}[uint3(IndexX, IndexY, IndexZ)].x = NumDens / mpw;
 
 				float toDensity = NumDens / CellVol;
 				float ChargeDensity = ((toDensity * Charge) - IonDensity) / Epsilon;
@@ -576,7 +576,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				const int IndexX = Index % {NumCells}.x;
 				const int IndexY = (Index / {NumCells}.x) % {NumCells}.y;
 				const int IndexZ = Index / ({NumCells}.x * {NumCells}.y);
-				OutValue = {CopyTextureRead}.Load(uint4(IndexX, IndexY, IndexZ, 0));
+				OutValue = {CopyTextureRead}.Load(uint4(IndexX, IndexY, IndexZ, 0)).x;
 			}
 		)");
 		OutHLSL += FString::Format(FormatSample, ArgsDeclaration);
@@ -620,7 +620,7 @@ bool UNiagaraDataInterfaceAurora::GetFunctionHLSL(const FNiagaraDataInterfaceGPU
 				const int IndexX = Index % {NumCells}.x;
 				const int IndexY = (Index / {NumCells}.x) % {NumCells}.y;
 				const int IndexZ = Index / ({NumCells}.x * {NumCells}.y);
-				{CopyTextureWrite}[uint3(IndexX, IndexY, IndexZ)] = InValue;
+				{CopyTextureWrite}[uint3(IndexX, IndexY, IndexZ)].x = InValue;
 				OutSuccess = true;
 			}
 		)");
@@ -1363,7 +1363,7 @@ void FNiagaraDataInterfaceProxyAurora::ResetData(const FNDIGpuComputeResetContex
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
 	AddClearUAVPass(GraphBuilder, ProxyData->PlasmaPotentialTexture.GetOrCreateUAV(GraphBuilder), 0.0f);
 	AddClearUAVPass(GraphBuilder, ProxyData->NumberDensityTexture.GetOrCreateUAV(GraphBuilder), uint32(0));
-	AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityTexture.GetOrCreateUAV(GraphBuilder), 0.0f);
+	AddClearUAVPass(GraphBuilder, ProxyData->ChargeDensityTexture.GetOrCreateUAV(GraphBuilder), FVector4f(ForceInitToZero));
 
 	AddClearUAVPass(GraphBuilder, ProxyData->ElectricFieldTexture.GetOrCreateUAV(GraphBuilder), FVector4f(ForceInitToZero));
 	AddClearUAVPass(GraphBuilder, ProxyData->VectorFieldTexture.GetOrCreateUAV(GraphBuilder), FVector4f(ForceInitToZero));
@@ -1422,6 +1422,11 @@ void FNiagaraDataInterfaceProxyAurora::PostStage(const FNDIGpuComputePostStageCo
 			FNiagaraGpuComputeDebugInterface DebugInterface = Context.GetComputeDispatchInterface().GetGpuComputeDebugInterface();
 			DebugInterface.AddTexture(GraphBuilder, Context.GetSystemInstanceID(), SourceDIName, ProxyData->ElectricFieldTexture.GetOrCreateTexture(GraphBuilder));
 		}
+
+		if (ProxyData->RenderTargetToCopyTo != nullptr)
+		{
+			ProxyData->CopyTexture.CopyToTexture(GraphBuilder, ProxyData->RenderTargetToCopyTo, TEXT("NiagaraRenderTargetToCopyTO"));
+		}
 	}
 #endif
 }
@@ -1435,11 +1440,6 @@ void FNiagaraDataInterfaceProxyAurora::PostSimulate(const FNDIGpuComputePostSimu
 		return;
 	}
 	FRDGBuilder& GraphBuilder = Context.GetGraphBuilder();
-
-	if (ProxyData->RenderTargetToCopyTo != nullptr)
-	{
-		ProxyData->ElectricFieldTexture.CopyToTexture(GraphBuilder, ProxyData->RenderTargetToCopyTo, TEXT("NiagaraRenderTargetToCopyTO"));
-	}
 
 	// UE_LOG(LogTemp, Log, TEXT("Clearing Number Density"));
 	AddClearUAVPass(GraphBuilder, ProxyData->NumberDensityTexture.GetOrCreateUAV(GraphBuilder), uint32(0));
