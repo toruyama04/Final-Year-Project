@@ -1423,13 +1423,17 @@ void FNiagaraDataInterfaceProxyAurora::PostStage(const FNDIGpuComputePostStageCo
 			FNiagaraGpuComputeDebugInterface DebugInterface = Context.GetComputeDispatchInterface().GetGpuComputeDebugInterface();
 			DebugInterface.AddTexture(GraphBuilder, Context.GetSystemInstanceID(), SourceDIName, ProxyData->ElectricFieldTexture.GetOrCreateTexture(GraphBuilder));
 		}
-
-		if (ProxyData->RenderTargetToCopyTo != nullptr)
-		{
-			ProxyData->CopyTexture.CopyToTexture(GraphBuilder, ProxyData->RenderTargetToCopyTo, TEXT("NiagaraRenderTargetToCopyTO"));
-		}
 	}
 #endif
+
+	if (Context.GetSimStageData().StageMetaData->SimulationStageName == TEXT("Compute Charge Density"))
+	{
+		FNDIAuroraInstanceDataRenderThread* ProxyData = SystemInstancesToProxyData.Find(Context.GetSystemInstanceID());
+		if (ProxyData->RenderTargetToCopyTo != nullptr)
+		{
+			ProxyData->CopyTexture.CopyToTexture(GraphBuilder, ProxyData->RenderTargetToCopyTo, TEXT("NiagaraRenderTarget"));
+		}
+	}
 }
 
 // Runs once after each tick
