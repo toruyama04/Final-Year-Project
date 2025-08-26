@@ -1,2 +1,2 @@
-# University of Birmingham LH Computer Science Project
-75%
+### University of Birmingham LH Computer Science Project
+Mark: 75%
